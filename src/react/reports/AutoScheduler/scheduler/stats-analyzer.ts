@@ -56,7 +56,13 @@ export class StatsAnalyzer {
   iterations = 0;
   /** A separate copy for the plan pass, which must not touch the simulation's mutable work items. */
   planIssues: LinkedIssue[];
-  planCache?: { plan: Plan; uncertaintyWeight: UncertaintyWeight; finish: number; start: number; final: boolean };
+  planCache?: {
+    plan: Plan;
+    uncertaintyWeight: UncertaintyWeight;
+    ownDue: Map<string, number>;
+    start: number;
+    final: boolean;
+  };
   constructor({
     issues,
     uncertaintyWeight,
@@ -146,17 +152,24 @@ export class StatsAnalyzer {
 
     const endDaySimulationResult = getUncertaintyThresholdData(endDaySimulation, this.uncertaintyWeight);
     const planStart = planStartAtWeight(this.firstStartDays, this.uncertaintyWeight);
-    const plan = this.planFor(endDaySimulationResult.dueDayTop, planStart.startDay);
 
-    // lets calculate the stats based on the uncertainty threshold
-    // while we're at it, lets also get the last run data ...
-    const simulationIssueResults = this.simulationIssues.map((simulationIssue) => {
+    // Each item's own numbers at the slider, then the plan calibrated against their finishes.
+    const ownResults = this.simulationIssues.map((simulationIssue) =>
+      getUncertaintyThresholdData(simulationIssue, this.uncertaintyWeight),
+    );
+    const ownDue = new Map<string, number>();
+    this.simulationIssues.forEach((simulationIssue, i) => {
+      if (simulationIssue.linkedIssue.scheduleDirection === 'forward') {
+        ownDue.set(simulationIssue.linkedIssue.key, ownResults[i].dueDayTop);
+      }
+    });
+    const plan = this.planFor(ownDue, planStart.startDay);
+
+    const simulationIssueResults = this.simulationIssues.map((simulationIssue, i) => {
       const key = simulationIssue.linkedIssue.key;
-      const result = applyPlan(
-        getUncertaintyThresholdData(simulationIssue, this.uncertaintyWeight),
-        plan.items.get(key),
-        { backward: simulationIssue.linkedIssue.scheduleDirection === 'backward' },
-      );
+      const result = applyPlan(ownResults[i], plan.items.get(key), {
+        backward: simulationIssue.linkedIssue.scheduleDirection === 'backward',
+      });
       return {
         ...result,
         mustStartByDay: mustStartByAtWeight(simulationIssue.mustStartByDays, this.uncertaintyWeight),
@@ -222,31 +235,42 @@ export class StatsAnalyzer {
     this._teardown();
   }
   /**
-   * The plan calibrated to the simulation's finish (or start) at the slider. Recalibrated only when
-   * the slider changes, a target moves by half a day, or the simulation finishes — a full search is
-   * about a dozen scheduler runs, and `dataForUI` runs once per batch.
+   * The plan calibrated so the typical item ends on its own finish at the slider (or, with only
+   * frozen work and what feeds it, starts when the simulation says work starts). Recalibrated only
+   * when the slider changes, any target moves by half a day, or the simulation finishes — a full
+   * search is about a dozen scheduler runs, and `dataForUI` runs once per batch.
    */
-  planFor(finish: number, start: number): Plan {
+  planFor(ownDue: Map<string, number>, start: number): Plan {
     const final = this.percentComplete >= 100;
     const cached = this.planCache;
     if (
       cached &&
       cached.uncertaintyWeight === this.uncertaintyWeight &&
       cached.final === final &&
-      Math.abs(cached.finish - finish) < 0.5 &&
-      Math.abs(cached.start - start) < 0.5
+      Math.abs(cached.start - start) < 0.5 &&
+      sameTargets(cached.ownDue, ownDue)
     ) {
       return cached.plan;
     }
     const plan = calibratePlan(this.planIssues, {
-      finish,
+      ownDue,
       start,
       fallbackQuantile: this.uncertaintyWeight === 'average' ? 50 : this.uncertaintyWeight,
     });
-    this.planCache = { plan, uncertaintyWeight: this.uncertaintyWeight, finish, start, final };
+    this.planCache = { plan, uncertaintyWeight: this.uncertaintyWeight, ownDue, start, final };
     return plan;
   }
 }
+/** True when every item's target is within half a day of the cached one. */
+function sameTargets(cached: Map<string, number>, next: Map<string, number>): boolean {
+  if (cached.size !== next.size) return false;
+  for (const [key, due] of next) {
+    const before = cached.get(key);
+    if (before === undefined || Math.abs(before - due) >= 0.5) return false;
+  }
+  return true;
+}
+
 type MinimalSimulationIssueFields = {
   startDays: number[];
   dueDays: number[];

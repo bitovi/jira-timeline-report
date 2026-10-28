@@ -302,7 +302,13 @@ describe('StatsAnalyzer plan (spec/044 consistent-plan.md)', () => {
     };
   }
 
-  it('lays the chain end to end, finishing when the simulation does, with shorter-than-90% lengths', () => {
+  const medianMiss = (bars: any[]) => {
+    const misses = bars.map((bar) => bar.dueDayTop - bar.ownDueDayTop).sort((a, b) => a - b);
+    const mid = misses.length >> 1;
+    return misses.length % 2 ? misses[mid] : (misses[mid - 1] + misses[mid]) / 2;
+  };
+
+  it('lays the chain end to end, ending the typical epic on its own 90% finish, at shorter-than-90% lengths', () => {
     const { analyzer, latest, bars } = analyze(chain, 90);
     analyzer.teardown();
 
@@ -310,13 +316,45 @@ describe('StatsAnalyzer plan (spec/044 consistent-plan.md)', () => {
     for (let i = 1; i < sorted.length; i++) {
       expect(sorted[i].startDateWithTimeEnoughToFinish).toBeGreaterThanOrEqual(sorted[i - 1].dueDayTop - 1e-9);
     }
-    expect(
-      Math.abs(sorted[sorted.length - 1].dueDayTop - latest().endDaySimulationResult.dueDayTop),
-    ).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(medianMiss(sorted))).toBeLessThanOrEqual(0.5);
     expect(latest().planQuantile).toBeLessThan(90);
-    // Each epic's own 90% finish still reaches past its bar.
-    expect(sorted.some((bar: any) => bar.ownDueDayTop > bar.dueDayTop)).toBe(true);
+    // Equal lengths: the first epic ends before its own 90% finish, the last after it.
+    expect(sorted[0].dueDayTop).toBeLessThan(sorted[0].ownDueDayTop);
+    expect(sorted[sorted.length - 1].dueDayTop).toBeGreaterThan(sorted[sorted.length - 1].ownDueDayTop);
     expect(sorted.every((bar: any) => bar.track === 0 && !bar.isOverflowTrack)).toBe(true);
+  });
+
+  it('leaves the risk of waiting on parallel branches to the overall finish, not to the epics', () => {
+    // R, then two identical branches on their own teams: B1 → B2 and C1 → C2 (IMP-99's shape).
+    const epic = (key: string, team: string, blocksKeys: string[] = []) =>
+      makeDerivedIssue({
+        key,
+        url: `#${key}`,
+        team: makeTeam(team),
+        storyPointsMedian: 10,
+        confidence: 40,
+        issue: {
+          fields: {
+            'Linked Issues': blocksKeys.map((to) => ({ type: { name: 'Blocks' }, outwardIssue: { key: to } })),
+          },
+        },
+      } as any);
+    const issues = [
+      epic('R', 'team-r', ['B1', 'C1']),
+      epic('B1', 'team-b', ['B2']),
+      epic('B2', 'team-b'),
+      epic('C1', 'team-c', ['C2']),
+      epic('C2', 'team-c'),
+    ];
+
+    const { analyzer, latest, bars } = analyze(issues, 90);
+    analyzer.teardown();
+
+    const all = bars();
+    expect(Math.abs(medianMiss(all))).toBeLessThanOrEqual(0.5);
+    // The plan's last bar ends before the whole plan's 90% finish: either branch can be the late one.
+    const planFinish = Math.max(...all.map((bar: any) => bar.dueDayTop));
+    expect(planFinish).toBeLessThan(latest().endDaySimulationResult.dueDayTop);
   });
 
   it('stretches lengths past the median at the median slider, because estimates run long', () => {

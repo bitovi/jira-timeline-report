@@ -28,14 +28,16 @@ You cannot have all three:
 
 The old non-Monte-Carlo scheduler gave up (3): it stacked p% lengths, so six epics at 90% finished
 around day 270 instead of the simulation's ~200. The current bars give up (2). This spec gives up
-(1) for the bars, and shows (1) separately as a whisker and in the tooltip.
+(1) exactly, keeps it close for the typical epic, and shows each epic's own window as a whisker. It
+also loosens (3): the plan's last date is close to, but not exactly, the overall p% finish, which
+stays in the Overall timing row.
 
 ## Decision
 
 - **The solid bar is a plan.** It comes from one run of the scheduler with no randomness, where every
-  epic gets its length at one shared percentile _q_. Choose _q_ so this run finishes when the
-  simulation says the whole plan finishes at the slider's risk. The bars fit the tracks and the
-  blockers by construction, because the real scheduler placed them.
+  epic gets its length at one shared percentile _q_. Choose _q_ so the typical epic's bar ends on
+  its own p% finish (see "Calibrating _q_"). The bars fit the tracks and the blockers by
+  construction, because the real scheduler placed them, and every bar is a real adjusted size.
 - **The bar is what gets written to Jira**, and what "Freeze" reproduces. Freezing a plan and
   running again gives the same bars, with no over-capacity track.
 - **Each epic's own risk is the thin line (the whisker).** It is the same thin line drawn today for
@@ -43,8 +45,8 @@ around day 270 instead of the simulation's ~200. The current bars give up (2). T
 - **No toggle.** The previous per-epic bars are not kept as an option. Their dates overlap on a
   track, and freezing them recreates this bug.
 
-The slider now means "chance the **whole plan** finishes by its end". Each epic's own chance is in
-its tooltip.
+The slider still means "chance each epic finishes by its date", now true for the typical epic rather
+than exactly for each one. The whole plan's chance is the Overall timing row.
 
 ## The plan pass
 
@@ -60,29 +62,55 @@ start or only a due date gets the missing date from its length at _q_.
 
 ### Calibrating _q_
 
-1. **Target.** Use the simulation's overall finish at the slider: the p-th percentile of `lastDays`,
-   or the mean at "average". This is the end of the "Overall timing" green band.
-2. **Search.** Find _q_ in [1, 99] whose plan finish is closest to the target. Use bisection: the
-   finish almost always grows with _q_. Stop when the finish is within 0.5 day of the target, or
-   after 12 steps. Keep the closest _q_ seen, so a rare non-monotone step can't make things worse.
-3. **When the finish can't move.** If every candidate finishes on the same day (the last item is
-   frozen), calibrate on the plan's **start** instead. Use the value `planStartAtWeight` already
-   returns from `firstStartDays`, which is the start of the "Overall timing" blue band.
-4. **When neither can move** (everything that matters is frozen), use _q_ = the slider's value, or
-   50 at "average".
+The first version matched the plan's **last** date to the overall p% finish. That fails on two
+shapes, in opposite directions:
 
-Expect _q_ to be below the slider at high settings, because one long epic is offset by others that
-come in short. At "median" and "average", _q_ usually lands above 50, because the lognormal is
-skewed to the right. Bars come out slightly longer than each epic's median length, which is
-correct, not a bug.
+- **A chain** (IMP-116): all epics running long at once is unlikely, so _q_ lands below the slider.
+  Every epic ends where the last one needs it to, not where its own p% says.
+- **Parallel branches** (IMP-99): you wait on both, which is less likely to go well than either
+  alone, so the overall finish is later than each branch's own finish and _q_ lands **above** the
+  slider. Every epic — on both branches — gets stretched to carry that "waiting on two branches"
+  risk, and their bars end weeks after their own p% finishes.
+
+One dial can't fit both, so it is fitted to the epics instead:
+
+1. **Target.** Each forward item's own p% finish: its `dueDayTop` from the simulation (the mean at
+   "average"), the right end of its whisker. Frozen items don't move; work feeding a frozen item is
+   placed from the frozen dates, so neither counts.
+2. **Measure.** The **median**, over those items, of plan end − own finish. Half the items end on or
+   before their own date, half after. The median, not the mean, so one huge, uncertain epic can't
+   drag the dial for everyone. It grows with _q_, since every bar end moves later.
+3. **Search.** Bisection on _q_ in [1, 99] until the measure is within 0.5 day of zero, or 12 steps,
+   keeping the closest _q_ seen. Out of reach, settle for 1 or 99.
+4. **When no item's finish can move** (only frozen work and what feeds it), calibrate the plan's
+   **start** against `planStartAtWeight` from `firstStartDays`, the start of the "Overall timing"
+   blue band.
+5. **When nothing moves**, _q_ = the slider's value, or 50 at "average".
+
+What it looks like:
+
+- In a chain, equal lengths put early epics a bit before their own p% finish and late ones a bit
+  after, so the plan can end slightly after the overall p% finish.
+- With parallel branches, epics sit near their own windows and the plan ends **before** the overall
+  p% finish. The gap is the risk of waiting on several branches: no single epic carries it, and the
+  Overall timing row shows it.
+- The parent's rolled-up due date (the latest epic) can therefore understate that risk. Writing the
+  overall finish to the parent is a possible follow-up.
+- Bars are never squeezed: every bar is its epic's length at _q_. (Re-timing bars to end exactly on
+  each epic's own finish was considered and rejected: a small epic after a big, uncertain one would
+  get a fraction of its size — IMP-99's "Promotion end-date error handling" ~57% — and that short
+  epic would be written to Jira.)
+
+At "median" and "average", _q_ usually lands above 50, because the lognormal is skewed to the right.
+Bars come out slightly longer than each epic's median length, which is correct, not a bug.
 
 ### When it runs
 
 - It needs its own `linkIssues(...)` copy. The plan pass and the simulation must not mutate the same
   `mutableWorkItem` objects.
 - It runs in `StatsAnalyzer.dataForUI`, which already runs per batch and on slider changes.
-- To keep that cheap, start the search from the previous _q_. Re-run it only when the target moved by
-  at least half a day, the slider changed, or the simulation finished.
+- To keep that cheap, re-run it only when any item's target moved by at least half a day, the slider
+  changed, or the simulation finished.
 - One plan run costs about one simulation iteration. A full search costs about 12, on top of a
   20-iteration batch.
 
@@ -161,15 +189,16 @@ Scheduler and stats:
 
 - **Plan pass, no overlap.** Six epics in a chain on one track, at slider 90: no plan bar overlaps
   another on the same track. Each starts at or after its blocker's end.
-- **Calibration.** In the same chain, the plan finish is within 0.5 day of the 90th percentile of
-  `lastDays`, and _q_ < 90.
+- **Calibration.** In the same chain, the median of plan end − own finish is within 0.5 day of zero,
+  _q_ < 90, the first epic ends before its own finish and the last after.
+- **Parallel branches.** A root blocking two identical branches: the median miss is within 0.5 day,
+  and the plan's last bar ends before the overall p% finish.
+- **Median, not mean.** One item far off its own finish doesn't move the dial.
 - **Median.** At slider 50 in the same chain, _q_ > 50.
 - **Frozen end.** With the last item frozen, the search calibrates on the start (_q_ moves the plan
   start toward the `firstStartDays` target). With everything frozen, _q_ = the slider.
 - **Freeze round trip.** Take the plan dates, freeze all of them, and re-run: same bars, and no
   over-capacity track.
-- **Nothing frozen, no blockers, parallel tracks.** The plan finish equals the target, within
-  tolerance.
 - **Deterministic.** Two plan passes with the same _q_ give identical output.
 
 UI:

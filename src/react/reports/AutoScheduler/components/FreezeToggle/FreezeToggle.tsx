@@ -54,7 +54,7 @@ export const FreezeToggle: FC<FreezeToggleProps> = ({ summary, isFrozen, canFree
           aria-pressed={isFrozen}
           aria-disabled={disabled || undefined}
           data-testid="freeze-toggle"
-          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded bg-transparent p-0 ${visibility}`}
+          className={`freeze-toggle flex h-4 w-4 shrink-0 items-center justify-center rounded bg-transparent p-0 ${visibility}`}
           onClick={() => {
             if (!disabled) onToggle(!isFrozen);
           }}

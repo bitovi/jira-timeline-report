@@ -40,8 +40,9 @@ The following starts from the bottom and builds up.
 
 - **plan.ts**  
   The plan pass (spec/044 consistent-plan.md): one scheduler run with every length at a shared
-  percentile, calibrated so it finishes when the simulation does at the slider's risk. Its positions
-  are the bars, and what Update Epic Dates writes, so they fit the tracks and blockers.
+  percentile, calibrated so the typical epic's bar ends on its own simulated finish at the slider's
+  risk. Its positions are the bars, and what Update Epic Dates writes, so they fit the tracks and
+  blockers.
 
 - **stats-analyzer.ts**  
   Contains logic for analyzing simulation statistics, such as calculating start and due days for issues, aggregating results, and preparing data for the UI. Defines types and functions for working with simulation results. Bars come from the plan pass; each item's own percentile finish (`ownDueDayTop`) is its whisker.

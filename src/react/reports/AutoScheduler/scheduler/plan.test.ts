@@ -54,16 +54,48 @@ describe('runPlan', () => {
 });
 
 describe('calibratePlan', () => {
-  it('finds the percentile whose plan finishes on the target', () => {
+  const none = new Map<string, number>();
+
+  it('ends the typical item on its own finish: half on or before, half after', () => {
+    // Three 10-day (median) epics in a chain whose own finishes, like a simulation's, grow by less
+    // than a full high-percentile length each: 15, 27, 38.
     const issues = linkIssues([epic('A', { blocks: 'B' }), epic('B', { blocks: 'C' }), epic('C')], false);
+    const ownDue = new Map([
+      ['A', 15],
+      ['B', 27],
+      ['C', 38],
+    ]);
 
-    const plan = calibratePlan(issues, { finish: 40, start: 0, fallbackQuantile: 80 });
+    const plan = calibratePlan(issues, { ownDue, start: 0, fallbackQuantile: 80 });
 
-    expect(Math.abs(plan.finish - 40)).toBeLessThanOrEqual(0.5);
+    // B is the median item: it lands on its own finish. With equal lengths, the first ends before its
+    // own finish and the last after.
+    expect(Math.abs(plan.items.get('B')!.dueDay - 27)).toBeLessThanOrEqual(0.5);
+    expect(plan.items.get('A')!.dueDay).toBeLessThan(15);
+    expect(plan.items.get('C')!.dueDay).toBeGreaterThan(38);
     expect(plan.quantile).toBeGreaterThan(50);
   });
 
-  it('calibrates on the start when a frozen item pins the finish', () => {
+  it('is not dragged by one item far off its own finish', () => {
+    const issues = linkIssues(
+      [epic('A'), epic('B', { team: team('team-b') }), epic('C', { team: team('team-c') })],
+      false,
+    );
+    // All three are identical, parallel 10-day epics; C's target is an outlier.
+    const plan = calibratePlan(issues, {
+      ownDue: new Map([
+        ['A', 12],
+        ['B', 12],
+        ['C', 90],
+      ]),
+      start: 0,
+      fallbackQuantile: 80,
+    });
+
+    expect(Math.abs(plan.items.get('A')!.dueDay - 12)).toBeLessThanOrEqual(0.5);
+  });
+
+  it('calibrates on the start when only frozen items and the work feeding them are left', () => {
     // U must finish before frozen F (days 2–4), so the plan's start moves earlier as U grows.
     const issues = linkIssues(
       [
@@ -74,7 +106,7 @@ describe('calibratePlan', () => {
       { frozenKeys: new Set(['F']), startDate },
     );
 
-    const plan = calibratePlan(issues, { finish: 999, start: -12, fallbackQuantile: 80 });
+    const plan = calibratePlan(issues, { ownDue: none, start: -12, fallbackQuantile: 80 });
 
     expect(Math.abs(plan.start - -12)).toBeLessThanOrEqual(0.5);
     expect(plan.finish).toBe(4);
@@ -86,13 +118,14 @@ describe('calibratePlan', () => {
       startDate,
     });
 
-    expect(calibratePlan(issues, { finish: 30, start: 0, fallbackQuantile: 80 }).quantile).toBe(80);
+    expect(calibratePlan(issues, { ownDue: none, start: 0, fallbackQuantile: 80 }).quantile).toBe(80);
   });
 
   it('settles for the nearest end of the range when the target is out of reach', () => {
     const issues = linkIssues([epic('A')], false);
+    const target = (due: number) => ({ ownDue: new Map([['A', due]]), start: 0, fallbackQuantile: 80 });
 
-    expect(calibratePlan(issues, { finish: 1, start: 0, fallbackQuantile: 80 }).quantile).toBe(1);
-    expect(calibratePlan(issues, { finish: 10_000, start: 0, fallbackQuantile: 80 }).quantile).toBe(99);
+    expect(calibratePlan(issues, target(1)).quantile).toBe(1);
+    expect(calibratePlan(issues, target(10_000)).quantile).toBe(99);
   });
 });

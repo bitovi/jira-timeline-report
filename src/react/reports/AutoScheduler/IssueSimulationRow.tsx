@@ -132,6 +132,10 @@ export const IssueSimulationRow: React.FC<{
   const fadeIfReplaced = previewFreeze ? 'opacity-25' : '';
   const fadeBarIfReplaced = shadow && previewFreeze ? 'opacity-25' : previewUnfreeze ? 'opacity-60' : '';
 
+  // A row shows its own shadow while either of its cells is hovered.
+  const [hoveringLabel, setHoveringLabel] = useState(false);
+  const [hoveringChart, setHoveringChart] = useState(false);
+
   function rangeBorderClasses() {
     if (fullResult?.isOverflowTrack) {
       return 'border-solid border-2 border-yellow-500';
@@ -166,6 +170,7 @@ export const IssueSimulationRow: React.FC<{
         textClassName="pointer hover:underline"
         gridRowStart={gridRowStart}
         striped={striped}
+        onHoverChange={fullResult ? setHoveringLabel : undefined}
         leading={
           fullResult && onToggleFreeze ? (
             <FreezeToggle
@@ -190,12 +195,14 @@ export const IssueSimulationRow: React.FC<{
         onClick={isFullSimulationResult(issue) ? undefined : () => setShowDetails((v) => !v)}
         onMouseEnter={() => {
           if (isFullSimulationResult(issue)) {
+            setHoveringChart(true);
             highlightUpstream(issue.linkedIssue, true);
             highlightDownstream(issue.linkedIssue, true);
           }
         }}
         onMouseLeave={() => {
           if (isFullSimulationResult(issue)) {
+            setHoveringChart(false);
             highlightUpstream(issue.linkedIssue, false);
             highlightDownstream(issue.linkedIssue, false);
           }
@@ -263,6 +270,7 @@ export const IssueSimulationRow: React.FC<{
                   barStartDay={issue.startDateWithTimeEnoughToFinish}
                   barDueDay={issue.dueDayTop}
                   previewing={previewFreeze}
+                  revealed={hoveringLabel || hoveringChart}
                 />
               )}
               {heldDay != null &&

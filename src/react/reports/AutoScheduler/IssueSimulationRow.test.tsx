@@ -93,6 +93,37 @@ describe('IssueSimulationRow', () => {
     expect(shadow.style.width).toBe('25%');
   });
 
+  describe('when the shadow shows', () => {
+    const jiraDates = () => result({ start: new Date(2026, 0, 12), due: new Date(2026, 0, 16) });
+
+    it('keeps it hidden until something is hovered, revealing it when any lock in the report is', () => {
+      renderRow(jiraDates());
+
+      expect(screen.getByTestId('jira-dates-shadow')).toHaveClass(
+        'opacity-0',
+        'group-has-[.freeze-toggle:hover]/report:opacity-100',
+      );
+    });
+
+    it('shows it while the row’s bar is hovered', async () => {
+      const { container } = renderRow(jiraDates());
+
+      await userEvent.hover(container.querySelector('#ORDER-1')!);
+      expect(screen.getByTestId('jira-dates-shadow')).toHaveClass('opacity-100');
+
+      await userEvent.unhover(container.querySelector('#ORDER-1')!);
+      expect(screen.getByTestId('jira-dates-shadow')).toHaveClass('opacity-0');
+    });
+
+    it('shows it while the row’s label is hovered', async () => {
+      renderRow(jiraDates());
+
+      await userEvent.hover(screen.getByRole('link', { name: 'Checkout' }));
+
+      expect(screen.getByTestId('jira-dates-shadow')).toHaveClass('opacity-100');
+    });
+  });
+
   it('hides the shadow when it lines up with the bar', () => {
     renderRow(result({ start: new Date(2026, 0, 5), due: new Date(2026, 0, 9) }));
 

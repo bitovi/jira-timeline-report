@@ -375,7 +375,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {/* Simulation Grid */}
           <div
-            className="auto-scheduler-grid grid min-h-0 flex-1 overflow-auto bg-white relative"
+            className="auto-scheduler-grid group/report grid min-h-0 flex-1 overflow-auto bg-white relative"
             style={{
               // `fit-content(40%)`: the labels size to their content but never take more than 40% of
               // the grid, so the bars stop losing every pixel a panel takes. The day columns carry a

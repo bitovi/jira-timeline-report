@@ -18,9 +18,18 @@ interface JiraDatesShadowProps {
    * where they line up with the bar.
    */
   previewing?: boolean;
+  /** The row is hovered. Otherwise the shadow stays hidden unless a lock somewhere in the report is. */
+  revealed?: boolean;
 }
 
 const SAME = 0.01;
+
+/**
+ * Hidden until wanted, so a chart full of them doesn't compete with the plan. Any hovered or focused
+ * lock in the report (the `group/report` container) reveals them all, for comparing before freezing.
+ */
+const REVEAL_ON_ANY_LOCK =
+  'opacity-0 group-has-[.freeze-toggle:hover]/report:opacity-100 group-has-[.freeze-toggle:focus-visible]/report:opacity-100';
 
 /**
  * An item's current Jira dates, drawn as the Gantt draws last period's dates
@@ -35,6 +44,7 @@ export const JiraDatesShadow: FC<JiraDatesShadowProps> = ({
   barStartDay,
   barDueDay,
   previewing = false,
+  revealed = false,
 }) => {
   const gridEndDay = gridStartDay + gridNumberOfDays;
   if (dueDay <= gridStartDay || startDay >= gridEndDay || dueDay <= startDay) return null;
@@ -45,13 +55,14 @@ export const JiraDatesShadow: FC<JiraDatesShadowProps> = ({
 
   const extents = { startExtends: startDay < gridStartDay, endExtends: dueDay > gridEndDay };
   const look = previewing ? 'z-10 border-neutral-300 bg-neutral-100' : 'border-black blur-xs';
+  const visibility = previewing || revealed ? 'opacity-100' : REVEAL_ON_ANY_LOCK;
 
   return (
     <div
       data-testid="jira-dates-shadow"
       data-previewing={previewing || undefined}
       aria-hidden
-      className={`pointer-events-none absolute top-1 h-4 transition-all duration-150 ${look} ${barBorderClasses(extents).join(' ')} ${barCornerClass(extents)}`}
+      className={`pointer-events-none absolute top-1 h-4 transition-all duration-150 ${look} ${visibility} ${barBorderClasses(extents).join(' ')} ${barCornerClass(extents)}`}
       style={{
         left: `${((left - gridStartDay) / gridNumberOfDays) * 100}%`,
         width: `${((right - left) / gridNumberOfDays) * 100}%`,

@@ -17,6 +17,8 @@ interface IssueSummaryLabelProps {
   leading?: ReactNode;
   /** On a gray row band; the pinned cell takes its color so the band runs under it. */
   striped?: boolean;
+  /** The label and the chart are separate grid cells, so a row learns it's hovered from each. */
+  onHoverChange?: (hovered: boolean) => void;
 }
 
 /**
@@ -32,10 +34,13 @@ export const IssueSummaryLabel: FC<IssueSummaryLabelProps> = ({
   gridRowStart,
   leading,
   striped = false,
+  onHoverChange,
 }) => (
   <div
     className={`self-stretch flex items-center pr-2 max-w-sm sticky left-0 ${striped ? 'bg-neutral-20' : 'bg-white'} ${leading ? 'group gap-1 pl-1' : 'pl-5'}`}
     style={{ zIndex: gridLayer.labelColumn, gridRow: gridRowStart, gridColumnStart: 'what' }}
+    onMouseEnter={onHoverChange && (() => onHoverChange(true))}
+    onMouseLeave={onHoverChange && (() => onHoverChange(false))}
   >
     {leading}
     <TruncatedText

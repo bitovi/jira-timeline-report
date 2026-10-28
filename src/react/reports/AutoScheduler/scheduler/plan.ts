@@ -48,11 +48,15 @@ export function runPlan(linkedIssues: LinkedIssue[], quantile: number): Plan {
 }
 
 export type CalibrationTarget = {
-  /** The simulation's overall finish at the slider. */
-  finish: number;
-  /** The simulation's plan start at the slider (≤ 0). Used only when the finish can't move. */
+  /**
+   * Each scheduled item's own finish at the slider (its `dueDayTop` from the simulation), keyed by
+   * issue key. Only forward work: frozen items don't move, and work feeding a frozen item is placed
+   * from the frozen dates, not from its own finish.
+   */
+  ownDue: ReadonlyMap<string, number>;
+  /** The simulation's plan start at the slider (≤ 0). Used only when no item's finish can move. */
   start: number;
-  /** The percentile to use when neither the finish nor the start responds to it. */
+  /** The percentile to use when neither measure responds to it. */
   fallbackQuantile: number;
 };
 
@@ -61,20 +65,44 @@ const MAX_QUANTILE = 99;
 const TOLERANCE_DAYS = 0.5;
 const MAX_STEPS = 12;
 
+/** The middle of `values`; the mean of the two middle ones for an even count. */
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = sorted.length >> 1;
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
 /**
- * Finds the shared percentile whose plan finishes when the simulation says the whole plan finishes
- * at the slider's risk — or, when frozen items pin the finish, starts when it says work starts.
+ * How far the typical item's plan end is from its own finish: the median, over the items in
+ * `ownDue`, of plan end − own finish. Grows with the percentile, since every bar end moves later.
+ */
+function typicalMiss(plan: Plan, ownDue: ReadonlyMap<string, number>): number {
+  const misses: number[] = [];
+  for (const [key, due] of ownDue) {
+    const planned = plan.items.get(key);
+    if (planned) misses.push(planned.dueDay - due);
+  }
+  return median(misses);
+}
+
+/**
+ * Finds the shared percentile whose plan ends the typical item when its own simulation finish says
+ * it ends (spec/044 consistent-plan.md): half the items end on or before their own date, half after.
+ * The median, so one huge, uncertain epic can't drag the dial for everyone. The plan's last date is
+ * then not the whole plan's finish — waiting on parallel branches is a risk no single epic carries,
+ * and the Overall timing row shows it. When only frozen items and the work feeding them are left,
+ * calibrates the plan's start instead.
  */
 export function calibratePlan(linkedIssues: LinkedIssue[], target: CalibrationTarget): Plan {
   const low = runPlan(linkedIssues, MIN_QUANTILE);
   const high = runPlan(linkedIssues, MAX_QUANTILE);
 
-  // Both measures grow with the percentile: the finish gets later, and the start earlier.
+  // Both measures grow with the percentile: bars end later, and the start gets earlier.
   let measure: (plan: Plan) => number;
   let goal: number;
-  if (high.finish - low.finish > TOLERANCE_DAYS) {
-    measure = (plan) => plan.finish;
-    goal = target.finish;
+  if (target.ownDue.size && typicalMiss(high, target.ownDue) - typicalMiss(low, target.ownDue) > TOLERANCE_DAYS) {
+    measure = (plan) => typicalMiss(plan, target.ownDue);
+    goal = 0;
   } else if (low.start - high.start > TOLERANCE_DAYS) {
     measure = (plan) => -plan.start;
     goal = -target.start;
