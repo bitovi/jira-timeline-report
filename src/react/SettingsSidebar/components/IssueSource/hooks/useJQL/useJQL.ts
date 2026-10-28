@@ -6,12 +6,10 @@ import { useCanObservable } from '../../../../../hooks/useCanObservable';
 export const useJQL = () => {
   const jqlFromRouteData = useCanObservable(value.from<string>(routeData, 'jql'));
   const childJqlFromRouteData = useCanObservable(value.from<string>(routeData, 'childJQL'));
-  const statusesToExcludeFromRouteData = useCanObservable(value.from<string[]>(routeData, 'statusesToExclude'));
   const loadChildrenFromRouteData = useCanObservable(value.from<boolean>(routeData, 'loadChildren'));
   const blockerJqlFromRouteData = useCanObservable(value.from<string>(routeData, 'blockerJQL'));
   const loadBlockersFromRouteData = useCanObservable(value.from<boolean>(routeData, 'loadBlockers'));
 
-  const [statusesToExclude, setStatusesToExclude] = useState<string[]>(statusesToExcludeFromRouteData);
   const [jql, setJql] = useState(jqlFromRouteData);
   const [childJql, setChildJql] = useState(childJqlFromRouteData);
   const [loadChildren, setLoadChildren] = useState(loadChildrenFromRouteData);
@@ -28,16 +26,11 @@ export const useJQL = () => {
     routeData.assign({
       jql,
       childJQL: childJql,
-      statusesToExclude,
       loadChildren,
       blockerJQL: blockerJql,
       loadBlockers,
     });
   };
-
-  const statusesDiffer =
-    statusesToExclude.some((filter) => !statusesToExcludeFromRouteData.includes(filter)) ||
-    statusesToExcludeFromRouteData.some((filter) => !statusesToExclude.includes(filter));
 
   return {
     loadChildren,
@@ -46,8 +39,6 @@ export const useJQL = () => {
     childJql,
     setChildJql,
     applyJql,
-    statusesToExclude,
-    setStatusesToExclude,
     setLoadChildren,
     blockerJql,
     setBlockerJql,
@@ -55,10 +46,7 @@ export const useJQL = () => {
     setLoadBlockers,
     applyButtonEnabled:
       (!!jql &&
-        (jql !== jqlFromRouteData ||
-          childJql !== childJqlFromRouteData ||
-          blockerJql !== blockerJqlFromRouteData ||
-          statusesDiffer)) ||
+        (jql !== jqlFromRouteData || childJql !== childJqlFromRouteData || blockerJql !== blockerJqlFromRouteData)) ||
       loadChildren !== loadChildrenFromRouteData ||
       loadBlockers !== loadBlockersFromRouteData,
   };

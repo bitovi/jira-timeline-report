@@ -49,6 +49,19 @@ describe('GanttGrid', () => {
     expect(container.querySelectorAll('a[href]').length).toBe(3);
   });
 
+  it('shows only the visible children when expanded', () => {
+    const visible = hierarchyIssues.filter((issue) => issue.key !== 'PROJ-3');
+    const { container } = renderGrid({ visibleIssuesOrReleasesObs: obs(visible) });
+    fireEvent.click(container.querySelector('img')!.parentElement!);
+    expect(container.querySelectorAll('a[href]').length).toBe(2);
+  });
+
+  it('has no chevron when every child is filtered out', () => {
+    const visible = hierarchyIssues.filter((issue) => issue.key === 'PROJ-1');
+    const { container } = renderGrid({ visibleIssuesOrReleasesObs: obs(visible) });
+    expect(container.querySelector('img')).toBeNull();
+  });
+
   it('renders a % complete column when showPercentCompleteObs is true', () => {
     renderGrid({ showPercentCompleteObs: obs(true) });
     // PROJ-1: 20/45 completed working days => 44%.

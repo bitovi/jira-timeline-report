@@ -37,7 +37,7 @@ import type { DateGranularity } from '../model/dateBucketing';
 import type { TableColumnEntry } from '../model/persistence';
 
 /** Wrap a control so it aligns in the shared control row, matching the flow-metrics/SelectIssueType cells. */
-const ControlCell: FC<{ label: string; children: ReactNode }> = ({ label, children }) => (
+export const ControlCell: FC<{ label: string; children: ReactNode }> = ({ label, children }) => (
   <div className="pt-1 flex flex-col items-start">
     <Label htmlFor="">{label}</Label>
     {children}

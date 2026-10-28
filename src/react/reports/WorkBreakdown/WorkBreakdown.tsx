@@ -33,6 +33,12 @@ export interface WorkBreakdownProps {
   primaryIssuesOrReleasesObs: CanObservable<IssueOrRelease[]>;
   /** All issues/releases — used to look up card children by key. */
   allIssuesOrReleasesObs: CanObservable<IssueOrRelease[]>;
+  /**
+   * `allIssuesOrReleasesObs` with rows below Report on hidden by the Filters panel (the vm's
+   * `visibleIssuesOrReleases`). When given, card children are looked up here instead, so a filtered
+   * child doesn't render. Card headers still come from the card's own rollup, which counts every child.
+   */
+  visibleIssuesOrReleasesObs?: CanObservable<IssueOrRelease[]>;
   /** Issues shown in the "Planning" fallback card (excluded from card children). */
   planningIssuesObs?: CanObservable<IssueOrRelease[]>;
   /** `cardsMode` — `'breakdown'` shows the matrix; anything else shows status. */
@@ -49,7 +55,9 @@ export interface WorkBreakdownProps {
    */
   filterRowsObs?: CanObservable<FilterRow[]>;
   /** A second, independent set of filter rows scoped to the CHILD issue type — decides which
-   *  children (if any) render within an already-shown card (see `buildBoard`). */
+   *  children (if any) render within an already-shown card (see `buildBoard`). Ignored when
+   *  `visibleIssuesOrReleasesObs` is supplied: that list already applies the child level's
+   *  resolved filter, and reapplying the raw legacy rows would override the Filters panel. */
   cardsChildFilterRowsObs?: CanObservable<FilterRow[]>;
   /** Click handler for cards/rows — wired to the issue tooltip when mounted in the app. */
   onIssueClick?: IssueClickHandler;
@@ -69,11 +77,12 @@ const toMode = (cardsMode: string): CardsMode => (cardsMode === 'breakdown' ? 'b
  */
 export const WorkBreakdown: React.FC<WorkBreakdownProps> = (props) => {
   const primaryIssues = useCanObservable(props.primaryIssuesOrReleasesObs);
-  const allIssues = useCanObservable(props.allIssuesOrReleasesObs);
+  const allIssues = useCanObservable(props.visibleIssuesOrReleasesObs ?? props.allIssuesOrReleasesObs);
   const planningIssues = useCanObservable(props.planningIssuesObs ?? emptyIssuesObs);
   const cardsMode = useCanObservable(props.cardsModeObs);
   const filterRows = useCanObservable(props.filterRowsObs ?? emptyFilterRowsObs);
-  const childFilterRows = useCanObservable(props.cardsChildFilterRowsObs ?? emptyFilterRowsObs);
+  const legacyChildFilterRows = useCanObservable(props.cardsChildFilterRowsObs ?? emptyFilterRowsObs);
+  const childFilterRows = props.visibleIssuesOrReleasesObs ? [] : legacyChildFilterRows;
 
   const [popup, setPopup] = useState<{ issue: IssueOrRelease; anchorEl: HTMLElement } | null>(null);
 

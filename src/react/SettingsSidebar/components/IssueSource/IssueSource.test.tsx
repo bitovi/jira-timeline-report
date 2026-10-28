@@ -39,8 +39,6 @@ vi.mock('./hooks/useJQL', () => ({
     childJql: '',
     setChildJql: vi.fn(),
     applyJql: vi.fn(),
-    statusesToExclude: [],
-    setStatusesToExclude: vi.fn(),
     applyButtonEnabled: true,
     loadBlockers: false,
     setLoadBlockers: vi.fn(),

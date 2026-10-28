@@ -24,6 +24,8 @@ const renderReport = (
     planning: IssueOrRelease[];
     cardsMode: string;
     filterRows: FilterRow[];
+    childFilterRows: FilterRow[];
+    visible: IssueOrRelease[];
     onIssueClick: (event: React.MouseEvent, issue: IssueOrRelease) => void;
   }> = {},
 ) => {
@@ -33,6 +35,8 @@ const renderReport = (
     planning = [],
     cardsMode = 'breakdown',
     filterRows = [],
+    childFilterRows,
+    visible,
     onIssueClick,
   } = overrides;
   return render(
@@ -42,12 +46,28 @@ const renderReport = (
       planningIssuesObs={obs(planning)}
       cardsModeObs={obs(cardsMode)}
       filterRowsObs={obs(filterRows)}
+      cardsChildFilterRowsObs={childFilterRows && obs(childFilterRows)}
+      visibleIssuesOrReleasesObs={visible && obs(visible)}
       onIssueClick={onIssueClick}
     />,
   );
 };
 
 describe('WorkBreakdown', () => {
+  // Matches no child, so any child that renders came through without the legacy pass.
+  const hideAllChildren: FilterRow[] = [{ id: 'c1', field: 'jiraStatus', operator: 'is', value: ['Nope'] }];
+
+  test('applies the legacy child filter rows when no visible list is supplied', () => {
+    renderReport({ cardsMode: 'status', childFilterRows: hideAllChildren });
+    expect(screen.queryByText('Digital menu board')).toBeNull();
+  });
+
+  test('ignores the legacy child filter rows when the visible list is supplied', () => {
+    // A saved Cards report with `cardsChildFilterRows`, whose child tab the Filters panel cleared.
+    renderReport({ cardsMode: 'status', childFilterRows: hideAllChildren, visible: allIssues });
+    expect(screen.getByText('Digital menu board')).toBeTruthy();
+  });
+
   test('breakdown mode renders a matrix card per primary issue', () => {
     renderReport({ cardsMode: 'breakdown' });
     expect(screen.getByText('100 Stores')).toBeTruthy();

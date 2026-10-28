@@ -9,8 +9,11 @@
  * pipeline (`timeline-report.js`) and the TypeScript Work Breakdown pipeline (`buildBoard.ts`).
  */
 
-/** "Jira Status" = the literal `issue.status`. "Rollup Status" = the app's computed status. */
-export type FilterField = 'jiraStatus' | 'rollupStatus';
+/**
+ * "Jira Status" = the literal `issue.status`. "Rollup Status" = the app's computed status.
+ * "Issue Type" = the literal `issue.type` (releases are `'Release'`).
+ */
+export type FilterField = 'jiraStatus' | 'rollupStatus' | 'issueType';
 
 export type FilterOperator = 'is' | 'is not';
 
@@ -32,6 +35,7 @@ function isNewlyValue(value: string): value is NewlyValue {
 /** The minimal issue/release shape this module reads. */
 export interface FilterableIssueOrRelease {
   status?: string;
+  type?: string;
   /** Releases don't have their own status — they're matched via their children's statuses. */
   childStatuses?: { children?: { status: string }[] };
   rollupStatuses?: {
@@ -79,12 +83,29 @@ function matchesRollupStatusRow(issue: FilterableIssueOrRelease, row: FilterRow)
   return row.operator === 'is' ? anyMatch : !anyMatch;
 }
 
-/** A row with no selected values imposes no constraint (always matches). */
+function matchesIssueTypeRow(issue: FilterableIssueOrRelease, row: FilterRow): boolean {
+  const included = issue.type != null && row.value.includes(issue.type);
+  return row.operator === 'is' ? included : !included;
+}
+
+/**
+ * A row with no selected values imposes no constraint (always matches). An unknown field (e.g. a
+ * row saved by a newer build) also imposes none, rather than falling into another field's matcher.
+ */
 export function matchesFilterRow(issue: FilterableIssueOrRelease, row: FilterRow): boolean {
   if (!row.value.length) {
     return true;
   }
-  return row.field === 'jiraStatus' ? matchesJiraStatusRow(issue, row) : matchesRollupStatusRow(issue, row);
+  switch (row.field) {
+    case 'jiraStatus':
+      return matchesJiraStatusRow(issue, row);
+    case 'rollupStatus':
+      return matchesRollupStatusRow(issue, row);
+    case 'issueType':
+      return matchesIssueTypeRow(issue, row);
+    default:
+      return true;
+  }
 }
 
 /** Rows AND together; an empty `rows` array always matches (no filter active). */

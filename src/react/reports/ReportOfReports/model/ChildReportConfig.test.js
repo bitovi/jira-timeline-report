@@ -336,6 +336,31 @@ describe('ChildReportConfig', () => {
     });
   });
 
+  describe('levelFilters', () => {
+    it('round-trips through its own param', () => {
+      const levelFilters = {
+        all: { rows: [{ id: 'r1', field: 'issueType', operator: 'is not', value: ['Bug'] }] },
+        Story: { rows: [], hideWithoutDates: true, dueDateStart: '2026-01-01' },
+      };
+      const config = childConfig('levelFilters=' + encodeURIComponent(JSON.stringify(levelFilters)));
+
+      expect(config.levelFilters).toEqual(levelFilters);
+      expect(config.effectiveLevelFilters.all).toEqual(levelFilters.all);
+      expect(config.effectiveLevelFilters.Story).toEqual(levelFilters.Story);
+    });
+
+    it('intersects the All items range with the legacy Report on range', () => {
+      const levelFilters = { all: { rows: [], dueDateStart: '2026-03-01', dueDateEnd: '2027-01-01' } };
+      const config = childConfig(
+        'scatterDateRangeStart=2026-01-01&scatterDateRangeEnd=2026-12-31&levelFilters=' +
+          encodeURIComponent(JSON.stringify(levelFilters)),
+        { simplifiedIssueHierarchy: [{ name: 'Epic', hierarchyLevel: 1 }] },
+      );
+
+      expect([config.effectiveDueDateStart, config.effectiveDueDateEnd]).toEqual(['2026-03-01', '2026-12-31']);
+    });
+  });
+
   describe('its own fetch', () => {
     it('requests its own JQL, so two children load different issues', async () => {
       const requested = [];
@@ -447,6 +472,9 @@ describe('ChildReportConfig', () => {
       groupBy: 'team',
       cardsMode: 'breakdown',
       cardsChildFilterRows: JSON.stringify([{ id: '1', field: 'jiraStatus', operator: 'is', value: ['QA'] }]),
+      levelFilters: JSON.stringify({
+        Epic: { rows: [{ id: '1', field: 'issueType', operator: 'is', value: ['Epic'] }] },
+      }),
       tableColumns: JSON.stringify([{ sourceId: 'identity:treeSummary' }, { sourceId: 'field:Status' }]),
       tableSortColumn: 'field:Status',
       tableSortDir: 'desc',

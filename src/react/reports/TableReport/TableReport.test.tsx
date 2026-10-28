@@ -312,6 +312,26 @@ describe('TableReport (hierarchy body)', () => {
     expect(within(bodyRows[1] as HTMLElement).queryByTestId('table-tree-caret')).not.toBeInTheDocument();
   });
 
+  // spec/043: the Filters panel hides child rows through `visibleIssuesOrReleasesObs`.
+  test('the tree hides children missing from the visible set, and drops the caret', () => {
+    render(
+      <TableReport
+        filteredDerivedIssuesObs={obs([])}
+        rollupTimingLevelsAndCalculationsObs={obs([{ hierarchyLevel: 1 }])}
+        primaryIssuesOrReleasesObs={obs([parent])}
+        allIssuesOrReleasesObs={obs([parent, child])}
+        visibleIssuesOrReleasesObs={obs([parent])}
+        {...(makeTableObs() as any)}
+        tableSortColumnObs={obs('identity:summary')}
+        tableSortDirObs={obs('tree')}
+      />,
+    );
+
+    const bodyRows = screen.getByRole('table').querySelectorAll('tbody tr');
+    expect(bodyRows).toHaveLength(1);
+    expect(within(bodyRows[0] as HTMLElement).queryByTestId('table-tree-caret')).not.toBeInTheDocument();
+  });
+
   test('leaf rows reserve the caret slot so their text aligns with parent rows', () => {
     renderHierarchy();
 

@@ -1,43 +1,46 @@
-import React, { Suspense } from 'react';
+import React, { useState } from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 
-import routeData from '../../../../../../canjs/routing/route-data/route-data';
 import DateRangeFilter from './DateRangeFilter';
 
-vi.mock('../../../../../../canjs/routing/route-data/route-data', async () => {
-  const mockRouteData = {
-    scatterDateRangeStart: '',
-    scatterDateRangeEnd: '',
-  };
-  const { ObservableObject } = await import('../../../../../../can');
-  return {
-    default: new (ObservableObject as ObjectConstructor)(mockRouteData),
-  };
-});
-
-type MockableRouteData = { scatterDateRangeStart: string; scatterDateRangeEnd: string };
-
-const renderComponent = () =>
-  render(
-    <Suspense fallback="loading">
-      <DateRangeFilter />
-    </Suspense>,
+/** Holds the range in state, as the hooks that feed it do, and reports every change. */
+const Harness = ({ onChange }: { onChange: (start: string, end: string) => void }) => {
+  const [range, setRange] = useState({ start: '', end: '' });
+  return (
+    <DateRangeFilter
+      start={range.start}
+      end={range.end}
+      onChange={(start, end) => {
+        setRange({ start, end });
+        onChange(start, end);
+      }}
+    />
   );
+};
 
-beforeEach(() => {
-  (routeData as unknown as MockableRouteData).scatterDateRangeStart = '';
-  (routeData as unknown as MockableRouteData).scatterDateRangeEnd = '';
-});
+const renderComponent = () => {
+  const onChange = vi.fn();
+  render(<Harness onChange={onChange} />);
+  return onChange;
+};
 
 describe('DateRangeFilter', () => {
-  it('renders the label, From/To pickers, Clear button, and preset chips', () => {
+  it('renders the label, From/To pickers, Clear button, and preset pills', () => {
     renderComponent();
     expect(screen.getByText('Due date range')).toBeInTheDocument();
+    expect(screen.getByLabelText('From')).toBeInTheDocument();
+    expect(screen.getByLabelText('To')).toBeInTheDocument();
     expect(screen.getByText('This quarter')).toBeInTheDocument();
     expect(screen.getByText('This and next quarter')).toBeInTheDocument();
     expect(screen.getByText('Clear')).toBeInTheDocument();
+  });
+
+  it('can hide its heading and prefix its ids', () => {
+    render(<DateRangeFilter start="" end="" onChange={() => {}} idPrefix="Epic-range" hideHeading />);
+    expect(screen.queryByText('Due date range')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('From')).toHaveAttribute('id', 'Epic-range-from');
   });
 
   it('disables Clear when no range is set', () => {
@@ -45,27 +48,25 @@ describe('DateRangeFilter', () => {
     expect(screen.getByText('Clear').closest('button')).toBeDisabled();
   });
 
-  it('clicking a preset sets both the from and to route params', async () => {
+  it('clicking a preset sets both ends', async () => {
     const user = userEvent.setup();
-    renderComponent();
+    const onChange = renderComponent();
 
     await user.click(screen.getByText('This quarter'));
 
-    const updated = routeData as unknown as MockableRouteData;
-    expect(updated.scatterDateRangeStart).not.toBe('');
-    expect(updated.scatterDateRangeEnd).not.toBe('');
+    const [start, end] = onChange.mock.calls.at(-1)!;
+    expect(start).not.toBe('');
+    expect(end).not.toBe('');
   });
 
-  it('clicking Clear resets both route params', async () => {
+  it('clicking Clear resets both ends', async () => {
     const user = userEvent.setup();
-    renderComponent();
+    const onChange = renderComponent();
 
     await user.click(screen.getByText('This quarter'));
     await user.click(screen.getByText('Clear'));
 
-    const updated = routeData as unknown as MockableRouteData;
-    expect(updated.scatterDateRangeStart).toBe('');
-    expect(updated.scatterDateRangeEnd).toBe('');
+    expect(onChange).toHaveBeenLastCalledWith('', '');
   });
 
   it('marks the matching preset as selected when the range equals its window', async () => {

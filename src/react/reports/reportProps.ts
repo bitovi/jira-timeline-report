@@ -17,6 +17,9 @@ export const propsFor = (vm: any, config: any) => ({
   allIssuesOrReleasesObs: value.from(vm, 'rolledupAndRolledBackIssuesAndReleases'),
   rollupTimingLevelsAndCalculationsObs: value.from(vm, 'rollupTimingLevelsAndCalculations'),
   filteredDerivedIssuesObs: value.from(vm, 'filteredDerivedIssues'),
+  // The rolled-up list with rows below Report on hidden by the Filters panel (spec/043). Gantt
+  // expanded rows and Cards read their children from it; everything else keeps the full list.
+  visibleIssuesOrReleasesObs: value.from(vm, 'visibleIssuesOrReleases'),
   // Cards report — spec/018-card-report/alt-plan.md. The issues the vm held back as "planning" are
   // exactly what its Planning card shows, so they arrive alongside the primaries rather than being
   // recomputed. No `filterRows` counterpart: the vm has already applied it to `primaryIssuesOrReleases`,
@@ -36,8 +39,9 @@ export const propsFor = (vm: any, config: any) => ({
   timeInStatusReorderObs: value.bind(config, 'timeInStatusReorder'),
   roundToObs: value.bind(config, 'roundTo'),
   groupByObs: value.bind(config, 'groupBy'),
-  dateRangeStartObs: value.bind(config, 'scatterDateRangeStart'),
-  dateRangeEndObs: value.bind(config, 'scatterDateRangeEnd'),
+  // All items ∩ the Report on level's range (falls back to the legacy scatter range). Read-only.
+  dateRangeStartObs: value.from(config, 'effectiveDueDateStart'),
+  dateRangeEndObs: value.from(config, 'effectiveDueDateEnd'),
   primaryIssueTypeObs: value.bind(config, 'primaryIssueType'),
   breakdownObs: value.bind(config, 'primaryReportBreakdown'),
   showPercentCompleteObs: value.bind(config, 'showPercentComplete'),

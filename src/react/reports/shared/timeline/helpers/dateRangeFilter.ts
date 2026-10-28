@@ -10,8 +10,11 @@ export interface DateRangeFilter {
 const startOfDay = (date: Date): Date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
 /** True when an issue's rolled-up due date falls within `[from, to]` (inclusive, either side optional). */
-export const isIssueInDateRange = (issue: IssueOrRelease, { from, to }: DateRangeFilter): boolean => {
-  const due = issue.rollupStatuses?.rollup?.due;
+export const isIssueInDateRange = (issue: IssueOrRelease, range: DateRangeFilter): boolean =>
+  isDueInDateRange(issue.rollupStatuses?.rollup?.due, range);
+
+/** True when `due` falls within `[from, to]` (inclusive, day-granular, either side optional). */
+export const isDueInDateRange = (due: Date | null | undefined, { from, to }: DateRangeFilter): boolean => {
   if (!due) {
     return false;
   }

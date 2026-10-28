@@ -11,7 +11,7 @@ import { usePrimaryReportType } from './hooks/usePrimaryReportType';
 import AutoSchedulerControls from './components/AutoSchedulerControls';
 import { useRouteData } from '../hooks/useRouteData/useRouteData';
 import { ChecklistDropdown } from '../reports/FlowMetrics/ChecklistDropdown';
-import { TableReportControls } from '../reports/TableReport/components/TableReportControls';
+import { ControlCell, TableReportControls } from '../reports/TableReport/components/TableReportControls';
 import type { DerivedIssue } from '../../jira/derived/derive';
 
 // Returns the number of days back that the `updated >= ...` clause covers.
@@ -209,10 +209,7 @@ export const ReportControlsWrapper: FC<{ children: ReactNode }> = ({ children })
   );
 };
 
-export const ReportControls: FC<Partial<FiltersProps>> = ({
-  rolledupAndRolledBackIssuesAndReleasesObs,
-  primaryIssuesOrReleasesObs,
-}) => {
+export const ReportControls: FC<Partial<FiltersProps>> = ({ rolledupAndRolledBackIssuesAndReleasesObs }) => {
   const [primaryReportType] = usePrimaryReportType();
 
   // A report-of-reports has no JQL, issue type, or view settings of its own — its children render
@@ -230,6 +227,10 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
       <>
         <SelectReportType />
         <SelectIssueType />
+        <div className="flex-grow" />
+        <div className="self-end pb-1">
+          <Filters excludeStatusesOnly />
+        </div>
       </>
     );
   }
@@ -239,6 +240,10 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
       <>
         <SelectReportType />
         <SelectIssueType />
+        <div className="flex-grow" />
+        <div className="self-end pb-1">
+          <Filters rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs} />
+        </div>
       </>
     );
   }
@@ -247,6 +252,10 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
     return (
       <ReportControlsWrapper>
         <AutoSchedulerControls />
+        {/* No bottom padding: Update dates sits flush at the bottom, and this lines up with it. */}
+        <div className="self-end">
+          <Filters rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs} />
+        </div>
       </ReportControlsWrapper>
     );
   }
@@ -262,6 +271,11 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
           <SelectReportType />
         </div>
         <TableReportControls />
+        <div className="flex-grow" />
+        {/* Same blank-label cell as Add column, so the two buttons line up. */}
+        <ControlCell label={'\u00A0'}>
+          <Filters rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs} />
+        </ControlCell>
       </>
     );
   }
@@ -280,6 +294,10 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
         </div>
         <div className="self-end pb-1">
           <ViewSettings />
+        </div>
+        {/* These reports read issues before rollup, where only Exclude statuses applies. */}
+        <div className="self-end pb-1">
+          <Filters excludeStatusesOnly />
         </div>
       </>
     );
@@ -300,6 +318,10 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
         <div className="self-end pb-1">
           <ViewSettings />
         </div>
+        {/* These reports read issues before rollup, where only Exclude statuses applies. */}
+        <div className="self-end pb-1">
+          <Filters excludeStatusesOnly />
+        </div>
       </>
     );
   }
@@ -310,14 +332,11 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({
         <CompareSlider />
       </div>
       <div className="self-end pb-1">
-        <Filters
-          rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs}
-          primaryIssuesOrReleasesObs={primaryIssuesOrReleasesObs}
-        />
-      </div>
-
-      <div className="self-end pb-1">
         <ViewSettings />
+      </div>
+      {/* Last on the row: it opens a panel from the right edge. */}
+      <div className="self-end pb-1">
+        <Filters rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs} />
       </div>
     </ReportControlsWrapper>
   );
