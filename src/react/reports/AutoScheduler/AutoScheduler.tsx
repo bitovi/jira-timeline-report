@@ -421,6 +421,26 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
               &nbsp;
             </div>
 
+            {/* Row bands, like Jira Plans: every other epic in a track. Before the month lines so they
+                paint underneath them. */}
+            {gridData.gridifiedTeams.flatMap((team) =>
+              team.gridifiedTracks.flatMap((track) =>
+                track.issues.map((issue, issueIdx) =>
+                  isStripedRow(issueIdx) ? (
+                    <div
+                      key={'band-' + issue.linkedIssue.key}
+                      data-testid="row-band"
+                      className="bg-neutral-20"
+                      style={{
+                        gridRow: `${track.style.gridRowStart + issueIdx + 1} / span 1`,
+                        gridColumn: `1 / span ${gridData.gridNumberOfDays + 1}`,
+                      }}
+                    />
+                  ) : null,
+                ),
+              ),
+            )}
+
             {gridData.timeRanges.map((range, i) => {
               return (
                 <div
@@ -564,6 +584,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
                                 uncertaintyWeight={uncertaintyWeight}
                                 isFrozen={frozenIssues.has(issue.linkedIssue.key)}
                                 onToggleFreeze={onToggleFreeze}
+                                striped={isStripedRow(issueIdx)}
                               />
                             ))}
                           </React.Fragment>
@@ -702,6 +723,11 @@ function hasUrl(issue: MinimalSimulationIssueResult | SimulationIssueResult): is
   return 'url' in issue.linkedIssue && typeof issue.linkedIssue.url === 'string';
 }
 
+/** Every other epic in a track gets a gray band, starting white. */
+function isStripedRow(issueIdx: number) {
+  return issueIdx % 2 === 1;
+}
+
 function totalWorkingDays(team: GridifiedStatsTeam) {
   return team.gridifiedTracks.reduce((total, track) => {
     return total + track.issues.reduce((sum, issue) => sum + issue.adjustedDaysOfWork, 0);
@@ -792,7 +818,7 @@ export function gridStartDayFor(statsUIData: StatsUIData, includeStartTail = fal
     earliest = Math.min(earliest, startDays[Math.floor(startDays.length * 0.01)]);
   }
   for (const result of statsUIData.simulationIssueResults) {
-    earliest = Math.min(earliest, result.startDateWithTimeEnoughToFinish, result.startDayBottom);
+    earliest = Math.min(earliest, result.startDateWithTimeEnoughToFinish, result.startDayBottom, result.ownWindowStart);
   }
   return Math.floor(earliest);
 }

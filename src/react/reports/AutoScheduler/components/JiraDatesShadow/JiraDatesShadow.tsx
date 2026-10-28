@@ -13,6 +13,11 @@ interface JiraDatesShadowProps {
   /** The bar drawn on top, in the same units. The shadow hides when it lines up with it exactly. */
   barStartDay: number;
   barDueDay: number;
+  /**
+   * The lock is hovered: fill the dates in as the bar that would land there, sharp and on top, even
+   * where they line up with the bar.
+   */
+  previewing?: boolean;
 }
 
 const SAME = 0.01;
@@ -29,21 +34,24 @@ export const JiraDatesShadow: FC<JiraDatesShadowProps> = ({
   gridStartDay = 0,
   barStartDay,
   barDueDay,
+  previewing = false,
 }) => {
   const gridEndDay = gridStartDay + gridNumberOfDays;
   if (dueDay <= gridStartDay || startDay >= gridEndDay || dueDay <= startDay) return null;
 
   const left = Math.max(startDay, gridStartDay);
   const right = Math.min(dueDay, gridEndDay);
-  if (Math.abs(left - barStartDay) < SAME && Math.abs(right - barDueDay) < SAME) return null;
+  if (!previewing && Math.abs(left - barStartDay) < SAME && Math.abs(right - barDueDay) < SAME) return null;
 
   const extents = { startExtends: startDay < gridStartDay, endExtends: dueDay > gridEndDay };
+  const look = previewing ? 'z-10 border-neutral-300 bg-neutral-100' : 'border-black blur-xs';
 
   return (
     <div
       data-testid="jira-dates-shadow"
+      data-previewing={previewing || undefined}
       aria-hidden
-      className={`pointer-events-none absolute top-0.5 h-4 border-black blur-xs ${barBorderClasses(extents).join(' ')} ${barCornerClass(extents)}`}
+      className={`pointer-events-none absolute top-1 h-4 transition-all duration-150 ${look} ${barBorderClasses(extents).join(' ')} ${barCornerClass(extents)}`}
       style={{
         left: `${((left - gridStartDay) / gridNumberOfDays) * 100}%`,
         width: `${((right - left) / gridNumberOfDays) * 100}%`,

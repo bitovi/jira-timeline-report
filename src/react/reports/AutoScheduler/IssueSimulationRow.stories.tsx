@@ -16,8 +16,8 @@ type RowArgs = {
   jiraDue?: Date;
   bar: [number, number];
   mightStart?: number;
-  /** The item's own finish at the slider's risk; past the bar's end it draws the whisker. */
-  ownDue?: number;
+  /** The span the item's own adjusted size covers at the slider's risk: the whisker. */
+  ownWindow?: [number, number];
   isOverflowTrack?: boolean;
   mustStartByDay?: number;
   lateForFrozenPercent?: number;
@@ -53,7 +53,9 @@ function toResult(args: RowArgs) {
     startDateWithTimeEnoughToFinish: args.bar[0],
     dueDayBottom: args.bar[1],
     dueDayTop: args.bar[1],
-    ownDueDayTop: args.ownDue ?? args.bar[1],
+    ownDueDayTop: (args.ownWindow ?? args.bar)[1],
+    ownWindowStart: (args.ownWindow ?? args.bar)[0],
+    ownWindowEnd: (args.ownWindow ?? args.bar)[1],
     track: 0,
     adjustedDaysOfWork: args.bar[1] - args.bar[0],
     isOverflowTrack: args.isOverflowTrack ?? false,
@@ -98,11 +100,11 @@ export const WithJiraShadow: StoryObj<typeof Row> = {
 };
 
 /**
- * The plan gives this item days 4–12, but on its own it is only 80% sure to finish by day 18: the thin
- * line runs past the bar's end as a whisker. Hover for "80% chance done by".
+ * The plan gives this item days 4–12. On its own, at 80%, it needs 12 days and finishes by day 18:
+ * the whisker spans days 6–18. The dot is when it might start (day 2).
  */
 export const Whisker: StoryObj<typeof Row> = {
-  args: { frozen: null, bar: [4, 12], mightStart: 2, ownDue: 18 },
+  args: { frozen: null, bar: [4, 12], mightStart: 2, ownWindow: [6, 18] },
 };
 
 /** Frozen with both dates: a solid, locked bar exactly on its Jira dates, so no shadow. */

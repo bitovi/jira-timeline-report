@@ -20,6 +20,8 @@ function result({
   isOverflowTrack = false,
   beforeStartPercent = 0,
   ownDue,
+  ownWindow,
+  mightStart,
 }: {
   frozen?: { startDay: number | null; dueDay: number | null } | null;
   start?: Date;
@@ -28,6 +30,8 @@ function result({
   isOverflowTrack?: boolean;
   beforeStartPercent?: number;
   ownDue?: number;
+  ownWindow?: [number, number];
+  mightStart?: number;
 }) {
   return {
     linkedIssue: {
@@ -45,11 +49,13 @@ function result({
         isStoryPointsMedianValid: true,
       },
     },
-    startDayBottom: bar[0],
+    startDayBottom: mightStart ?? bar[0],
     startDateWithTimeEnoughToFinish: bar[0],
     dueDayBottom: bar[1],
     dueDayTop: bar[1],
     ownDueDayTop: ownDue ?? bar[1],
+    ownWindowStart: (ownWindow ?? bar)[0],
+    ownWindowEnd: (ownWindow ?? bar)[1],
     track: 0,
     adjustedDaysOfWork: bar[1] - bar[0],
     isOverflowTrack,
@@ -132,18 +138,103 @@ describe('IssueSimulationRow', () => {
     expect(bar.style.width).toBe('50%');
   });
 
-  it('extends the thin line past the bar to the item’s own finish, as a whisker', () => {
-    renderRow(result({ bar: [0, 5], ownDue: 9 }));
+  it('draws the whisker over the span the item’s own adjusted size covers', () => {
+    renderRow(result({ bar: [0, 5], ownWindow: [3, 12] }));
 
     const line = screen.getByTestId('issue-range-line');
-    expect(line.style.left).toBe('0%');
+    expect(line.style.left).toBe('15%');
     expect(line.style.width).toBe('45%');
   });
 
-  it('ends the thin line at the bar when the item’s own finish is earlier', () => {
-    renderRow(result({ bar: [0, 5], ownDue: 3 }));
+  it('marks when the item might start with a dot on the same line', () => {
+    renderRow(result({ bar: [4, 9], mightStart: 2, ownWindow: [5, 12] }));
 
-    expect(screen.getByTestId('issue-range-line').style.width).toBe('25%');
+    expect(screen.getByTestId('might-start-dot').style.left).toBe('10%');
+  });
+
+  it('draws neither whisker nor dot for a frozen item', () => {
+    renderRow(result({ frozen: { startDay: 0, dueDay: 5 } }), { isFrozen: true });
+
+    expect(screen.queryByTestId('issue-range-line')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('might-start-dot')).not.toBeInTheDocument();
+  });
+
+  describe('previewing a freeze from the lock', () => {
+    const lock = (name = 'Freeze Checkout') => screen.getByRole('button', { name });
+
+    it('fills in the Jira dates and fades the bar, whisker and dot', async () => {
+      const { container } = renderRow(
+        result({ start: new Date(2026, 0, 12), due: new Date(2026, 0, 16), ownWindow: [0, 8], mightStart: 0 }),
+      );
+
+      await userEvent.hover(lock());
+
+      const shadow = screen.getByTestId('jira-dates-shadow');
+      expect(shadow).toHaveAttribute('data-previewing', 'true');
+      expect(shadow).not.toHaveClass('blur-xs');
+      expect(container.querySelector('#ORDER-1')).toHaveClass('opacity-25');
+      expect(screen.getByTestId('issue-range-line')).toHaveClass('opacity-25');
+      expect(screen.getByTestId('might-start-dot')).toHaveClass('opacity-25');
+
+      await userEvent.unhover(lock());
+
+      expect(screen.getByTestId('jira-dates-shadow')).not.toHaveAttribute('data-previewing');
+      expect(container.querySelector('#ORDER-1')).not.toHaveClass('opacity-25');
+    });
+
+    it('previews on keyboard focus too', async () => {
+      renderRow(result({ start: new Date(2026, 0, 12), due: new Date(2026, 0, 16) }));
+
+      await userEvent.tab();
+
+      expect(lock()).toHaveFocus();
+      expect(screen.getByTestId('jira-dates-shadow')).toHaveAttribute('data-previewing', 'true');
+    });
+
+    it('shows the Jira dates even when they line up with the bar', async () => {
+      renderRow(result({ start: new Date(2026, 0, 5), due: new Date(2026, 0, 9) }));
+
+      await userEvent.hover(lock());
+
+      const shadow = screen.getByTestId('jira-dates-shadow');
+      expect(shadow).toHaveAttribute('data-previewing', 'true');
+      expect(shadow.style.left).toBe('0%');
+      expect(shadow.style.width).toBe('25%');
+    });
+
+    it('marks the one held date, and fades only the whisker, for an item with one date', async () => {
+      const { container } = renderRow(result({ due: new Date(2026, 0, 16) }));
+
+      await userEvent.hover(lock());
+
+      expect(screen.queryByTestId('jira-dates-shadow')).not.toBeInTheDocument();
+      // Due Fri 16th is exclusive day 10.
+      expect(screen.getByTestId('freeze-preview-date').style.left).toBe('50%');
+      expect(screen.getByTestId('issue-range-line')).toHaveClass('opacity-25');
+      expect(container.querySelector('#ORDER-1')).not.toHaveClass('opacity-25');
+    });
+
+    it('dims a frozen bar when previewing an unfreeze', async () => {
+      const { container } = renderRow(
+        result({ frozen: { startDay: 0, dueDay: 5 }, start: new Date(2026, 0, 5), due: new Date(2026, 0, 9) }),
+        { isFrozen: true },
+      );
+
+      await userEvent.hover(lock('Unfreeze Checkout'));
+
+      expect(container.querySelector('#ORDER-1')).toHaveClass('opacity-60');
+      expect(screen.queryByTestId('jira-dates-shadow')).not.toBeInTheDocument();
+    });
+
+    it('previews nothing when the item has no Jira dates to freeze at', async () => {
+      const { container } = renderRow(result({}));
+
+      await userEvent.hover(lock());
+
+      expect(screen.queryByTestId('freeze-preview-date')).not.toBeInTheDocument();
+      expect(screen.getByTestId('issue-range-line')).not.toHaveClass('opacity-25');
+      expect(container.querySelector('#ORDER-1')).not.toHaveClass('opacity-25');
+    });
   });
 
   it('says when the item on its own is done by, at the slider’s risk', async () => {
@@ -213,6 +304,23 @@ describe('IssueSimulationRow overall timing', () => {
         />
       </div>,
     );
+
+  it('draws a median finish as a visible pill, though its two ends come from neighbouring runs', () => {
+    // At the median the band's ends are adjacent sorted runs: a hair apart, not equal.
+    const { container } = render(
+      <div>
+        <IssueSimulationRow
+          issue={{ ...overall, dueDayBottom: 15, dueDayTop: 15.003 } as SimulationIssueResult}
+          gridRowStart={3}
+          gridData={grid}
+          selectedStartDate={PLAN_START}
+          uncertaintyWeight={50}
+        />
+      </div>,
+    );
+
+    expect(container.querySelector('[id="[~DUE DATE~]"]')).toHaveClass('border-x-4');
+  });
 
   it('draws a start band and a finish band, with nothing joining them', () => {
     renderOverall({ startDay: -4, startDayLate: 0, beforeStartPercent: 40, startDays: [-4, -2, 0, 0, 0] });

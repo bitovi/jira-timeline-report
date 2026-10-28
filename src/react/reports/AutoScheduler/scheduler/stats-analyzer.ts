@@ -155,6 +155,7 @@ export class StatsAnalyzer {
       const result = applyPlan(
         getUncertaintyThresholdData(simulationIssue, this.uncertaintyWeight),
         plan.items.get(key),
+        { backward: simulationIssue.linkedIssue.scheduleDirection === 'backward' },
       );
       return {
         ...result,
@@ -396,21 +397,36 @@ export function withOverlapInfo<T extends OverlapCandidate>(
 
 /**
  * Puts an item's bar where the plan pass placed it (spec/044 consistent-plan.md). The item's own
- * percentile end, from the simulation, moves to `ownDueDayTop`: the end of its whisker and the
- * "p% chance done by" date. Without a planned position (no plan yet) the bar keeps its own dates.
+ * numbers from the simulation stay alongside: `ownDueDayTop`, its own percentile end, and its own
+ * window — the span its own adjusted size covers, which the row draws as the whisker. A forward
+ * item's window ends at its own percentile end. Work feeding a frozen item is mirrored: its safe
+ * number is the early start, so its window starts there (capped at its latest due).
+ * Without a planned position (no plan yet) the bar keeps its own dates.
  */
 export function applyPlan<
   T extends {
+    startDayBottom: number;
     dueDayTop: number;
     adjustedDaysOfWork: number;
     startDateWithTimeEnoughToFinish: number;
     mostCommonTrack: number;
   },
->(result: T, planned: PlannedItem | undefined): T & { ownDueDayTop: number; track: number } {
-  if (!planned) return { ...result, ownDueDayTop: result.dueDayTop, track: result.mostCommonTrack };
+>(
+  result: T,
+  planned: PlannedItem | undefined,
+  { backward = false }: { backward?: boolean } = {},
+): T & { ownDueDayTop: number; ownWindowStart: number; ownWindowEnd: number; track: number } {
+  const own = {
+    ownDueDayTop: result.dueDayTop,
+    ownWindowStart: backward ? result.startDayBottom : result.dueDayTop - result.adjustedDaysOfWork,
+    ownWindowEnd: backward
+      ? Math.min(result.startDayBottom + result.adjustedDaysOfWork, result.dueDayTop)
+      : result.dueDayTop,
+  };
+  if (!planned) return { ...result, ...own, track: result.mostCommonTrack };
   return {
     ...result,
-    ownDueDayTop: result.dueDayTop,
+    ...own,
     startDateWithTimeEnoughToFinish: planned.startDay,
     dueDayTop: planned.dueDay,
     adjustedDaysOfWork: planned.dueDay - planned.startDay,

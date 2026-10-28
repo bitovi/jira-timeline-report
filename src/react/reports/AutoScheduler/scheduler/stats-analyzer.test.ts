@@ -70,16 +70,33 @@ describe('mustStartByAtWeight', () => {
 });
 
 describe('applyPlan', () => {
-  const own = { dueDayTop: 20, adjustedDaysOfWork: 9, startDateWithTimeEnoughToFinish: 11, mostCommonTrack: 1 };
+  const own = {
+    startDayBottom: 6,
+    dueDayTop: 20,
+    adjustedDaysOfWork: 9,
+    startDateWithTimeEnoughToFinish: 11,
+    mostCommonTrack: 1,
+  };
 
-  it('draws the bar at the planned position and keeps the item’s own end for the whisker', () => {
+  it('draws the bar at the planned position and keeps the item’s own window for the whisker', () => {
     expect(applyPlan(own, { startDay: 4, dueDay: 12, track: 0 })).toMatchObject({
       startDateWithTimeEnoughToFinish: 4,
       dueDayTop: 12,
       adjustedDaysOfWork: 8,
       track: 0,
       ownDueDayTop: 20,
+      // Its own 9-day size, ending at its own percentile end.
+      ownWindowStart: 11,
+      ownWindowEnd: 20,
     });
+  });
+
+  it('mirrors the window of work feeding a frozen item from its early start', () => {
+    expect(applyPlan(own, { startDay: 4, dueDay: 12, track: 0 }, { backward: true })).toMatchObject({
+      ownWindowStart: 6,
+      ownWindowEnd: 15,
+    });
+    expect(applyPlan({ ...own, dueDayTop: 10 }, undefined, { backward: true }).ownWindowEnd).toBe(10);
   });
 
   it('keeps the item’s own bar until there is a plan', () => {

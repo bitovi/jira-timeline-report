@@ -44,6 +44,14 @@ const OVERALL_START_HISTOGRAM = {
   subject: 'work has to start on or before',
 };
 
+/**
+ * A band whose two ends are under half a day apart is drawn as a single-date pill. At the median both
+ * ends come from neighbouring runs, a hair apart, and a "range" that thin wouldn't show at all.
+ */
+function isSingleDay(from: number, to: number) {
+  return Math.abs(to - from) < 0.5;
+}
+
 /** How a frozen bar shows uncertainty: none when both dates are held, otherwise only on the free side. */
 function frozenBarFill(frozen: { startDay: number | null; dueDay: number | null }) {
   if (frozen.startDay != null && frozen.dueDay != null) return 'bg-blue-500';
@@ -65,6 +73,8 @@ export const IssueSimulationRow: React.FC<{
   /** Controls the histograms from outside, for a parent whose layout depends on them being open. */
   detailsOpen?: boolean;
   onDetailsOpenChange?: (open: boolean) => void;
+  /** On a gray row band (the band itself is drawn by the grid, under the month lines). */
+  striped?: boolean;
 }> = ({
   issue,
   gridRowStart,
@@ -76,6 +86,7 @@ export const IssueSimulationRow: React.FC<{
   planStart,
   detailsOpen,
   onDetailsOpenChange,
+  striped = false,
 }) => {
   // STATE ==============
   const [ownShowDetails, setOwnShowDetails] = useState(false);
@@ -106,10 +117,20 @@ export const IssueSimulationRow: React.FC<{
 
   // Only items with both Jira dates get a shadow; one date doesn't say where the work sits.
   const derivedTiming = fullResult?.linkedIssue.derivedTiming;
-  const shadow = useMemo(
-    () => (derivedTiming?.start && derivedTiming?.due ? jiraDayOffsets(selectedStartDate, derivedTiming) : null),
+  const jiraDays = useMemo(
+    () => (derivedTiming?.start || derivedTiming?.due ? jiraDayOffsets(selectedStartDate, derivedTiming) : null),
     [derivedTiming, selectedStartDate],
   );
+  const shadow = jiraDays?.startDay != null && jiraDays.dueDay != null ? jiraDays : null;
+
+  // Hovering the lock previews the pick: the Jira dates fill in and what they'd replace fades. With
+  // one date we can't say where the bar would land without re-simulating, so only that date is marked.
+  const [previewingLock, setPreviewingLock] = useState(false);
+  const previewFreeze = previewingLock && !frozen && jiraDays != null;
+  const previewUnfreeze = previewingLock && Boolean(frozen);
+  const heldDay = previewFreeze && !shadow ? (jiraDays!.dueDay ?? jiraDays!.startDay) : null;
+  const fadeIfReplaced = previewFreeze ? 'opacity-25' : '';
+  const fadeBarIfReplaced = shadow && previewFreeze ? 'opacity-25' : previewUnfreeze ? 'opacity-60' : '';
 
   function rangeBorderClasses() {
     if (fullResult?.isOverflowTrack) {
@@ -118,7 +139,7 @@ export const IssueSimulationRow: React.FC<{
     if (!isFullSimulationResult(issue)) {
       // Full height either way: a range is a wider bar, a single date a narrow pill. (A 6px white
       // inset used to shrink a range to a 4px stripe, so the more uncertain case looked fainter.)
-      if (issue.dueDayBottom === issue.dueDayTop) {
+      if (isSingleDay(issue.dueDayBottom, issue.dueDayTop)) {
         return 'border-solid border border-x-4 border-green-200';
       } else {
         return 'border-solid border border-white';
@@ -144,6 +165,7 @@ export const IssueSimulationRow: React.FC<{
         openInNewTab
         textClassName="pointer hover:underline"
         gridRowStart={gridRowStart}
+        striped={striped}
         leading={
           fullResult && onToggleFreeze ? (
             <FreezeToggle
@@ -151,6 +173,7 @@ export const IssueSimulationRow: React.FC<{
               isFrozen={isFrozen}
               canFreeze={canFreeze(fullResult.linkedIssue)}
               onToggle={(next) => onToggleFreeze(fullResult.linkedIssue.key, next)}
+              onPreviewChange={setPreviewingLock}
             />
           ) : undefined
         }
@@ -190,16 +213,16 @@ export const IssueSimulationRow: React.FC<{
           />
         )}
 
-        <div className="relative block py-0.5" style={{ zIndex: gridLayer.row }}>
+        <div className="relative block py-1" style={{ zIndex: gridLayer.row }}>
           {!isFullSimulationResult(issue) ? (
             <>
               {planStart && (
                 <>
                   <div
                     data-testid="overall-start-band"
-                    className={`transition-all duration-100 absolute top-0.5 h-4 rounded border-box bg-gradient-to-r from-blue-400 to-blue-200 from-45% to-55% ${
+                    className={`transition-all duration-100 absolute top-1 h-4 rounded border-box bg-gradient-to-r from-blue-400 to-blue-200 from-45% to-55% ${
                       // The finish band's look, in blue: a narrow pill for a single day, a wider bar for a range.
-                      planStart.startDay === planStart.startDayLate
+                      isSingleDay(planStart.startDay, planStart.startDayLate)
                         ? 'border-solid border border-x-4 border-blue-200'
                         : 'border-solid border border-white'
                     }`}
@@ -231,28 +254,37 @@ export const IssueSimulationRow: React.FC<{
             </>
           ) : (
             <>
-              {shadow?.startDay != null && shadow.dueDay != null && (
+              {shadow && (
                 <JiraDatesShadow
-                  startDay={shadow.startDay}
-                  dueDay={shadow.dueDay}
+                  startDay={shadow.startDay!}
+                  dueDay={shadow.dueDay!}
                   gridNumberOfDays={gridData.gridNumberOfDays}
                   gridStartDay={gridData.gridStartDay}
                   barStartDay={issue.startDateWithTimeEnoughToFinish}
                   barDueDay={issue.dueDayTop}
+                  previewing={previewFreeze}
                 />
               )}
-              {/* The thin line, under the bar: from when the item might start to its own finish at the
-                  slider's risk. Past the bar's end it is the whisker — how far a bad run could go. */}
+              {heldDay != null &&
+                heldDay >= gridData.gridStartDay &&
+                heldDay <= gridData.gridStartDay + gridData.gridNumberOfDays && (
+                  <div
+                    data-testid="freeze-preview-date"
+                    aria-hidden
+                    className="pointer-events-none absolute top-0.5 z-10 h-5 w-1 -translate-x-1/2 rounded-full bg-neutral-300"
+                    style={{ left: percent(heldDay) }}
+                  />
+                )}
+              {/* The whisker, centred behind the bar: the span this item's own adjusted size covers at
+                  the slider's risk (spec/044 consistent-plan.md). Blue is start, green is end; the bar
+                  nearly always covers the middle, where they blend. */}
               {!frozen && (
                 <div
                   data-testid="issue-range-line"
-                  className="transition-all duration-100 absolute bg-gradient-to-r from-blue-200 to-green-200 from-85% to-95% h-1 top-2.5 border-box"
+                  className={`transition-all duration-100 absolute bg-gradient-to-r from-blue-200 to-green-200 from-45% to-55% h-1 top-2.5 border-box ${fadeIfReplaced}`}
                   style={{
-                    left: percent(Math.min(issue.startDayBottom, issue.startDateWithTimeEnoughToFinish)),
-                    width: percentWidth(
-                      Math.min(issue.startDayBottom, issue.startDateWithTimeEnoughToFinish),
-                      Math.max(issue.ownDueDayTop, issue.dueDayTop),
-                    ),
+                    left: percent(issue.ownWindowStart),
+                    width: percentWidth(issue.ownWindowStart, issue.ownWindowEnd),
                   }}
                 />
               )}
@@ -261,10 +293,8 @@ export const IssueSimulationRow: React.FC<{
                 id={issue.linkedIssue.key}
                 data-frozen={frozen ? 'true' : undefined}
                 className={`transition-all duration-100 work-item cursor-pointer ${rangeBorderClasses()} relative ${
-                  frozen
-                    ? `${frozenBarFill(frozen)} flex items-center overflow-hidden text-white`
-                    : 'bg-gradient-to-r from-blue-500 to-green-400 from-45% to-55%'
-                } h-4 border-box rounded`}
+                  frozen ? `${frozenBarFill(frozen)} flex items-center overflow-hidden text-white` : 'bg-neutral-100'
+                } h-4 border-box rounded ${fadeBarIfReplaced}`}
                 style={{
                   left: percent(issue.startDateWithTimeEnoughToFinish),
                   width: percentWidth(issue.startDateWithTimeEnoughToFinish, issue.dueDayTop),
@@ -282,6 +312,16 @@ export const IssueSimulationRow: React.FC<{
                   </span>
                 )}
               </div>
+              {/* Might start: the early tail of when this item could begin. Drawn over the bar so it
+                  stays visible when it falls inside it. */}
+              {!frozen && (
+                <div
+                  data-testid="might-start-dot"
+                  aria-hidden
+                  className={`transition-all duration-100 pointer-events-none absolute top-2 h-2 w-2 -translate-x-1/2 rounded-full bg-blue-400 ring-1 ring-white ${fadeIfReplaced}`}
+                  style={{ left: percent(issue.startDayBottom) }}
+                />
+              )}
             </>
           )}
         </div>

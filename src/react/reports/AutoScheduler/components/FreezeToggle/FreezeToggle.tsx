@@ -13,6 +13,8 @@ interface FreezeToggleProps {
   /** False when Jira gives the item neither a start nor a due date. */
   canFreeze: boolean;
   onToggle: (frozen: boolean) => void;
+  /** While hovered or focused, so the row can preview what toggling would do. Never fires when disabled. */
+  onPreviewChange?: (previewing: boolean) => void;
 }
 
 /**
@@ -22,9 +24,12 @@ interface FreezeToggleProps {
  * `aria-disabled` rather than `disabled`: a disabled button gets no pointer or focus events, so the
  * tooltip explaining *why* it's disabled could never open.
  */
-export const FreezeToggle: FC<FreezeToggleProps> = ({ summary, isFrozen, canFreeze, onToggle }) => {
+export const FreezeToggle: FC<FreezeToggleProps> = ({ summary, isFrozen, canFreeze, onToggle, onPreviewChange }) => {
   const label = `${isFrozen ? 'Unfreeze' : 'Freeze'} ${summary}`;
   const disabled = !canFreeze && !isFrozen;
+  const preview = (previewing: boolean) => {
+    if (!disabled) onPreviewChange?.(previewing);
+  };
 
   const visibility = isFrozen
     ? 'text-neutral-800'
@@ -34,6 +39,9 @@ export const FreezeToggle: FC<FreezeToggleProps> = ({ summary, isFrozen, canFree
 
   return (
     <Tooltip
+      // Below, it would cover the next row's lock and swallow the hover meant for it.
+      position="left"
+      ignoreTooltipPointerEvents
       content={
         disabled ? FREEZE_NEEDS_DATES : isFrozen ? 'Unfreeze: let the scheduler move this' : 'Freeze at its Jira dates'
       }
@@ -49,6 +57,16 @@ export const FreezeToggle: FC<FreezeToggleProps> = ({ summary, isFrozen, canFree
           className={`flex h-4 w-4 shrink-0 items-center justify-center rounded bg-transparent p-0 ${visibility}`}
           onClick={() => {
             if (!disabled) onToggle(!isFrozen);
+          }}
+          onMouseEnter={() => preview(true)}
+          onMouseLeave={() => preview(false)}
+          onFocus={(e) => {
+            triggerProps.onFocus?.(e);
+            preview(true);
+          }}
+          onBlur={(e) => {
+            triggerProps.onBlur?.(e);
+            preview(false);
           }}
         >
           {isFrozen ? <LockLockedIcon label="" /> : <LockUnlockedIcon label="" />}

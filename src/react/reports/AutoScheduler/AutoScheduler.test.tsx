@@ -73,6 +73,8 @@ function issueResult(key: string, daysAdded: number) {
     dueDayBottom: 10,
     dueDayTop: 10,
     ownDueDayTop: 10,
+    ownWindowStart: 0,
+    ownWindowEnd: 10,
     track: 0,
     adjustedDaysOfWork: 10,
   };
@@ -453,5 +455,14 @@ describe('AutoScheduler work before the start date', () => {
 
     expect(screen.queryByTestId('start-date-line')).not.toBeInTheDocument();
     expect(screen.queryByText(/Work must start by/)).not.toBeInTheDocument();
+  });
+});
+
+describe('AutoScheduler row bands', () => {
+  it('bands every other epic in a track gray, like Jira Plans', () => {
+    renderScheduler();
+
+    // Four epics on one track: the second and fourth are banded.
+    expect(screen.getAllByTestId('row-band')).toHaveLength(2);
   });
 });

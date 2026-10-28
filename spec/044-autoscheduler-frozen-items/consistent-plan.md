@@ -95,8 +95,8 @@ correct, not a bug.
 | Row / track an epic is shown on         | most common track across runs                                 | plan track                                                  |
 | Over-capacity track                     | most common track ≥ track limit                               | plan track ≥ track limit                                    |
 | Blocker lines                           | between bar ends and starts                                   | unchanged, but bars are now plan dates                      |
-| Thin line, left end                     | `startDayBottom`                                              | `min(startDayBottom, plan start)`                           |
-| Thin line, right end                    | `dueDayTop` (hidden under the bar)                            | `max(dueDayTop, plan end)`                                  |
+| Thin line (whisker)                     | `startDayBottom` → `dueDayTop`                                | the item's own window (see below)                           |
+| Might start                             | left end of the thin line                                     | a dot at `startDayBottom`                                   |
 | Tooltip                                 | "Must start", "Must end"                                      | plan dates, plus "_p_% chance done by _date_" (`dueDayTop`) |
 | **Update Epic Dates**                   | bar dates                                                     | plan dates                                                  |
 | Team "Total Working Days"               | sum of `adjustedDaysOfWork`                                   | sum of plan lengths                                         |
@@ -131,19 +131,23 @@ the same reason.
   `track` the plan track. `planQuantile` is in the UI data.
 - The row's thin line has `data-testid="issue-range-line"`.
 
-## The whisker
+## The whisker and the might-start dot
 
-It is the existing thin line ("The Little Line" in `IssueSimulationRow.tsx`): 4px tall, a blue→green
-gradient, under the bar.
+Everything sits on one line, centred behind the bar, so the bar, the whisker and the dot read as one
+row.
 
-- Today it runs from `startDayBottom` to `dueDayTop`, and the bar ends at `dueDayTop`, so only its
-  left part shows.
-- Now the bar usually ends before `dueDayTop`, so the green tail also shows to the right.
-- A whisker reaching past the next epic's start reads as "if this one goes badly, it eats into the
-  next". That is the information the overlapping bars were trying to give.
-- When the epic's own p% finish is earlier than the plan end (it has slack), the line simply ends at
-  the bar. It never points backward.
-- Frozen items still get no thin line.
+- **Whisker**: the thin 4px blue→green line. It spans what the old bar spanned: the item's own
+  adjusted size at the slider's risk, ending at its own percentile end — `[ownDueDayTop −
+own length, ownDueDayTop]`. Its length is the number the
+  [Statistical Software Estimator](https://bitovi.github.io/statistical-software-estimator/) teaches
+  for one epic. Work feeding a frozen item is mirrored from its early start —
+  `[startDayBottom, min(startDayBottom + own length, ownDueDayTop)]` — the anchoring its bars used
+  before the plan pass.
+- **Might-start dot**: an 8px blue circle at `startDayBottom`, the early tail of when the item could
+  begin. Drawn over the bar, so it stays visible when it falls inside it. For forward work it is
+  usually left of the whisker: the early start comes before the late start the whisker implies.
+  They meet when nothing comes before the item, at "average", and for mirrored work.
+- Frozen items get neither.
 
 ## Out of scope
 
