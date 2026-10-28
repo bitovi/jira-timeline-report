@@ -11,7 +11,7 @@ import { usePrimaryReportType } from './hooks/usePrimaryReportType';
 import AutoSchedulerControls from './components/AutoSchedulerControls';
 import { useRouteData } from '../hooks/useRouteData/useRouteData';
 import { ChecklistDropdown } from '../reports/FlowMetrics/ChecklistDropdown';
-import { TableReportControls } from '../reports/TableReport/components/TableReportControls';
+import { ControlCell, TableReportControls } from '../reports/TableReport/components/TableReportControls';
 import type { DerivedIssue } from '../../jira/derived/derive';
 
 // Returns the number of days back that the `updated >= ...` clause covers.
@@ -252,7 +252,8 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({ rolledupAndRolledBac
     return (
       <ReportControlsWrapper>
         <AutoSchedulerControls />
-        <div className="self-end pb-1">
+        {/* No bottom padding: Update dates sits flush at the bottom, and this lines up with it. */}
+        <div className="self-end">
           <Filters rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs} />
         </div>
       </ReportControlsWrapper>
@@ -270,9 +271,11 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({ rolledupAndRolledBac
           <SelectReportType />
         </div>
         <TableReportControls />
-        <div className="self-end pb-1">
+        <div className="flex-grow" />
+        {/* Same blank-label cell as Add column, so the two buttons line up. */}
+        <ControlCell label={'\u00A0'}>
           <Filters rolledupAndRolledBackIssuesAndReleasesObs={rolledupAndRolledBackIssuesAndReleasesObs} />
-        </div>
+        </ControlCell>
       </>
     );
   }
