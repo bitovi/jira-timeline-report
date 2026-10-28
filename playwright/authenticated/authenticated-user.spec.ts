@@ -4,7 +4,7 @@ test.describe('Authenticated User', () => {
   test('Display graph', async ({ page }) => {
     await page.goto('/');
 
-    await page.getByRole('button', { name: 'Sources' }).click();
+    await page.locator('#timeline-configuration').getByRole('button', { name: 'Sources' }).click();
 
     // The JQL input is the `@atlaskit/jql-editor` widget: a ProseMirror `role="combobox"`
     // contenteditable div (not a `<textarea>`), so it's targeted by its stable `data-testid`
