@@ -46,8 +46,7 @@ const ReportSettings: FC<ReportSettingsProps> = ({
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 
   return (
-    // `flex flex-col` so the footer links section below can be squeezed by the (shrink-0) nav
-    // buttons instead of overlapping them via `position: fixed` (the previous approach).
+    // `flex flex-col` so the help icon below sits at the bottom (`mt-auto`) under the nav buttons.
     <div className="flex h-full flex-col overflow-hidden px-6 pt-6 pb-2">
       <div className="shrink-0">
         {showSidebarBranding && <Branding unlicensed={unlicensed} />}
@@ -130,44 +129,44 @@ const ReportSettings: FC<ReportSettingsProps> = ({
       </div>
 
       {/*
-        The footer links section is allowed to shrink (`min-h-0`, default is `min-h-full` i.e.
-        `auto`/content-size, which is what caused the old `position: fixed` block to overlap the
-        nav buttons above on short windows). Its children are never explicitly shrunk (`shrink-0`)
-        since their own text already gives them a natural minimum height - there's nothing to gain
-        by asking them to shrink. Instead, once this section's box is forced smaller than its
-        content, the lowest (least important) links simply overflow past its bottom edge and get
-        clipped by `overflow-hidden` - automatically dropping least-important-first, with no
-        per-item tuning or height media queries needed. The `after:` gradient softens whichever
-        link happens to be straddling that cutoff so it fades rather than hard-clipping mid-glyph.
+        Only the help icon shows; hovering the bottom strip of the sidebar (or focusing the icon)
+        slides the links up above it. The panel overlays the nav buttons instead of taking space,
+        so short windows no longer have to clip links. It comes after the button in the DOM so
+        Tab goes icon -> links. `invisible` keeps hidden links out of the tab order and pointer.
       */}
-      <div
-        className="relative mt-auto flex min-h-0 shrink flex-col items-center gap-2 overflow-hidden pt-2
-          after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-2
-          after:bg-gradient-to-b after:from-transparent after:to-white after:content-['']"
-      >
-        <img className="shrink-0 pb-2" width="24px" src="./images/_QuestionCircleIcon_.svg" aria-hidden />
-        <SmallLink href="https://bitovi.atlassian.net/wiki/spaces/StatusReportsForJira/overview">
-          Read the guides
-        </SmallLink>
-        <SmallLink href="https://www.bitovi.com/academy/learn-agile-program-management-with-jira.html">
-          APM Training
-        </SmallLink>
-        <SmallLink href="https://www.bitovi.com/services/agile-project-management-consulting">
-          Connect with Bitovi
-        </SmallLink>
-        <SmallLink href="https://www.bitovi.com/status-reports-for-jira">Join the Mailing List</SmallLink>
-        <button className="link shrink-0 text-slate-300 text-sm" onClick={() => setIsBugFormOpen(true)}>
-          Report a bug
+      <div className="group relative mt-auto flex shrink-0 justify-center pt-2">
+        <button type="button" aria-label="Help" className="rounded-full p-1">
+          <img width="24px" src="./images/_QuestionCircleIcon_.svg" aria-hidden />
         </button>
-        <BugReportModal isOpen={isBugFormOpen} onClose={() => setIsBugFormOpen(false)} />
-        <button className="link shrink-0 text-slate-300 text-sm" onClick={() => setIsFeedbackFormOpen(true)}>
-          Request a feature
-        </button>
-        <SmallLink href="https://marketplace.atlassian.com/apps/1236390/status-reports-for-jira?hosting=cloud&tab=reviews">
-          Write a review
-        </SmallLink>
-        <FeatureRequestModal isOpen={isFeedbackFormOpen} onClose={() => setIsFeedbackFormOpen(false)} />
+        <div
+          className="invisible absolute inset-x-0 bottom-full flex translate-y-2 flex-col items-center gap-2 bg-white
+            pt-4 pb-2 opacity-0 transition-[opacity,transform,visibility] duration-200 ease-out
+            group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100
+            group-hover:visible group-hover:translate-y-0 group-hover:opacity-100"
+        >
+          <SmallLink href="https://bitovi.atlassian.net/wiki/spaces/StatusReportsForJira/overview">
+            Read the guides
+          </SmallLink>
+          <SmallLink href="https://www.bitovi.com/academy/learn-agile-program-management-with-jira.html">
+            APM Training
+          </SmallLink>
+          <SmallLink href="https://www.bitovi.com/services/agile-project-management-consulting">
+            Connect with Bitovi
+          </SmallLink>
+          <SmallLink href="https://www.bitovi.com/status-reports-for-jira">Join the Mailing List</SmallLink>
+          <button className="link shrink-0 text-slate-300 text-sm" onClick={() => setIsBugFormOpen(true)}>
+            Report a bug
+          </button>
+          <button className="link shrink-0 text-slate-300 text-sm" onClick={() => setIsFeedbackFormOpen(true)}>
+            Request a feature
+          </button>
+          <SmallLink href="https://marketplace.atlassian.com/apps/1236390/status-reports-for-jira?hosting=cloud&tab=reviews">
+            Write a review
+          </SmallLink>
+        </div>
       </div>
+      <BugReportModal isOpen={isBugFormOpen} onClose={() => setIsBugFormOpen(false)} />
+      <FeatureRequestModal isOpen={isFeedbackFormOpen} onClose={() => setIsFeedbackFormOpen(false)} />
     </div>
   );
 };
