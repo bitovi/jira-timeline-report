@@ -6,6 +6,7 @@ import { rollupAndRollback } from '../../jira/rolledup-and-rolledback/rollup-and
 import { calculateReportStatuses } from '../../jira/rolledup/work-status/work-status';
 import {
   ALL_LEVELS,
+  filterBeforeRollup,
   findAncestorAtLevel,
   isLevelFilterActive,
   matchesLevelFilter,
@@ -106,6 +107,19 @@ export class TimelineReportViewModel extends ObservableObject {
           return this.routeData.derivedIssues;
         }
       }
+    },
+
+    // `filteredDerivedIssues` minus the issues the Filters panel hides, for the reports that read
+    // issues before rollup (Flow Metrics, Time in Status). Rollup still reads the unfiltered list.
+    get levelFilteredDerivedIssues() {
+      if (!this.filteredDerivedIssues) {
+        return this.filteredDerivedIssues;
+      }
+      return filterBeforeRollup(
+        this.filteredDerivedIssues,
+        this.routeData.effectiveLevelFilters ?? {},
+        this.routeData.issueHierarchy,
+      );
     },
 
     // the timing calculations for the type and below

@@ -8,6 +8,8 @@ import type { IssueTypeChartData } from './TimeInStatusCharts';
 
 interface TimeInStatusProps {
   filteredDerivedIssuesObs: CanObservable<Array<DerivedIssue>>;
+  /** `filteredDerivedIssues` with the Filters panel applied. Falls back to the unfiltered list. */
+  levelFilteredDerivedIssuesObs?: CanObservable<Array<DerivedIssue>>;
 }
 
 function getStatusDurationsMap(issue: DerivedIssue): Map<string, number> {
@@ -320,6 +322,7 @@ const DEFAULT_ISSUE_TYPE_SET = new Set(DEFAULT_ISSUE_TYPES);
 
 export const TimeInStatus: React.FC<TimeInStatusProps> = (props) => {
   const allIssues = useCanObservable(props.filteredDerivedIssuesObs);
+  const panelFilteredIssues = useCanObservable(props.levelFilteredDerivedIssuesObs ?? props.filteredDerivedIssuesObs);
   const [dateRange] = useRouteData<number | undefined>('timeInStatusDateRange');
   const [statusFilter, setStatusFilter] = useRouteData<string[] | undefined>('timeInStatusStatusFilter');
   const [issueTypeFilter, setIssueTypeFilter] = useRouteData<string[] | undefined>('timeInStatusIssueTypeFilter');
@@ -361,7 +364,7 @@ export const TimeInStatus: React.FC<TimeInStatusProps> = (props) => {
   );
 
   const issues = useMemo(() => {
-    let filtered = allIssues ?? [];
+    let filtered = panelFilteredIssues ?? [];
     if (dateRange) {
       const cutoff = Date.now() - dateRange * 24 * 60 * 60 * 1000;
       filtered = filtered.filter((i) => {
@@ -372,7 +375,7 @@ export const TimeInStatus: React.FC<TimeInStatusProps> = (props) => {
     if (issueTypeFilter?.length) filtered = filtered.filter((i) => issueTypeFilter.includes(i.type));
     if (projectFilter?.length) filtered = filtered.filter((i) => projectFilter.includes(i.projectKey));
     return filtered;
-  }, [allIssues, dateRange, issueTypeFilter, projectFilter]);
+  }, [panelFilteredIssues, dateRange, issueTypeFilter, projectFilter]);
 
   const { rows, statusColumns, issueTypeCharts } = useMemo(() => {
     if (!issues?.length) {

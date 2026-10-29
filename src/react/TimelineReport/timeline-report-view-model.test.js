@@ -161,6 +161,21 @@ describe('level filters', () => {
     });
   });
 
+  describe('levelFilteredDerivedIssues', () => {
+    const levelFiltered = (levelFilters) => getter('levelFilteredDerivedIssues').call(vmThis(levelFilters));
+
+    it('applies each tab to its own level, initiatives included', () => {
+      expect(
+        keys(
+          levelFiltered({
+            all: { rows: [row('jiraStatus', 'is not', ['Done'])] },
+            Story: { rows: [row('issueType', 'is', ['Bug'])] },
+          }),
+        ),
+      ).toEqual(['I-1', 'E-1', 'E-3', 'S-2']);
+    });
+  });
+
   describe('visibleIssuesOrReleases', () => {
     const visible = (levelFilters) => getter('visibleIssuesOrReleases').call(vmThis(levelFilters));
 

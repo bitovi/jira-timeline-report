@@ -37,7 +37,8 @@ const useScope = (key: LevelKey) => {
   const [primaryIssueType] = useRouteData<string | undefined>('primaryIssueType');
   const [secondaryIssueType] = useRouteData<string | undefined>('secondaryIssueType');
   const [issueHierarchy] = useRouteData<HierarchyLevel[] | null>('issueHierarchy');
-  return levelScope(key, { primaryIssueType, secondaryIssueType, issueHierarchy });
+  const [primaryReportType] = useRouteData<string | undefined>('primaryReportType');
+  return levelScope(key, { primaryIssueType, secondaryIssueType, issueHierarchy, primaryReportType });
 };
 
 const inScope = (issue: MinimalLevelIssue, scope: ReturnType<typeof levelScope>) =>
