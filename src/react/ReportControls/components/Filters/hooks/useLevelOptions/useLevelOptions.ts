@@ -3,6 +3,7 @@ import type { CanObservable } from '../../../../../hooks/useCanObservable/useCan
 import { useCanObservable } from '../../../../../hooks/useCanObservable/useCanObservable';
 import { STATUS_LEGEND_ORDER, getStatusLabel } from '../../../../../reports/WorkBreakdown/helpers';
 import {
+  filtersApplyBeforeRollup,
   levelScope,
   RELEASE_LEVEL,
   type HierarchyLevel,
@@ -75,13 +76,14 @@ export const useLevelStatusOptions = (key: LevelKey): Option[] => {
 
 /**
  * Rollup Status options for one tab, from the rolled-up issues (generalizes
- * `useSelectableRollupStatuses`). Empty above Report on: those levels aren't rolled up, so the field
- * isn't offered there.
+ * `useSelectableRollupStatuses`). Empty above Report on and in reports that filter before rollup:
+ * those issues aren't rolled up, so the field isn't offered there.
  */
 export const useLevelRollupStatusOptions = (key: LevelKey, issuesObs?: CanObservable<MinimalLevelIssue[]>) => {
   const issues = useCanObservable(issuesObs ?? emptyIssuesObs);
   const scope = useScope(key);
-  if (scope.isAbove) {
+  const [primaryReportType] = useRouteData<string | undefined>('primaryReportType');
+  if (scope.isAbove || filtersApplyBeforeRollup(primaryReportType)) {
     return [];
   }
 

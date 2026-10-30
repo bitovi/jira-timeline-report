@@ -7,6 +7,7 @@ import { calculateReportStatuses } from '../../jira/rolledup/work-status/work-st
 import {
   ALL_LEVELS,
   filterBeforeRollup,
+  filtersApplyBeforeRollup,
   findAncestorAtLevel,
   isLevelFilterActive,
   matchesLevelFilter,
@@ -120,6 +121,15 @@ export class TimelineReportViewModel extends ObservableObject {
         this.routeData.effectiveLevelFilters ?? {},
         this.routeData.issueHierarchy,
       );
+    },
+
+    // How many issues the open report has to show, which decides report vs. empty-result. Reports
+    // that filter before rollup don't read `primaryIssuesOrReleases`, so its count doesn't apply.
+    get reportIssueCount() {
+      if (filtersApplyBeforeRollup(this.routeData.primaryReportType)) {
+        return this.levelFilteredDerivedIssues?.length ?? 0;
+      }
+      return this.primaryIssuesOrReleases?.length ?? 0;
     },
 
     // the timing calculations for the type and below
