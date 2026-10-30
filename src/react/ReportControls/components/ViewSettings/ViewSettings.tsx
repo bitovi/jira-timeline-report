@@ -74,9 +74,11 @@ const ViewSettings: FC = () => {
               <DropdownMenu
                 shouldRenderToParent
                 trigger={
-                  primaryReportType === 'flow-metrics' || primaryReportType === 'time-in-status'
+                  primaryReportType === 'flow-metrics'
                     ? 'Filter Results'
-                    : 'View settings'
+                    : primaryReportType === 'time-in-status'
+                      ? 'Status columns'
+                      : 'View settings'
                 }
               >
                 <div className="p-6 w-[475px]">

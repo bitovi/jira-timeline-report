@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { CanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import type { DerivedIssue } from '../../../jira/derived/derive';
 import { useCanObservable } from '../../hooks/useCanObservable/useCanObservable';
@@ -325,26 +325,8 @@ export const TimeInStatus: React.FC<TimeInStatusProps> = (props) => {
   const panelFilteredIssues = useCanObservable(props.levelFilteredDerivedIssuesObs ?? props.filteredDerivedIssuesObs);
   const [dateRange] = useRouteData<number | undefined>('timeInStatusDateRange');
   const [statusFilter, setStatusFilter] = useRouteData<string[] | undefined>('timeInStatusStatusFilter');
-  const [issueTypeFilter, setIssueTypeFilter] = useRouteData<string[] | undefined>('timeInStatusIssueTypeFilter');
   const [projectFilter] = useRouteData<string[] | undefined>('timeInStatusProjectFilter');
   const [customOrders, setCustomOrders] = useRouteData<Record<string, string[]> | undefined>('timeInStatusReorder');
-
-  // Initialize issue type filter to standard types on first load (when no explicit filter is saved)
-  const filterInitialized = useRef(false);
-  useEffect(() => {
-    if (filterInitialized.current) return;
-    if (issueTypeFilter !== undefined) {
-      filterInitialized.current = true;
-      return;
-    }
-    if (!allIssues?.length) return;
-    const availableTypes = [...new Set(allIssues.map((i) => i.type).filter(Boolean))];
-    const defaults = availableTypes.filter((t) => DEFAULT_ISSUE_TYPE_SET.has(t));
-    if (defaults.length > 0 && defaults.length < availableTypes.length) {
-      setIssueTypeFilter(defaults);
-    }
-    filterInitialized.current = true;
-  }, [allIssues, issueTypeFilter, setIssueTypeFilter]);
 
   const handleSetCustomOrder = (issueType: string, order: string[] | null) => {
     const next = { ...(customOrders ?? {}) };
@@ -372,10 +354,9 @@ export const TimeInStatus: React.FC<TimeInStatusProps> = (props) => {
         return !rawCreated || new Date(rawCreated as string).getTime() >= cutoff;
       });
     }
-    if (issueTypeFilter?.length) filtered = filtered.filter((i) => issueTypeFilter.includes(i.type));
     if (projectFilter?.length) filtered = filtered.filter((i) => projectFilter.includes(i.projectKey));
     return filtered;
-  }, [panelFilteredIssues, dateRange, issueTypeFilter, projectFilter]);
+  }, [panelFilteredIssues, dateRange, projectFilter]);
 
   const { rows, statusColumns, issueTypeCharts } = useMemo(() => {
     if (!issues?.length) {
