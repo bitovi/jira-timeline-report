@@ -111,8 +111,8 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   const openReportObs = useMemo(() => value.from<any>(rd, 'reportData'), []);
   const openReport = useCanObservable(openReportObs);
 
-  const primaryIssuesOrReleasesObs = useMemo(() => value.from<any[]>(vm, 'primaryIssuesOrReleases'), [vm]);
-  const primaryIssuesOrReleases = useCanObservable(primaryIssuesOrReleasesObs) ?? [];
+  const reportIssueCountObs = useMemo(() => value.from<number>(vm, 'reportIssueCount'), [vm]);
+  const reportIssueCount = useCanObservable(reportIssueCountObs) ?? 0;
 
   const showingConfiguration = isLoggedIn;
 
@@ -326,7 +326,7 @@ export const TimelineReport: FC<TimelineReportProps> = ({
             isLoggedIn={isLoggedIn}
             jql={jql}
             primaryIssueType={primaryIssueType}
-            primaryIssuesCount={primaryIssuesOrReleases.length}
+            primaryIssuesCount={reportIssueCount}
             selfManagesData={selfManagesData}
             unsupportedReportType={deadReportType}
             fillsHeight={fillsHeight}

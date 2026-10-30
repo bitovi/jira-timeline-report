@@ -261,6 +261,17 @@ describe('<FiltersPanel />', () => {
     expect(screen.queryByText('Rollup Status')).not.toBeInTheDocument();
   });
 
+  it('does not offer Rollup Status in reports that filter before rollup', async () => {
+    data.primaryReportType = 'flow-metrics';
+    const { user, dialog } = await renderPanel();
+
+    await user.click(within(dialog).getByText('+ Add filter'));
+    await user.click(within(dialog).getByLabelText('Field'));
+
+    expect(screen.getAllByText('Issue Type').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Rollup Status')).not.toBeInTheDocument();
+  });
+
   it('Exclude statuses is on All items only, writes statusesToExclude and counts on the badge', async () => {
     const { user, dialog } = await renderPanel();
 

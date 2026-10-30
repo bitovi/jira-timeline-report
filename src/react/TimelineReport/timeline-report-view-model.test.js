@@ -161,6 +161,41 @@ describe('level filters', () => {
     });
   });
 
+  describe('levelFilteredDerivedIssues', () => {
+    const levelFiltered = (levelFilters) => getter('levelFilteredDerivedIssues').call(vmThis(levelFilters));
+
+    it('applies each tab to its own level, initiatives included', () => {
+      expect(
+        keys(
+          levelFiltered({
+            all: { rows: [row('jiraStatus', 'is not', ['Done'])] },
+            Story: { rows: [row('issueType', 'is', ['Bug'])] },
+          }),
+        ),
+      ).toEqual(['I-1', 'E-1', 'E-3', 'S-2']);
+    });
+  });
+
+  describe('reportIssueCount', () => {
+    const count = (primaryReportType, levelFilters) =>
+      getter('reportIssueCount').call({
+        routeData: { primaryReportType },
+        primaryIssuesOrReleases: [],
+        levelFilteredDerivedIssues: levelFilters,
+      });
+
+    // Every primary Epic filtered out, but matching Stories remain for the pre-rollup reports.
+    it('counts the level-filtered issues in reports that filter before rollup', () => {
+      expect(count('flow-metrics', stories)).toBe(2);
+      expect(count('time-in-status', stories)).toBe(2);
+    });
+
+    it('counts the primary rows everywhere else', () => {
+      expect(count('start-due', stories)).toBe(0);
+      expect(count('estimation-progress', stories)).toBe(0);
+    });
+  });
+
   describe('visibleIssuesOrReleases', () => {
     const visible = (levelFilters) => getter('visibleIssuesOrReleases').call(vmThis(levelFilters));
 

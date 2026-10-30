@@ -2,6 +2,7 @@ import { useRouteData } from '../../../../../hooks/useRouteData';
 import {
   ALL_LEVELS,
   countActiveFilters,
+  filtersApplyBeforeRollup,
   RELEASE_LEVEL,
   type HierarchyLevel,
   type LevelFilters,
@@ -31,6 +32,7 @@ export const pluralize = (name: string) => {
 export const useFilterTabs = (): FilterTab[] => {
   const [issueHierarchy] = useRouteData<HierarchyLevel[] | null>('issueHierarchy');
   const [primaryIssueType] = useRouteData<string | undefined>('primaryIssueType');
+  const [primaryReportType] = useRouteData<string | undefined>('primaryReportType');
   const [effectiveLevelFilters] = useRouteData<LevelFilters | undefined>('effectiveLevelFilters');
 
   // Exclude statuses lives on All items, so it counts there (once, like a field filter row).
@@ -40,7 +42,8 @@ export const useFilterTabs = (): FilterTab[] => {
 
   return [
     { key: ALL_LEVELS, label: 'All items', count: count(ALL_LEVELS) + (statusesToExclude?.length ? 1 : 0) },
-    ...(primaryIssueType === RELEASE_LEVEL
+    // Releases only exist after rollup.
+    ...(primaryIssueType === RELEASE_LEVEL && !filtersApplyBeforeRollup(primaryReportType)
       ? [{ key: RELEASE_LEVEL, label: pluralize(RELEASE_LEVEL), count: count(RELEASE_LEVEL) }]
       : []),
     ...(issueHierarchy ?? []).map(({ name }) => ({ key: name, label: pluralize(name), count: count(name) })),
