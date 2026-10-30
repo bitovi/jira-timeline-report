@@ -11,19 +11,20 @@ work under it. Rather than build a new report type, the MVP composes it from the
 - Ungrouped, it lists one row per initiative. **Group by Parent Summary** collapses it to one row per
   Outcome:
 
-| Parent Summary | Icon & Summary   | Due date                | Estimate Progress                                    |
-| -------------- | ---------------- | ----------------------- | ---------------------------------------------------- |
-| outcomeA       | inc1, inc2, inc3 | 2026-12-01 – 2027-06-01 | Partially estimated (1), Estimated (1), No epics (1) |
+| Parent Summary | Icon & Summary   | Due date                | Estimate Progress                                       |
+| -------------- | ---------------- | ----------------------- | ------------------------------------------------------- |
+| outcomeA       | inc1, inc2, inc3 | 2026-12-01 – 2027-06-01 | Partially estimated (1), Estimated (1), No children (1) |
 
 With **Aggregation → Max** on the due date column the cell becomes `2027-06-01`, and with
-**Format → How far out** it becomes `8 months out`.
+**Format → How far out** it becomes `7 months out` (as of 2026-10-29).
 
 Four pieces of work deliver this:
 
 1. Date columns get **Min** and **Max** aggregations.
 2. Date columns get a **Format** option: Date (today) or **How far out**.
 3. A new **Rolled-up Due Date** column.
-4. A new **Estimate Progress** column, reusing the Estimation Progress report's rules.
+4. A new **Estimate Progress** column: how many of each row's direct children are estimated, using
+   the Estimation Progress report's definition of "estimated".
 
 ### What exists today (answers to the questions raised)
 
@@ -50,14 +51,17 @@ Four pieces of work deliver this:
 
 ## Decisions (agreed)
 
-| Topic                    | Decision                                                                                                                                                                                         |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Rolled-up due            | Latest due date among children (each child's own rolled-up value, recursively), **falling back to the issue's own due date** when no child has one. Same semantics as `childrenFirstThenParent`. |
-| Children source          | `filteredDerivedIssues` linked by `parentKey`, independent of the hierarchy range. The sources' JQL must still load the epics.                                                                   |
-| "Estimated" epic         | Same as Estimation Progress: an estimate (`storyPoints ?? storyPointsMedian`) **and** a `confidence`.                                                                                            |
-| Estimate Progress labels | Epic rows: **Estimated / Unestimated**. Initiative rows: **Estimated / Partially estimated / Unestimated epics / No epics**. Grouped: `Estimated (1), Partially estimated (1), No epics (1)`.    |
-| How far out              | `Today`, `N days out` (under 14 days), `N weeks out` (under 8 weeks), `N months out` (under 24 months), then `N years out`. Past dates read `… ago`. Singular for 1 (`1 week out`).              |
-| Feature flag             | New `planningHealth` flag in the Features tab gates **the two new columns**. Date Min/Max and the How far out format ship ungated.                                                               |
+| Topic                    | Decision                                                                                                                                                                                                                                               |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Rolled-up due            | Latest due date among children (each child's own rolled-up value, recursively), **falling back to the issue's own due date** when no child has one. (Close to, but not the same as, the Timing default `childrenFirstThenParent`; see Open questions.) |
+| Children source          | `filteredDerivedIssues` linked by `parentKey`, independent of the hierarchy range. The sources' JQL must still load the epics.                                                                                                                         |
+| Children not loaded      | No in-app warning. Loading every level is the user's job, so the columns' docs/help text say that without the level below loaded, rows read "No children" and their own due date.                                                                      |
+| Excluded statuses        | Issues hidden by Exclude statuses are removed before these columns run, so they neither count nor show, the same as today's Estimation Progress report.                                                                                                |
+| "Estimated" child        | Same as Estimation Progress: an estimate (`storyPoints ?? storyPointsMedian`) **and** a `confidence`, read through Team Configuration for that child's team and level.                                                                                 |
+| Estimate Progress        | **Level-agnostic: a row looks only at its direct children, whatever level they are.** No hierarchy level is hardcoded. On an Initiative row the children are epics; on an Epic row they're stories.                                                    |
+| Estimate Progress labels | Generic, never naming a level: **Estimated** (all children estimated), **Partially estimated** (some), **Unestimated** (none), **No children** (no children loaded). Grouped: `Estimated (1), Partially estimated (1), No children (1)`.               |
+| How far out              | `Today`, `N days out` (under 14 days), `N weeks out` (under 8 weeks), `N months out` (under 24 months), then `N years out`. Past dates read `… ago`. Singular for 1 (`1 week out`).                                                                    |
+| Feature flag             | New `planningHealth` flag in the Features tab gates **the two new columns**. Date Min/Max and the How far out format ship ungated.                                                                                                                     |
 
 ## Design
 
@@ -97,25 +101,25 @@ will show Count, Range, Min and Max.
   `dateFormat?: 'date' | 'relative'`, and have date renderers read it. That's the smallest change
   that reaches both the cell and the measure renderer.
 
-### 3. Shared estimation-progress rules
+### 3. Shared estimation rule
 
-The rules live as private functions in `src/react/reports/EstimationProgress/EstimationProgress.tsx`
-(`getReportingData`, L145-193). Extract the classification into
+`src/react/reports/EstimationProgress/EstimationProgress.tsx` (`getReportingData`, L145-193) decides
+whether an epic is estimated inline. Extract that test, plus a level-agnostic classifier, into
 `src/react/reports/shared/estimationProgress.ts`:
 
 ```ts
-export type EpicEstimate = 'Estimated' | 'Unestimated';
-export type InitiativeEstimate = 'Estimated' | 'Partially estimated' | 'Unestimated epics' | 'No epics';
+export type EstimateProgress = 'Estimated' | 'Partially estimated' | 'Unestimated' | 'No children';
 
-export function isEpicEstimated(issue: DerivedIssue): boolean; // storyPoints ?? storyPointsMedian, and confidence
-export function classifyAboveEpic(epicTotal: number, epicEstimated: number): InitiativeEstimate;
+/** An estimate (storyPoints ?? storyPointsMedian) and a confidence. */
+export function isEstimated(issue: DerivedIssue): boolean;
+/** Classify a row from its direct children's counts. */
+export function classifyEstimateProgress(childTotal: number, childEstimated: number): EstimateProgress;
 ```
 
-`EstimationProgress.tsx` imports these and keeps its own counting and team rollups. Its behavior must
-stay the same. While extracting, fix the modal-title key mismatch (`noEpic` vs `noEpics`, L251/L407),
-which makes the "no epics" modal show the title "Issues".
-
-Like the existing report, this hard-codes level 1 = Epic and level 2 = the level above epics.
+`EstimationProgress.tsx` uses `isEstimated` for its epic test. Its categories, labels and level
+handling stay as they are; that report is out of scope apart from this one shared helper. While
+there, fix the modal-title key mismatch (`noEpic` vs `noEpics`, L251/L407), which makes the "no
+epics" modal show the title "Issues".
 
 ### 4. Per-issue planning-health data
 
@@ -124,9 +128,8 @@ A new pure module, `src/react/reports/TableReport/model/planningHealth.ts`:
 ```ts
 export interface PlanningHealth {
   rolledUpDue: Date | null;
-  /** Level 1: one EpicEstimate. Level 2: one InitiativeEstimate. Level ≥3: the InitiativeEstimate of
-   *  every level-2 descendant (a tally). Level 0: null. */
-  estimateProgress: string | string[] | null;
+  /** From the issue's direct children: Estimated / Partially estimated / Unestimated / No children. */
+  estimateProgress: EstimateProgress;
 }
 export function computePlanningHealth(issues: DerivedIssue[]): Map<string, PlanningHealth>;
 ```
@@ -134,8 +137,8 @@ export function computePlanningHealth(issues: DerivedIssue[]): Map<string, Plann
 - Build `childrenByParentKey` from `parentKey`, then memoize a bottom-up walk.
 - `rolledUpDue(issue)` is the max of `rolledUpDue(child)` over children, or `issue.dueDate` when there
   is no such child value. Guard against `parentKey` cycles.
-- `estimateProgress` uses §3. At level 2, `epicTotal` and `epicEstimated` count direct level-1
-  children.
+- `estimateProgress` is `classifyEstimateProgress(children.length, children.filter(isEstimated).length)`
+  over the issue's **direct** children (§3). It does not recurse and never checks `hierarchyLevel`.
 
 In `TableReport.tsx`, compute the map once with
 `useMemo(() => computePlanningHealth(filteredDerivedIssues), …)`, but only when the flag is on. Attach
@@ -154,14 +157,13 @@ next to the `estimation:*` columns, only when the flag is on. Use a new
     compare, and default aggregation `max`.
   - It gets Min/Max/Range and the How far out format like any other date column.
 - **Estimate Progress** (`planning:estimateProgress`)
-  - `getValue` returns the string or string array. The cell renders a single label as-is and an array
-    as a tally.
-  - Filter `select` over the six labels. Sort follows label order (No epics → Estimated), not the
-    alphabet.
+  - `getValue` returns one of the four labels; the cell renders it as-is.
+  - Filter `select` over the four labels. Sort follows planning order, not the alphabet:
+    No children → Unestimated → Partially estimated → Estimated.
   - Default aggregation is a new **`tally`**: `AggregationId 'tally'`, label "Count by value",
-    `applicableTo: ['text', 'select']`. It flattens arrays (so grouping Outcome rows merges their
-    tallies), counts each value, and finalizes to `"Estimated (1), Partially estimated (1), …"` in
-    first-seen order. It's generic, so any text/select column can use it.
+    `applicableTo: ['text', 'select']`. It counts each row's value (flattening arrays, so it also
+    works for array fields like Labels) and finalizes to `"Estimated (1), Partially estimated (1), …"`
+    in first-seen order. It's generic, so any text/select column can use it.
   - Optional nice-to-have: colour each label with the Estimation Progress report's classes
     (`color-text-and-bg-complete` / `-ontrack` / `-behind` / `-notstarted`).
 
@@ -195,6 +197,16 @@ unknown `sourceId`s, and add a test either way.
 | `src/react/reports/TableReport/TableReport.tsx`                 | compute + attach `planningHealth`, format setter, flag |
 | `src/configuration/features.ts`                                 | `planningHealth` flag                                  |
 
+## Open questions
+
+1. **Should Rolled-up Due Date follow the Timing settings?** The Timing settings
+   (`routeData.issueTimingCalculations`) choose a date rollup method per level, and the Gantt uses
+   them. Following them means calling the existing methods in `src/jira/rollup/dates/dates.ts` per
+   row level, and passing the full (unsliced) `issueTimingCalculations` to the table, since
+   `rollupTimingLevelsAndCalculationsObs` only covers the hierarchy range. Side effect: the default
+   (`childrenFirstThenParent`) falls back to the parent's own date only when it has **no children**,
+   so an initiative whose epics are all undated would show blank, not its own date.
+
 ## Out of scope / follow-ups
 
 - **Possible date off-by-one:** `dateEntry` and `toDateLabel` format local-midnight dates with
@@ -215,15 +227,16 @@ unknown `sourceId`s, and add a test either way.
   - `grouping.test.ts`: date min/max measures render as dates and in relative format;
     `applicableAggregations` for a date column includes min/max.
   - `planningHealth.test.ts`: due falls back to own when there are no dated children; recursion
-    (outcome → initiative → epic); cycle guard; all four initiative categories; level ≥3 tally;
-    level 0 null.
+    (outcome → initiative → epic); cycle guard; all four estimate categories; the same rule at
+    different levels (initiative → epics, epic → stories, outcome → initiatives), i.e. no level is
+    special-cased.
   - Shared estimation rules: Estimation Progress counts are unchanged (existing tests, or add a
     snapshot of `getReportingData` output before extracting).
   - `buildColumnCatalog.test.ts`: columns present only with the flag; `persistence.test.ts`: `format`
     round-trips, and absent means `'date'`.
 - **`TableReport.test.tsx`:** the user's scenario end to end. Three initiatives under one outcome,
   with epics in the derived set. Assert the ungrouped rows, then group by Parent Summary and assert
-  `Partially estimated (1), Estimated (1), No epics (1)`, Max = latest date, and How far out text
+  `Partially estimated (1), Estimated (1), No children (1)`, Max = latest date, and How far out text
   (fake timers for "today").
 - **Manually**, via the `launch-dev` agent: turn on `tableReport` and `planningHealth` in Features.
   Build the Initiative → Initiative table with the four columns, group by Parent Summary, set
