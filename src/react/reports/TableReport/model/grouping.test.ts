@@ -4,10 +4,12 @@ import {
   applicableAggregations,
   computeMeasureValue,
   cycleGroupSort,
+  displayMeasureValue,
   effectiveAggregationId,
   formatGroupLabel,
   formatMeasureValue,
   groupIssues,
+  isNumericMeasure,
   selectMeasureColumns,
   sortGroups,
   EMPTY_GROUP_LABEL,
@@ -156,11 +158,11 @@ describe('applicableAggregations', () => {
   test('number column offers numeric aggregations + count', () => {
     expect(applicableAggregations(pointsCol)).toEqual(['sum', 'avg', 'min', 'max', 'count']);
   });
-  test('date column offers count + range', () => {
-    expect(applicableAggregations(dueCol)).toEqual(['count', 'range']);
+  test('date column offers min, max, count + range', () => {
+    expect(applicableAggregations(dueCol)).toEqual(['min', 'max', 'count', 'range']);
   });
-  test('select column offers count + distinct', () => {
-    expect(applicableAggregations(statusCol)).toEqual(['count', 'distinct']);
+  test('select column offers count, distinct, tally + bar', () => {
+    expect(applicableAggregations(statusCol)).toEqual(['count', 'distinct', 'tally', 'bar']);
   });
 });
 
@@ -238,5 +240,85 @@ describe('cycleGroupSort', () => {
 
   test('a third click on the label column just flips back to asc (no separate "unsorted" state)', () => {
     expect(cycleGroupSort({ by: label, dir: 'desc' }, label)).toEqual({ by: label, dir: 'asc' });
+  });
+});
+
+describe('date measures (spec/044)', () => {
+  const TODAY = new Date(2026, 9, 29, 12);
+  const members: TableIssue[] = [
+    { key: 'A', due: new Date(2026, 11, 1) },
+    { key: 'B', due: new Date(2027, 5, 1) },
+    { key: 'C', due: null },
+  ];
+
+  test('Min / Max over a date column display as dates', () => {
+    expect(displayMeasureValue(dueCol, members, { aggregation: 'min', today: TODAY })).toBe(
+      new Date(2026, 11, 1).toISOString().slice(0, 10),
+    );
+    expect(displayMeasureValue(dueCol, members, { aggregation: 'max', dateFormat: 'date', today: TODAY })).toBe(
+      new Date(2027, 5, 1).toISOString().slice(0, 10),
+    );
+  });
+
+  test('Min / Max / Range follow the How far out format', () => {
+    expect(displayMeasureValue(dueCol, members, { aggregation: 'max', dateFormat: 'relative', today: TODAY })).toBe(
+      '7 months out',
+    );
+    expect(displayMeasureValue(dueCol, members, { aggregation: 'min', dateFormat: 'relative', today: TODAY })).toBe(
+      '5 weeks out',
+    );
+    expect(displayMeasureValue(dueCol, members, { aggregation: 'range', dateFormat: 'relative', today: TODAY })).toBe(
+      '5 weeks out – 7 months out',
+    );
+  });
+
+  test('a group with no dates is blank', () => {
+    expect(
+      displayMeasureValue(dueCol, [{ key: 'C', due: null }], {
+        aggregation: 'max',
+        dateFormat: 'relative',
+        today: TODAY,
+      }),
+    ).toBe('');
+    expect(
+      displayMeasureValue(dueCol, [{ key: 'C', due: null }], {
+        aggregation: 'range',
+        dateFormat: 'relative',
+        today: TODAY,
+      }),
+    ).toBe('');
+  });
+
+  test('number measures are unchanged', () => {
+    expect(displayMeasureValue(pointsCol, [{ points: 2 }, { points: 5 }], { aggregation: 'max' })).toBe('5');
+  });
+
+  test('date Min / Max stay left-aligned; number Min / Max and Count right-align', () => {
+    expect(isNumericMeasure(dueCol, 'max')).toBe(false);
+    expect(isNumericMeasure(dueCol, 'min')).toBe(false);
+    expect(isNumericMeasure(dueCol, 'count')).toBe(true);
+    expect(isNumericMeasure(pointsCol, 'max')).toBe(true);
+  });
+});
+
+describe('value order in grouped cells', () => {
+  const issues: TableIssue[] = [
+    { key: 'A', status: 'Ready' },
+    { key: 'B', status: 'Idea' },
+    { key: 'C', status: 'Ready' },
+    { key: 'D', status: 'Done' },
+  ];
+
+  test('Count by value and Distinct list default to A→Z', () => {
+    expect(displayMeasureValue(statusCol, issues, { aggregation: 'tally' })).toBe('Done (1), Idea (1), Ready (2)');
+    expect(displayMeasureValue(statusCol, issues, { aggregation: 'distinct' })).toBe('Done, Idea, Ready');
+  });
+
+  test('follow a saved order; unnamed values follow A→Z', () => {
+    const valueOrder = ['Ready', 'Idea'];
+    expect(displayMeasureValue(statusCol, issues, { aggregation: 'tally', valueOrder })).toBe(
+      'Ready (2), Idea (1), Done (1)',
+    );
+    expect(displayMeasureValue(statusCol, issues, { aggregation: 'distinct', valueOrder })).toBe('Ready, Idea, Done');
   });
 });

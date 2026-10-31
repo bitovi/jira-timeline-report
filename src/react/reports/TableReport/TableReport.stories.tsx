@@ -9,6 +9,8 @@ import type { FilterState } from './model/applyView';
 import type { Jira } from '../../../jira-oidc-helpers';
 import { JiraProvider } from '../../services/jira/JiraProvider';
 import { jiraKeys } from '../../services/jira/key-factory';
+import { featuresKeyFactory } from '../../services/features/key-factory';
+import { StorageProvider } from '../../services/storage';
 import { TableReport } from './TableReport';
 
 // ---------------------------------------------------------------------------------------------------
@@ -44,18 +46,30 @@ const makeSeededClient = () => {
   // Seed BOTH modes: the hook keys on login state, which Storybook doesn't control.
   client.setQueryData(jiraKeys.issueFields('auth'), mockFields);
   client.setQueryData(jiraKeys.issueFields('sample'), mockFields);
+  // Feature flags (`useFeatures`): the planning-health columns (spec/044) on, so they're in the
+  // Add-column menu.
+  client.setQueryData(featuresKeyFactory.features(), { planningHealth: true });
   return client;
 };
 
 /** Stub Jira service — only needed so `useJira()` doesn't throw; its methods are never called. */
 const stubJira = { fetchJiraFields: async () => mockFields } as unknown as Jira;
 
+/** Stub storage — only needed so `useStorage()` doesn't throw; the seeded features query never calls it. */
+const stubStorage = {
+  get: async () => ({}),
+  update: async () => {},
+  storageInitialized: async () => true,
+} as unknown as React.ComponentProps<typeof StorageProvider>['storage'];
+
 const SeedDecorator = (Story: React.FC) => (
-  <QueryClientProvider client={makeSeededClient()}>
-    <JiraProvider jira={stubJira}>
-      <Story />
-    </JiraProvider>
-  </QueryClientProvider>
+  <StorageProvider storage={stubStorage}>
+    <QueryClientProvider client={makeSeededClient()}>
+      <JiraProvider jira={stubJira}>
+        <Story />
+      </JiraProvider>
+    </QueryClientProvider>
+  </StorageProvider>
 );
 
 // ---------------------------------------------------------------------------------------------------

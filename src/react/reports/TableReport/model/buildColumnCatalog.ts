@@ -18,15 +18,24 @@ import {
   summaryColumn,
   treeSummaryColumn,
 } from './fieldTypeRegistry';
-import { resolveNormalizedFieldSource } from './normalizedFieldSources';
+import { resolveNormalizedFieldSource, STATUS_BAR } from './normalizedFieldSources';
 import { BUILTIN_CONCEPTS, CLAIMED_FIELD_IDS, REPORT_FIELD_FACETS } from './builtinFieldRegistry';
-import { assigneeAvatarRender, iconRender, labelsRender, statusRender } from './normalizedRenderers';
+import {
+  assigneeAvatarRender,
+  iconRender,
+  labelsRender,
+  statusCategoryChartColor,
+  statusRender,
+} from './normalizedRenderers';
 import { compareToLast } from './diffRender';
 import { computePercentComplete } from '../../GanttReport/GanttGrid/helpers/percentComplete';
+import { ESTIMATE_PROGRESS_ORDER } from '../../shared/estimationProgress';
 
-import type { ColumnDefinition, ColumnGroup, FilterDescriptor, RenderContext, TableIssue } from './columns';
+import type { BarStyle, ColumnDefinition, ColumnGroup, FilterDescriptor, RenderContext, TableIssue } from './columns';
 import type { ReactNode } from 'react';
 import type { BuiltinFacet } from './builtinFieldRegistry';
+import type { PlanningHealth } from './planningHealth';
+import type { EstimateProgress } from '../../shared/estimationProgress';
 
 /** The `schema` slice we read off a Jira field (see `useJiraIssueFields`). */
 interface FieldSchema {
@@ -82,6 +91,7 @@ function buildFieldColumn(field: JiraField): ColumnDefinition {
     filter,
     aggregate: defaultAggregate,
     defaultAggregate,
+    bar: normalized?.bar,
   };
 }
 
@@ -178,6 +188,86 @@ function buildEstimationColumn(
   };
 }
 
+/** The {@link PlanningHealth} the report attaches to each row (absent when the flag is off). */
+function planningHealthOf(issue: TableIssue): PlanningHealth | undefined {
+  return issue.planningHealth as PlanningHealth | undefined;
+}
+
+/**
+ * Rolled-up Due Date — the latest due date among the row's children (recursively), else its own
+ * (spec/044-planning-health-mvp §5). Only levels that are loaded count: without the level below
+ * loaded, a row shows its own due date. A date column like any other, so it gets Min/Max/Range and
+ * the "How far out" format; groups default to Max.
+ */
+function buildRolledUpDueColumn(): ColumnDefinition {
+  const entry = getFieldTypeEntry('date');
+  return {
+    id: 'planning:rolledUpDue',
+    label: 'Rolled-up Due Date',
+    group: 'Report Fields',
+    source: { kind: 'computed', computedId: 'rolledUpDue' },
+    getValue: (issue) => planningHealthOf(issue)?.rolledUpDue ?? null,
+    render: entry.render,
+    compare: entry.compare,
+    filter: entry.filter,
+    aggregate: 'max',
+    defaultAggregate: 'max',
+  };
+}
+
+/** The Estimation Progress report's colour for each label. */
+const ESTIMATE_PROGRESS_CLASSES: Record<EstimateProgress, string> = {
+  Estimated: 'color-text-and-bg-complete',
+  'Partially estimated': 'color-text-and-bg-ontrack',
+  Unestimated: 'color-text-and-bg-behind',
+  'No children': 'color-text-and-bg-notstarted',
+};
+
+/**
+ * The same colours as Stacked bar defaults: the report theme colours behind those classes, so they
+ * follow Settings → Theme.
+ */
+const ESTIMATE_PROGRESS_COLORS: Record<EstimateProgress, string> = {
+  Estimated: 'theme.complete',
+  'Partially estimated': 'theme.ontrack',
+  Unestimated: 'theme.behind',
+  'No children': 'theme.notstarted',
+};
+
+/**
+ * Estimate Progress — how many of the row's DIRECT children are estimated (an estimate and a
+ * confidence, as in the Estimation Progress report). Level-agnostic: an Initiative row counts its
+ * epics, an Epic row its stories. A row whose children aren't loaded reads "No children". Sorts in
+ * planning order rather than A→Z; groups default to a "Stacked bar" in the Estimation Progress
+ * report's colours, with values A→Z like any other column (⋯ → Order and colors to change it).
+ */
+function buildEstimateProgressColumn(): ColumnDefinition<EstimateProgress | undefined> {
+  const rank = (value: EstimateProgress | undefined) => (value == null ? -1 : ESTIMATE_PROGRESS_ORDER.indexOf(value));
+  const getValue = (issue: TableIssue) => planningHealthOf(issue)?.estimateProgress;
+  return {
+    id: 'planning:estimateProgress',
+    label: 'Estimate Progress',
+    group: 'Report Fields',
+    source: { kind: 'computed', computedId: 'estimateProgress' },
+    getValue,
+    render: (value) =>
+      value == null
+        ? ''
+        : createElement('span', { className: `px-1 rounded ${ESTIMATE_PROGRESS_CLASSES[value]}` }, value),
+    compare: (a, b) => rank(a) - rank(b),
+    filter: { kind: 'select', options: [...ESTIMATE_PROGRESS_ORDER] },
+    aggregate: 'bar',
+    defaultAggregate: 'bar',
+    bar: { defaultColor: (value) => ESTIMATE_PROGRESS_COLORS[value as EstimateProgress] },
+  };
+}
+
+/** Options that add or remove catalog columns. */
+export interface ColumnCatalogOptions {
+  /** The `planningHealth` feature flag: adds Rolled-up Due Date and Estimate Progress. */
+  planningHealth?: boolean;
+}
+
 /**
  * Per-sourceId presentation overrides for built-in / report facets whose display needs more than the
  * type-registry default (icon `<img>`, coloured status Lozenge, label chips, select filters). Kept
@@ -186,11 +276,15 @@ function buildEstimationColumn(
 interface FacetPresentation {
   render?: (value: unknown, ctx: RenderContext) => ReactNode;
   filter?: FilterDescriptor;
+  bar?: BarStyle;
 }
 const FACET_PRESENTATION: Record<string, FacetPresentation> = {
   'builtin:issueType:icon': { render: iconRender, filter: { kind: 'select' } },
-  'builtin:status:name': { render: statusRender, filter: { kind: 'select' } },
-  'builtin:status:category': { filter: { kind: 'select' } },
+  'builtin:status:name': { render: statusRender, filter: { kind: 'select' }, bar: STATUS_BAR },
+  'builtin:status:category': {
+    filter: { kind: 'select' },
+    bar: { defaultColor: statusCategoryChartColor },
+  },
   'builtin:labels:list': { render: labelsRender },
   // `select` rather than the type registry's `text`, because assignees are a bounded set of people
   // — the same call as `builtin:status:name`. It also keeps "Distinct list" on the aggregation menu
@@ -220,6 +314,7 @@ function buildBuiltinColumn(facet: BuiltinFacet, group: ColumnGroup, nominalFiel
     filter: presentation?.filter ?? entry.filter,
     aggregate: entry.defaultAggregate,
     defaultAggregate: entry.defaultAggregate,
+    bar: presentation?.bar,
   };
 }
 
@@ -227,7 +322,7 @@ function buildBuiltinColumn(facet: BuiltinFacet, group: ColumnGroup, nominalFiel
  * Build the full Phase 1 column catalog: identity columns, curated built-in facets, one column per
  * (unclaimed) Jira field, and the Estimation parity columns.
  */
-export function buildColumnCatalog(fields: IssueFields): ColumnDefinition[] {
+export function buildColumnCatalog(fields: IssueFields, options: ColumnCatalogOptions = {}): ColumnDefinition[] {
   const identity: ColumnDefinition<any>[] = [treeSummaryColumn(), issueKeyColumn(), summaryColumn(), issueTypeColumn()];
 
   // Loadable field ids (key + id, lowercased) — gates which built-in facets can be offered.
@@ -270,6 +365,7 @@ export function buildColumnCatalog(fields: IssueFields): ColumnDefinition[] {
     buildEstimationColumn('rolledUpDays', 'Rolled Up Days', rolledUpDaysValue),
     buildPercentCompleteColumn(),
   ];
+  if (options.planningHealth) estimation.push(buildRolledUpDueColumn(), buildEstimateProgressColumn());
 
   return [...identity, ...builtin, ...reportFields, ...estimation, ...fieldColumns];
 }

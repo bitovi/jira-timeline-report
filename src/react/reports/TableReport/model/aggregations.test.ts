@@ -13,6 +13,32 @@ function run(id: AggregationId, values: unknown[]): unknown {
 }
 
 describe('aggregation reducers', () => {
+  test('min / max over dates reduce Date, string and epoch values to epoch ms, ignoring nulls', () => {
+    const dec = new Date(2026, 11, 1);
+    const jun = new Date(2027, 5, 1);
+    expect(run('min', [jun, null, dec])).toBe(dec.getTime());
+    expect(run('max', [jun, undefined, dec])).toBe(jun.getTime());
+    expect(run('max', ['2026-12-01', '2027-06-01'])).toBe(Date.parse('2027-06-01'));
+    expect(run('min', [jun.getTime(), dec])).toBe(dec.getTime());
+    expect(run('max', [null, 'not a date'])).toBeNull();
+  });
+
+  test('tally counts each value in first-seen order', () => {
+    expect(run('tally', ['Partially estimated', 'Estimated', 'Partially estimated', 'No children'])).toBe(
+      'Partially estimated (2), Estimated (1), No children (1)',
+    );
+    expect(run('tally', [])).toBeNull();
+    expect(run('tally', [null, ''])).toBeNull();
+  });
+
+  test('tally flattens array values (e.g. Labels)', () => {
+    expect(run('tally', [['bug', 'ui'], ['bug'], []])).toBe('bug (2), ui (1)');
+  });
+
+  test('tally is not a numeric aggregation', () => {
+    expect(isNumericAggregation('tally')).toBe(false);
+  });
+
   test('sum adds numeric values', () => {
     expect(run('sum', [10, 20, 30])).toBe(60);
   });

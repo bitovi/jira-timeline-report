@@ -341,3 +341,56 @@ describe('buildColumnCatalog', () => {
     expect(computed.length).toBeGreaterThan(0);
   });
 });
+
+describe('buildColumnCatalog — planning health columns (spec/044)', () => {
+  const ids = (catalog: ReturnType<typeof buildColumnCatalog>) => catalog.map((c) => c.id);
+
+  test('are present only with the planningHealth option', () => {
+    expect(ids(buildColumnCatalog(fields)).filter((id) => id.startsWith('planning:'))).toEqual([]);
+    expect(
+      ids(buildColumnCatalog(fields, { planningHealth: false })).filter((id) => id.startsWith('planning:')),
+    ).toEqual([]);
+    const on = buildColumnCatalog(fields, { planningHealth: true });
+    expect(ids(on).filter((id) => id.startsWith('planning:'))).toEqual([
+      'planning:rolledUpDue',
+      'planning:estimateProgress',
+    ]);
+    expect(on.filter((c) => c.id.startsWith('planning:')).every((c) => c.group === 'Report Fields')).toBe(true);
+  });
+
+  test('Rolled-up Due Date is a date column that defaults to Max', () => {
+    const column = buildColumnCatalog(fields, { planningHealth: true }).find((c) => c.id === 'planning:rolledUpDue')!;
+    const due = new Date(2027, 5, 1);
+    const issue: TableIssue = { key: 'A', planningHealth: { rolledUpDue: due, estimateProgress: 'Estimated' } };
+    expect(column.getValue(issue)).toBe(due);
+    expect(column.getValue({ key: 'B' })).toBeNull();
+    expect(column.filter).toEqual({ kind: 'date' });
+    expect(column.defaultAggregate).toBe('max');
+  });
+
+  test('Estimate Progress reads the label, defaults to a stacked bar and sorts in planning order', () => {
+    const column = buildColumnCatalog(fields, { planningHealth: true }).find(
+      (c) => c.id === 'planning:estimateProgress',
+    )!;
+    const issue: TableIssue = { key: 'A', planningHealth: { rolledUpDue: null, estimateProgress: 'Unestimated' } };
+    expect(column.getValue(issue)).toBe('Unestimated');
+    expect(column.filter?.kind).toBe('select');
+    expect(column.defaultAggregate).toBe('bar');
+    expect(column.bar?.defaultColor?.('Estimated', issue)).toBe('theme.complete');
+    const sorted = ['Estimated', 'No children', 'Partially estimated', 'Unestimated'].sort(column.compare);
+    expect(sorted).toEqual(['No children', 'Unestimated', 'Partially estimated', 'Estimated']);
+  });
+});
+
+test('Status columns default their stacked-bar colours to their status category family', () => {
+  const catalog = buildColumnCatalog([
+    ...fields,
+    { name: 'Status', key: 'status', schema: { type: 'status' }, id: 'status', custom: false },
+  ]);
+  const status = catalog.find((c) => c.id === 'builtin:status:name')!;
+  expect(status.bar?.defaultColor?.('Shipped', { statusCategory: 'Done' })).toMatch(/^color\.chart\.green\./);
+  expect(status.bar?.defaultColor?.('Doing', { statusCategory: 'In Progress' })).toMatch(/^color\.chart\.blue\./);
+  expect(status.bar?.defaultColor?.('Idea', { statusCategory: 'To Do' })).toMatch(/^color\.chart\.gray\./);
+  const category = catalog.find((c) => c.id === 'builtin:status:category')!;
+  expect(category.bar?.defaultColor?.('Done', {})).toBe('color.chart.green.bolder');
+});

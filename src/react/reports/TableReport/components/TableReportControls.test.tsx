@@ -14,6 +14,10 @@ const mockFields: IssueFields = [
 vi.mock('../../../services/jira/useJiraIssueFields', () => ({
   useJiraIssueFields: () => mockFields,
 }));
+// Feature flags come from storage; the controls only read `planningHealth` (off here).
+vi.mock('../../../services/features/useFeatures', () => ({
+  useAsyncFeatures: () => ({ features: {}, isLoading: false }),
+}));
 
 // Back the route-data hook with a mutable store so we can seed values and observe write-backs
 // without wiring the real can route-data.

@@ -21,9 +21,13 @@ import { aggregateGroup } from './aggregate';
 import { fieldValueText } from './fieldValueText';
 import { createStableObjectKey, groupByKeys } from './group';
 
-import { aggregations } from './aggregations';
+import { aggregations, isNumericAggregation } from './aggregations';
+import { formatDateValue, formatHowFarOut } from './relativeDate';
+import { renderStackedBar } from './stackedBar';
+import { issuesByValue, orderValues } from './valueOrder';
 
 import type { AggregationId } from './aggregations';
+import type { DateFormat } from './relativeDate';
 import type { ColumnDefinition, RenderMeasureContext, TableIssue } from './columns';
 import type { ReactNode } from 'react';
 
@@ -39,6 +43,9 @@ export interface TableGroup {
 
 /** Per-column aggregation overrides, keyed by column id (set from the column's `⋯` menu). */
 export type AggregationOverrides = Record<string, AggregationId>;
+
+/** Per-column date formats, keyed by column id (set from a date column's `⋯` menu → Format). */
+export type DateFormatOverrides = Record<string, DateFormat>;
 
 /** The label shown for an empty / missing group value. */
 export const EMPTY_GROUP_LABEL = '(empty)';
@@ -118,7 +125,8 @@ export function effectiveAggregationId(column: ColumnDefinition, override?: Aggr
 }
 
 /**
- * Looks up a column's `renderMeasure` override for an aggregation id, guarding against `aggId`
+ * Looks up how to draw a measure: the column's own `renderMeasure` override for the aggregation id,
+ * else the built-in "Stacked bar" renderer for `bar`, else `null` (plain text). Guarding against `aggId`
  * values that didn't originate from the {@link AggregationId} union — e.g. a hand-edited saved
  * report or URL param. `column.renderMeasure` is keyed by aggregation id and its values are invoked
  * as functions, so an unvalidated lookup here is a dynamic-method-call risk (CWE-754): confirm the
@@ -135,6 +143,7 @@ export function getMeasureRenderer(
       return candidate;
     }
   }
+  if (aggId === 'bar') return (ctx) => renderStackedBar(column, ctx);
   return null;
 }
 
@@ -162,6 +171,59 @@ export function formatMeasureValue(value: unknown): string {
   if (Array.isArray(value)) return value.join(', ');
   if (typeof value === 'number') return Number.isInteger(value) ? String(value) : value.toFixed(1);
   return String(value);
+}
+
+/** Min/Max over a date column reduce to an epoch number, but the cell shows a date. */
+function isDateMinMax(column: ColumnDefinition, aggId: AggregationId): boolean {
+  return column.filter?.kind === 'date' && (aggId === 'min' || aggId === 'max');
+}
+
+/**
+ * Whether an aggregated cell holds a number and so right-aligns: {@link isNumericAggregation}, except
+ * Min/Max over a date column, which display as a date and stay left-aligned like the ungrouped cell.
+ */
+export function isNumericMeasure(column: ColumnDefinition, aggId: AggregationId): boolean {
+  return isNumericAggregation(aggId) && !isDateMinMax(column, aggId);
+}
+
+/** How a grouped cell is shown: its aggregation and the column's display settings. */
+export interface MeasureDisplayOptions {
+  /** Per-column aggregation override; defaults per {@link effectiveAggregationId}. */
+  aggregation?: AggregationId;
+  dateFormat?: DateFormat;
+  /** The column's saved value order (Count by value / Distinct list); see `valueOrder.ts`. */
+  valueOrder?: readonly string[];
+  today?: Date;
+}
+
+/**
+ * The display text for one measure column over a group's (or cross-tab cell's) members. Date
+ * columns format Min/Max through the column's {@link DateFormat}, and a Range in the "How far out"
+ * format formats both ends (`4 days out – 8 months out`). Count by value and Distinct list follow the
+ * column's value order. Everything else is `formatMeasureValue(computeMeasureValue(...))`. Returns
+ * `''` when there is nothing to show.
+ */
+export function displayMeasureValue(
+  column: ColumnDefinition,
+  members: TableIssue[],
+  { aggregation, dateFormat, valueOrder, today = new Date() }: MeasureDisplayOptions = {},
+): string {
+  const id = effectiveAggregationId(column, aggregation);
+  if (isDateMinMax(column, id)) return formatDateValue(computeMeasureValue(column, members, id), dateFormat, today);
+  if (column.filter?.kind === 'date' && id === 'range' && dateFormat === 'relative') {
+    const min = computeMeasureValue(column, members, 'min');
+    const max = computeMeasureValue(column, members, 'max');
+    if (min == null || max == null) return '';
+    return `${formatHowFarOut(min, today)} – ${formatHowFarOut(max, today)}`;
+  }
+  if (id === 'tally' || id === 'distinct') {
+    const byValue = issuesByValue(column, members);
+    const values = orderValues(byValue.keys(), valueOrder);
+    return id === 'tally'
+      ? values.map((value) => `${value} (${byValue.get(value)!.length})`).join(', ')
+      : values.join(', ');
+  }
+  return formatMeasureValue(computeMeasureValue(column, members, aggregation));
 }
 
 /** The aggregations that make sense for a column, based on its filter kind / `applicableTo`. */

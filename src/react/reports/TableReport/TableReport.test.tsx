@@ -20,6 +20,12 @@ const mockFields: IssueFields = [
 vi.mock('../../services/jira/useJiraIssueFields', () => ({
   useJiraIssueFields: () => mockFields,
 }));
+// Feature flags come from storage. The report reads only `planningHealth` (spec/044); tests that
+// need it on set `mockFeatures.planningHealth = true`.
+const mockFeatures: Record<string, boolean> = {};
+vi.mock('../../services/features/useFeatures', () => ({
+  useAsyncFeatures: () => ({ features: mockFeatures, isLoading: false }),
+}));
 
 import { TableReport } from './TableReport';
 
@@ -1230,5 +1236,257 @@ describe('TableReport (sticky headers / frozen label columns)', () => {
       expect(th.style.position).toBe('sticky');
       expect(parseInt(th.style.top, 10)).toBeGreaterThan(0);
     });
+  });
+});
+
+/** The z-index of the nearest positioned layer around `element` (portalled popups set it inline). */
+const zIndexOf = (element: HTMLElement): number => {
+  for (let el: HTMLElement | null = element; el; el = el.parentElement) {
+    const z = parseInt(el.style.zIndex, 10);
+    if (!Number.isNaN(z)) return z;
+  }
+  return 0;
+};
+
+describe('TableReport planning health (spec/044)', () => {
+  const day = (y: number, m: number, d: number) => new Date(y, m - 1, d);
+  const iso = (date: Date) => date.toISOString().slice(0, 10);
+
+  /** A derived issue under `parent`, with the raw Parent object the Parent Summary column reads. */
+  const derived = (key: string, parent: { key: string; summary: string } | null, extra: Record<string, unknown> = {}) =>
+    ({
+      ...makeIssue(key, key),
+      parentKey: parent?.key ?? null,
+      dueDate: null,
+      storyPoints: null,
+      storyPointsMedian: null,
+      confidence: null,
+      issue: {
+        fields: {
+          'Issue Type': { iconUrl: '' },
+          ...(parent
+            ? {
+                Parent: {
+                  key: parent.key,
+                  fields: { summary: parent.summary, issuetype: { name: 'Parent', hierarchyLevel: 3 } },
+                },
+              }
+            : {}),
+        },
+      },
+      ...extra,
+    }) as any;
+
+  const estimated = { storyPoints: 5, confidence: 80 };
+  const outcome = { key: 'OUT-1', summary: 'outcomeA' };
+
+  // Three initiatives under one outcome. The epics are loaded too (they're what the columns count),
+  // but the outcome itself is not.
+  const ISSUES = [
+    derived('inc1', outcome, { hierarchyLevel: 2, dueDate: day(2026, 11, 1) }),
+    derived('inc2', outcome, { hierarchyLevel: 2 }),
+    derived('inc3', outcome, { hierarchyLevel: 2, dueDate: day(2026, 12, 1) }),
+    derived('E1', { key: 'inc1', summary: 'inc1' }, { ...estimated, dueDate: day(2027, 1, 15) }),
+    derived('E2', { key: 'inc1', summary: 'inc1' }),
+    derived('E3', { key: 'inc2', summary: 'inc2' }, { ...estimated, dueDate: day(2027, 6, 1) }),
+  ];
+
+  const PLANNING_COLUMNS = [
+    { sourceId: 'builtin:parent:summary' },
+    { sourceId: 'identity:treeSummary' },
+    { sourceId: 'planning:rolledUpDue' },
+    { sourceId: 'planning:estimateProgress' },
+  ];
+
+  const renderPlanning = () => {
+    const tableObs = makeTableObs();
+    tableObs.tableColumnsObs.set([...PLANNING_COLUMNS]);
+    renderReport(ISSUES, tableObs);
+    return tableObs;
+  };
+
+  /** A body row's cell texts, found by the row's summary. */
+  const rowTexts = (summary: string) => {
+    const row = screen
+      .getAllByRole('row')
+      .find((r) => r.querySelector('td') && within(r).queryByText(summary, { selector: 'a' }));
+    return Array.from(row!.querySelectorAll('td')).map((td) => td.textContent);
+  };
+
+  afterEach(() => {
+    mockFeatures.planningHealth = false;
+    vi.useRealTimers();
+  });
+
+  test('ungrouped, each initiative shows its rolled-up due date and estimate progress', () => {
+    mockFeatures.planningHealth = true;
+    renderPlanning();
+
+    expect(rowTexts('inc1')).toEqual(['outcomeA', 'inc1', iso(day(2027, 1, 15)), 'Partially estimated']);
+    expect(rowTexts('inc2')).toEqual(['outcomeA', 'inc2', iso(day(2027, 6, 1)), 'Estimated']);
+    // No epics loaded under inc3: its own due date, and "No children".
+    expect(rowTexts('inc3')).toEqual(['outcomeA', 'inc3', iso(day(2026, 12, 1)), 'No children']);
+  });
+
+  test('grouped by Parent Summary: one row per outcome, Max due date, How far out', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 29, 12));
+    mockFeatures.planningHealth = true;
+    const tableObs = renderPlanning();
+    act(() => tableObs.tableGroupByObs.set('builtin:parent:summary'));
+
+    const outcomeHeader = screen.getAllByTestId('table-group-header').find((r) => r.textContent?.includes('outcomeA'))!;
+    const measures = () =>
+      within(outcomeHeader)
+        .getAllByTestId('table-group-measure')
+        .map((td) => td.textContent);
+    expect(within(outcomeHeader).getByTestId('table-group-count')).toHaveTextContent('(3)');
+
+    const [, due] = measures();
+    // Rolled-up Due Date defaults to Max.
+    expect(due).toBe(iso(day(2027, 6, 1)));
+
+    // ⋯ → Format → How far out, persisted on the column entry.
+    fireEvent.click(screen.getByRole('button', { name: 'Rolled-up Due Date column options' }));
+    fireEvent.click(screen.getByTestId('table-format-relative'));
+    expect(tableObs.tableColumnsObs.get().find((c: any) => c.sourceId === 'planning:rolledUpDue')).toEqual({
+      sourceId: 'planning:rolledUpDue',
+      format: 'relative',
+    });
+    expect(measures()[1]).toBe('7 months out');
+  });
+
+  test('with the flag off, saved planning columns are dropped silently and stay saved', () => {
+    const tableObs = renderPlanning();
+
+    const headers = screen.getAllByTestId('table-header-sort').map((b) => b.textContent);
+    expect(headers).toEqual(['Parent Summary', 'Icon & Summary']);
+    expect(tableObs.tableColumnsObs.get()).toEqual(PLANNING_COLUMNS);
+  });
+
+  test('grouped, Estimate Progress defaults to a stacked bar whose segments open the issues in a modal', () => {
+    mockFeatures.planningHealth = true;
+    const tableObs = renderPlanning();
+    act(() => tableObs.tableGroupByObs.set('builtin:parent:summary'));
+
+    const outcomeHeader = screen.getAllByTestId('table-group-header').find((r) => r.textContent?.includes('outcomeA'))!;
+    const segments = within(outcomeHeader).getAllByTestId('stacked-bar-segment');
+    // A→Z like any column, in the Estimation Progress report's colours.
+    expect(segments.map((s) => s.getAttribute('aria-label'))).toEqual([
+      'Estimated (1)',
+      'No children (1)',
+      'Partially estimated (1)',
+    ]);
+    expect(segments[0]).toHaveAttribute('data-color', 'theme.complete');
+    expect(segments[0].style.width).toBe(`${100 / 3}%`);
+
+    fireEvent.click(segments[2]);
+    const modal = screen.getByTestId('table-issue-list-modal');
+    expect(within(modal).getByText('outcomeA: Partially estimated (1)')).toBeInTheDocument();
+    expect(within(modal).getByRole('link', { name: 'inc1' })).toHaveAttribute('href', 'https://example.test/inc1');
+  });
+
+  test('Count by value on Estimate Progress is plain text, like any other column', () => {
+    mockFeatures.planningHealth = true;
+    const tableObs = renderPlanning();
+    tableObs.tableColumnsObs.set(
+      PLANNING_COLUMNS.map((c) => (c.sourceId === 'planning:estimateProgress' ? { ...c, aggregation: 'tally' } : c)),
+    );
+    act(() => tableObs.tableGroupByObs.set('builtin:parent:summary'));
+
+    const outcomeHeader = screen.getAllByTestId('table-group-header').find((r) => r.textContent?.includes('outcomeA'))!;
+    expect(within(outcomeHeader).queryByTestId('stacked-bar')).not.toBeInTheDocument();
+    const progress = within(outcomeHeader).getAllByTestId('table-group-measure').at(-1);
+    expect(progress).toHaveTextContent('Estimated (1), No children (1), Partially estimated (1)');
+  });
+
+  test('⋯ → Order and colors reorders the values in grouped cells, and saves on the column', async () => {
+    mockFeatures.planningHealth = true;
+    const tableObs = renderPlanning();
+    tableObs.tableColumnsObs.set(
+      PLANNING_COLUMNS.map((c) => (c.sourceId === 'planning:estimateProgress' ? { ...c, aggregation: 'tally' } : c)),
+    );
+    act(() => tableObs.tableGroupByObs.set('builtin:parent:summary'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Estimate Progress column options' }));
+    fireEvent.click(screen.getByTestId('table-order-and-colors'));
+    const modal = await screen.findByTestId('table-order-and-colors-modal');
+    const rowNames = () =>
+      within(modal)
+        .getAllByTestId('reorderable-row')
+        .map((r) => r.textContent);
+    expect(rowNames()).toEqual(['Estimated', 'No children', 'Partially estimated']);
+
+    // Keyboard path: the drag handle is also a menu button.
+    fireEvent.click(within(modal).getByRole('button', { name: 'Reorder No children' }));
+    expect(zIndexOf(await screen.findByText('Move to top'))).toBeGreaterThan(510);
+    fireEvent.click(await screen.findByText('Move to top'));
+    expect(rowNames()).toEqual(['No children', 'Estimated', 'Partially estimated']);
+
+    fireEvent.click(within(modal).getByTestId('table-order-and-colors-save'));
+    await waitFor(() => expect(screen.queryByTestId('table-order-and-colors-modal')).not.toBeInTheDocument());
+    expect(tableObs.tableColumnsObs.get().find((c: any) => c.sourceId === 'planning:estimateProgress')).toEqual({
+      sourceId: 'planning:estimateProgress',
+      aggregation: 'tally',
+      valueOrder: ['No children', 'Estimated', 'Partially estimated'],
+    });
+    const outcomeHeader = screen.getAllByTestId('table-group-header').find((r) => r.textContent?.includes('outcomeA'))!;
+    expect(within(outcomeHeader).getAllByTestId('table-group-measure').at(-1)).toHaveTextContent(
+      'No children (1), Estimated (1), Partially estimated (1)',
+    );
+  });
+
+  test('Order and colors → Reset to default clears the saved order and colours', async () => {
+    mockFeatures.planningHealth = true;
+    const tableObs = renderPlanning();
+    tableObs.tableColumnsObs.set(
+      PLANNING_COLUMNS.map((c) =>
+        c.sourceId === 'planning:estimateProgress'
+          ? { ...c, valueOrder: ['No children', 'Estimated'], valueColors: { Estimated: 'theme.blocked' } }
+          : c,
+      ),
+    );
+    act(() => tableObs.tableGroupByObs.set('builtin:parent:summary'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Estimate Progress column options' }));
+    fireEvent.click(screen.getByTestId('table-order-and-colors'));
+    const modal = await screen.findByTestId('table-order-and-colors-modal');
+    fireEvent.click(within(modal).getByTestId('table-order-and-colors-reset'));
+    fireEvent.click(within(modal).getByTestId('table-order-and-colors-save'));
+    await waitFor(() =>
+      expect(tableObs.tableColumnsObs.get().find((c: any) => c.sourceId === 'planning:estimateProgress')).toEqual({
+        sourceId: 'planning:estimateProgress',
+      }),
+    );
+  });
+
+  test('Order and colors → picking a colour repaints that value in the stacked bar', async () => {
+    mockFeatures.planningHealth = true;
+    const tableObs = renderPlanning();
+    act(() => tableObs.tableGroupByObs.set('builtin:parent:summary'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Estimate Progress column options' }));
+    fireEvent.click(screen.getByTestId('table-order-and-colors'));
+    const modal = await screen.findByTestId('table-order-and-colors-modal');
+    // Starts on the column's default: the report theme colour.
+    const trigger = within(modal).getByRole('button', { name: 'Color for Estimated: Complete (default)' });
+    fireEvent.click(trigger);
+    // Above the modal (z-index 510), not behind it: Atlaskit popups default to 400.
+    expect(zIndexOf(await screen.findByTestId('color-swatch-picker'))).toBeGreaterThan(510);
+    fireEvent.click(await screen.findByRole('button', { name: 'Purple boldest' }));
+    expect(within(modal).getByRole('button', { name: 'Color for Estimated: Purple boldest' })).toBeInTheDocument();
+
+    fireEvent.click(within(modal).getByTestId('table-order-and-colors-save'));
+    await waitFor(() => expect(screen.queryByTestId('table-order-and-colors-modal')).not.toBeInTheDocument());
+    expect(tableObs.tableColumnsObs.get().find((c: any) => c.sourceId === 'planning:estimateProgress')).toEqual({
+      sourceId: 'planning:estimateProgress',
+      valueOrder: ['Estimated', 'No children', 'Partially estimated'],
+      valueColors: { Estimated: 'color.chart.purple.boldest' },
+    });
+    const outcomeHeader = screen.getAllByTestId('table-group-header').find((r) => r.textContent?.includes('outcomeA'))!;
+    const estimated = within(outcomeHeader)
+      .getAllByTestId('stacked-bar-segment')
+      .find((s) => s.getAttribute('aria-label') === 'Estimated (1)')!;
+    expect(estimated).toHaveAttribute('data-color', 'color.chart.purple.boldest');
   });
 });

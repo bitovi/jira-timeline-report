@@ -5,6 +5,11 @@ import {
   buildColumnEntries,
   entriesToAggregationOverrides,
   entriesToColumnIds,
+  entriesToDateFormats,
+  entriesToValueOrders,
+  setEntryFormat,
+  entriesToValueColors,
+  setEntryValueSettings,
   toSortState,
 } from './persistence';
 import type { TableColumnEntry } from './persistence';
@@ -61,5 +66,56 @@ describe('TableReport persistence schema', () => {
     expect(toSortState('identity:key', 'rank')).toEqual({ columnId: 'identity:key', dir: 'rank' });
     // Unknown dir falls back to 'asc'.
     expect(toSortState('identity:key', 'weird')).toEqual({ columnId: 'identity:key', dir: 'asc' });
+  });
+
+  test('a date format round-trips; absent means date (spec/044)', () => {
+    const entries: TableColumnEntry[] = [{ sourceId: 'report:dueDate' }, { sourceId: 'field:points' }];
+    expect(entriesToDateFormats(entries)).toEqual({});
+
+    const relative = setEntryFormat(entries, 'report:dueDate', 'relative');
+    expect(relative).toEqual([{ sourceId: 'report:dueDate', format: 'relative' }, { sourceId: 'field:points' }]);
+    expect(entriesToDateFormats(relative)).toEqual({ 'report:dueDate': 'relative' });
+    expect(JSON.parse(JSON.stringify(relative))).toEqual(relative);
+
+    // Back to the default drops the key, so old and new URLs look the same.
+    expect(setEntryFormat(relative, 'report:dueDate', 'date')).toEqual(entries);
+  });
+
+  test('buildColumnEntries keeps a stored format when columns change', () => {
+    const prev: TableColumnEntry[] = [{ sourceId: 'report:dueDate', format: 'relative', width: 120 }];
+    expect(buildColumnEntries(['field:points', 'report:dueDate'], { 'report:dueDate': 'max' }, prev)).toEqual([
+      { sourceId: 'field:points' },
+      { sourceId: 'report:dueDate', width: 120, aggregation: 'max', format: 'relative' },
+    ]);
+  });
+
+  test('a value order round-trips, survives column changes, and Reset drops it', () => {
+    const entries: TableColumnEntry[] = [{ sourceId: 'builtin:status:name' }];
+    const ordered = setEntryValueSettings(entries, 'builtin:status:name', { valueOrder: ['Ready', 'Idea'] });
+    expect(ordered).toEqual([{ sourceId: 'builtin:status:name', valueOrder: ['Ready', 'Idea'] }]);
+    expect(entriesToValueOrders(ordered)).toEqual({ 'builtin:status:name': ['Ready', 'Idea'] });
+    expect(buildColumnEntries(['field:points', 'builtin:status:name'], {}, ordered)[1]).toEqual(ordered[0]);
+    expect(setEntryValueSettings(ordered, 'builtin:status:name', {})).toEqual(entries);
+  });
+
+  test('picked colours round-trip next to the order, and an empty set drops the key', () => {
+    const entries: TableColumnEntry[] = [{ sourceId: 'builtin:status:name', width: 90 }];
+    const set = setEntryValueSettings(entries, 'builtin:status:name', {
+      valueOrder: ['Ready'],
+      valueColors: { Ready: 'color.chart.blue.bold' },
+    });
+    expect(set).toEqual([
+      {
+        sourceId: 'builtin:status:name',
+        width: 90,
+        valueOrder: ['Ready'],
+        valueColors: { Ready: 'color.chart.blue.bold' },
+      },
+    ]);
+    expect(entriesToValueColors(set)).toEqual({ 'builtin:status:name': { Ready: 'color.chart.blue.bold' } });
+    expect(buildColumnEntries(['builtin:status:name'], {}, set)).toEqual(set);
+    expect(setEntryValueSettings(set, 'builtin:status:name', { valueOrder: ['Ready'], valueColors: {} })).toEqual([
+      { sourceId: 'builtin:status:name', width: 90, valueOrder: ['Ready'] },
+    ]);
   });
 });

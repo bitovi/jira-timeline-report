@@ -13,6 +13,7 @@ import { createElement } from 'react';
 
 import { defaultAggregationForType } from './aggregations';
 import { fieldValueText } from './fieldValueText';
+import { formatDateValue } from './relativeDate';
 import { JiraImage } from '../../../components/JiraImage';
 
 import type { ReactNode } from 'react';
@@ -70,10 +71,7 @@ const numberEntry: FieldTypeEntry = {
 };
 
 const dateEntry: FieldTypeEntry = {
-  render: (value) => {
-    const time = toTime(value);
-    return time == null ? '' : new Date(time).toISOString().slice(0, 10);
-  },
+  render: (value, ctx) => formatDateValue(value, ctx?.dateFormat),
   compare: (a, b) => nullsLast(a, b) ?? (toTime(a) ?? 0) - (toTime(b) ?? 0),
   filter: { kind: 'date' },
   defaultAggregate: defaultAggregationForType('date'),

@@ -8,6 +8,9 @@ import Lozenge from '@atlaskit/lozenge';
 
 import { JiraImage } from '../../../components/JiraImage';
 
+import { familyShadeForName } from './chartColors';
+
+import type { ChartFamily } from './chartColors';
 import type { RenderContext } from './columns';
 
 type LozengeAppearance = 'default' | 'inprogress' | 'moved' | 'new' | 'removed' | 'success';
@@ -30,6 +33,30 @@ function statusAppearance(status: string, category?: string): LozengeAppearance 
   if (/done|closed|complete|resolved|shipped/.test(s)) return 'success';
   if (/progress|review|doing|active/.test(s)) return 'inprogress';
   return 'default';
+}
+
+/** The chart colour family matching each Lozenge appearance. */
+const APPEARANCE_FAMILY: Record<LozengeAppearance, ChartFamily> = {
+  success: 'green',
+  inprogress: 'blue',
+  removed: 'red',
+  moved: 'yellow',
+  new: 'purple',
+  default: 'gray',
+};
+
+/**
+ * A status's default "Stacked bar" colour id: its Lozenge's colour family (grey / blue / green /
+ * red), in a shade picked by the status's name. Jira only colours by status category, so Idea,
+ * Estimating and Ready would otherwise all be the same grey.
+ */
+export function statusChartColor(status: string, category?: string): string {
+  return familyShadeForName(APPEARANCE_FAMILY[statusAppearance(status, category)], status);
+}
+
+/** The Status Category column's colour id: one shade per category, since each category is one value. */
+export function statusCategoryChartColor(category: string): string {
+  return `color.chart.${APPEARANCE_FAMILY[statusAppearance('', category)]}.bolder`;
 }
 
 /** Render a status value as a coloured Atlaskit Lozenge (design system component). */

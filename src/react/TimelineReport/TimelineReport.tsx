@@ -39,6 +39,7 @@ import { reportComponents } from '../reports/shellRegistry';
 import { propsFor } from '../reports/reportProps';
 import { ReportLayoutProvider } from '../services/report-layout';
 import { CapacityOverridesProvider } from '../services/capacity-overrides';
+import { StorageProvider } from '../services/storage';
 import { CapacityOverrideApplier } from './components/CapacityOverrideApplier';
 
 // Reports that own their own data instead of consuming the shell's single JQL-driven request.
@@ -244,160 +245,165 @@ export const TimelineReport: FC<TimelineReportProps> = ({
   const ReportControlsAny = ReportControls as ComponentType<any>;
 
   return (
-    <CapacityOverridesProvider onTeamDataSaved={onUpdateTeamsConfiguration}>
-      <CapacityOverrideApplier
-        baseRef={baseNormalizeOptionsRef}
-        baseVersion={baseNormalizeOptionsVersion}
-        readNormalizeOptions={readNormalizeOptions}
-        writeNormalizeOptions={writeNormalizeOptions}
-      />
-      {/* Holds the report-of-reports document tree. Mounted here because its consumers are sibling
+    // Storage for everything below — the report body and the control row read feature flags from it
+    // (`useFeatures`). A few subtrees still wrap their own provider from when they were separate
+    // roots; the nearest one wins and they all hold this same `storage`.
+    <StorageProvider storage={storage}>
+      <CapacityOverridesProvider onTeamDataSaved={onUpdateTeamsConfiguration}>
+        <CapacityOverrideApplier
+          baseRef={baseNormalizeOptionsRef}
+          baseVersion={baseNormalizeOptionsVersion}
+          readNormalizeOptions={readNormalizeOptions}
+          writeNormalizeOptions={writeNormalizeOptions}
+        />
+        {/* Holds the report-of-reports document tree. Mounted here because its consumers are sibling
           subtrees: the report body below renders it, and SaveReports persists it (spec/016 Phase 3). */}
-      <ReportLayoutProvider savedReport={openReport}>
-        {showingConfiguration && (
-          <div
-            id="timeline-configuration"
-            className="app-chrome-hidden border-gray-100 border-r border-neutral-301 relative block bg-white shrink-0"
-          >
-            <SettingsSidebar
-              showSidebarBranding={showSidebarBranding}
-              linkBuilder={linkBuilder}
-              interceptLinkClicks={interceptLinkClicks}
-              onUpdateTeamsConfiguration={onUpdateTeamsConfiguration}
-              onNewReport={startNewReport}
-            />
-          </div>
-        )}
+        <ReportLayoutProvider savedReport={openReport}>
+          {showingConfiguration && (
+            <div
+              id="timeline-configuration"
+              className="app-chrome-hidden border-gray-100 border-r border-neutral-301 relative block bg-white shrink-0"
+            >
+              <SettingsSidebar
+                showSidebarBranding={showSidebarBranding}
+                linkBuilder={linkBuilder}
+                interceptLinkClicks={interceptLinkClicks}
+                onUpdateTeamsConfiguration={onUpdateTeamsConfiguration}
+                onNewReport={startNewReport}
+              />
+            </div>
+          )}
 
-        <div className="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto relative">
-          {/* Forge only — the one-time Connect→KVS copy. See spec/021-forge/resolver-storage/migration-option.plan.md. */}
-          <div id="connect-migration-banner" className="app-chrome-hidden">
-            <ConnectMigrationBanner storage={storage} jira={rd.jiraHelpers} />
-          </div>
+          <div className="fullish-vh pl-4 pr-4 flex flex-1 flex-col overflow-y-auto relative">
+            {/* Forge only — the one-time Connect→KVS copy. See spec/021-forge/resolver-storage/migration-option.plan.md. */}
+            <div id="connect-migration-banner" className="app-chrome-hidden">
+              <ConnectMigrationBanner storage={storage} jira={rd.jiraHelpers} />
+            </div>
 
-          <div id="view-reports" className="app-chrome-hidden">
-            <ViewReports
-              linkBuilder={linkBuilder}
-              interceptLinkClicks={interceptLinkClicks}
-              onBackButtonClicked={() => {
-                rd.showSettings = '';
-              }}
-              onStartReport={startReport}
-            />
-          </div>
+            <div id="view-reports" className="app-chrome-hidden">
+              <ViewReports
+                linkBuilder={linkBuilder}
+                interceptLinkClicks={interceptLinkClicks}
+                onBackButtonClicked={() => {
+                  rd.showSettings = '';
+                }}
+                onStartReport={startReport}
+              />
+            </div>
 
-          <div id="sample-data-notice" className="app-chrome-hidden pt-4">
-            <SampleDataNotice
-              shouldHideNoticeObservable={routeData.isLoggedInObservable as unknown as CanObservable<boolean>}
-              onLoginClicked={() => loginComponent.login()}
-            />
-          </div>
+            <div id="sample-data-notice" className="app-chrome-hidden pt-4">
+              <SampleDataNotice
+                shouldHideNoticeObservable={routeData.isLoggedInObservable as unknown as CanObservable<boolean>}
+                onLoginClicked={() => loginComponent.login()}
+              />
+            </div>
 
-          <div id="saved-reports" className="py-4">
-            <SavedReports
-              queryParamObservable={pushStateObservable as unknown as CanObservable<string>}
-              storage={storage}
-              linkBuilder={linkBuilder}
-              interceptLinkClicks={interceptLinkClicks}
-              shouldShowReportsObservable={routeData.isLoggedInObservable as unknown as CanObservable<boolean>}
-              onViewReportsButtonClicked={() => {
-                rd.showSettings = 'REPORTS';
-              }}
-            />
-          </div>
-
-          <div
-            id="report-controls"
-            className={`app-chrome-hidden ${showingHome ? 'hidden' : 'flex'} flex-wrap gap-x-1 gap-y-2 @container/controls`}
-          >
-            {/* Wrapped in the same QueryClient + JiraProvider as the report body (below) so controls
-              that fetch Jira data — e.g. the Table report's TableReportControls calling
-              useJiraIssueFields — work here too. queryClient is a shared singleton, so the fields
-              query is deduped with the body rather than fetched twice. */}
-            <QueryClientProvider client={queryClient}>
-              <JiraProvider jira={rd.jiraHelpers}>
-                <ReportControlsAny rolledupAndRolledBackIssuesAndReleasesObs={baseProps.allIssuesOrReleasesObs} />
-              </JiraProvider>
-            </QueryClientProvider>
-          </div>
-
-          <ReportArea
-            loadingState={loadingState}
-            isLoggedIn={isLoggedIn}
-            jql={jql}
-            primaryIssueType={primaryIssueType}
-            primaryIssuesCount={primaryIssuesOrReleases.length}
-            selfManagesData={selfManagesData}
-            unsupportedReportType={deadReportType}
-            fillsHeight={fillsHeight}
-            home={
-              <ReportHomeContainer
+            <div id="saved-reports" className="py-4">
+              <SavedReports
+                queryParamObservable={pushStateObservable as unknown as CanObservable<string>}
                 storage={storage}
                 linkBuilder={linkBuilder}
                 interceptLinkClicks={interceptLinkClicks}
-                onStartReport={startReport}
-              />
-            }
-            startedReport={startedReport}
-            onOpenSources={() => {
-              rd.showSettings = 'SOURCES';
-            }}
-            setup={
-              <ChooseSourcesMessage
-                reportTypeName={REPORT_TYPES.find(({ key }) => key === primaryReportType)?.name}
-                onViewAllReports={() => {
+                shouldShowReportsObservable={routeData.isLoggedInObservable as unknown as CanObservable<boolean>}
+                onViewReportsButtonClicked={() => {
                   rd.showSettings = 'REPORTS';
                 }}
               />
-            }
-          >
-            <div id="print-header">
-              <PrintHeader />
             </div>
 
-            {PrimaryReport && (
-              // `p-2` is **the** report gutter, for every report type. It lives here because this div
-              // is the report page's mount point and nothing else renders through it: a report
-              // embedded in a Report of Reports goes through `ChildReport`, which renders
-              // `<PrimaryReport />` bare, so it inherits none of this. Reports used to each carry
-              // their own root padding and it rode along into documents, indenting every embedded
-              // chart inside a layout that had already positioned it.
-              //
-              // One value rather than a per-type lookup: the nine reports had `p-2` (4), `p-4` (2) and
-              // nothing at all (3), which is drift rather than nine decisions worth preserving. 8px is
-              // the plurality and what the three most-used visual reports already used.
-              //
-              // `mb-10`, by contrast, stays keyed by report type — it's genuinely report-specific. See
-              // `reportNeedsFooterClearance`'s own doc comment.
-              //
-              // `min-h-0` is load-bearing for the fill-height branch: a flex item's automatic minimum
-              // size is its content, so without it the container grows past the viewport and the
-              // report scrolls the page again instead of scrolling itself.
-              <div
-                id="react-report-container"
-                className={[
-                  'p-2',
-                  reportNeedsFooterClearance(primaryReportType) ? 'mb-10' : '',
-                  fillsHeight ? 'flex min-h-0 flex-1 flex-col' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-              >
-                <QueryClientProvider client={queryClient}>
-                  <JiraProvider jira={rd.jiraHelpers}>
-                    <PrimaryReport key={primaryReportType} {...baseProps} />
-                  </JiraProvider>
-                </QueryClientProvider>
+            <div
+              id="report-controls"
+              className={`app-chrome-hidden ${showingHome ? 'hidden' : 'flex'} flex-wrap gap-x-1 gap-y-2 @container/controls`}
+            >
+              {/* Wrapped in the same QueryClient + JiraProvider as the report body (below) so controls
+              that fetch Jira data — e.g. the Table report's TableReportControls calling
+              useJiraIssueFields — work here too. queryClient is a shared singleton, so the fields
+              query is deduped with the body rather than fetched twice. */}
+              <QueryClientProvider client={queryClient}>
+                <JiraProvider jira={rd.jiraHelpers}>
+                  <ReportControlsAny rolledupAndRolledBackIssuesAndReleasesObs={baseProps.allIssuesOrReleasesObs} />
+                </JiraProvider>
+              </QueryClientProvider>
+            </div>
+
+            <ReportArea
+              loadingState={loadingState}
+              isLoggedIn={isLoggedIn}
+              jql={jql}
+              primaryIssueType={primaryIssueType}
+              primaryIssuesCount={primaryIssuesOrReleases.length}
+              selfManagesData={selfManagesData}
+              unsupportedReportType={deadReportType}
+              fillsHeight={fillsHeight}
+              home={
+                <ReportHomeContainer
+                  storage={storage}
+                  linkBuilder={linkBuilder}
+                  interceptLinkClicks={interceptLinkClicks}
+                  onStartReport={startReport}
+                />
+              }
+              startedReport={startedReport}
+              onOpenSources={() => {
+                rd.showSettings = 'SOURCES';
+              }}
+              setup={
+                <ChooseSourcesMessage
+                  reportTypeName={REPORT_TYPES.find(({ key }) => key === primaryReportType)?.name}
+                  onViewAllReports={() => {
+                    rd.showSettings = 'REPORTS';
+                  }}
+                />
+              }
+            >
+              <div id="print-header">
+                <PrintHeader />
               </div>
-            )}
 
-            <div id="report-footer" className="sticky bottom-0 z-40">
-              <ReportFooter />
-            </div>
-          </ReportArea>
-        </div>
-      </ReportLayoutProvider>
-    </CapacityOverridesProvider>
+              {PrimaryReport && (
+                // `p-2` is **the** report gutter, for every report type. It lives here because this div
+                // is the report page's mount point and nothing else renders through it: a report
+                // embedded in a Report of Reports goes through `ChildReport`, which renders
+                // `<PrimaryReport />` bare, so it inherits none of this. Reports used to each carry
+                // their own root padding and it rode along into documents, indenting every embedded
+                // chart inside a layout that had already positioned it.
+                //
+                // One value rather than a per-type lookup: the nine reports had `p-2` (4), `p-4` (2) and
+                // nothing at all (3), which is drift rather than nine decisions worth preserving. 8px is
+                // the plurality and what the three most-used visual reports already used.
+                //
+                // `mb-10`, by contrast, stays keyed by report type — it's genuinely report-specific. See
+                // `reportNeedsFooterClearance`'s own doc comment.
+                //
+                // `min-h-0` is load-bearing for the fill-height branch: a flex item's automatic minimum
+                // size is its content, so without it the container grows past the viewport and the
+                // report scrolls the page again instead of scrolling itself.
+                <div
+                  id="react-report-container"
+                  className={[
+                    'p-2',
+                    reportNeedsFooterClearance(primaryReportType) ? 'mb-10' : '',
+                    fillsHeight ? 'flex min-h-0 flex-1 flex-col' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
+                  <QueryClientProvider client={queryClient}>
+                    <JiraProvider jira={rd.jiraHelpers}>
+                      <PrimaryReport key={primaryReportType} {...baseProps} />
+                    </JiraProvider>
+                  </QueryClientProvider>
+                </div>
+              )}
+
+              <div id="report-footer" className="sticky bottom-0 z-40">
+                <ReportFooter />
+              </div>
+            </ReportArea>
+          </div>
+        </ReportLayoutProvider>
+      </CapacityOverridesProvider>
+    </StorageProvider>
   );
 };
 

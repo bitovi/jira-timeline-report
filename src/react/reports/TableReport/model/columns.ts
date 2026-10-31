@@ -10,6 +10,7 @@
 import type { ReactNode } from 'react';
 
 import type { AggregationId } from './aggregations';
+import type { DateFormat } from './relativeDate';
 
 /**
  * The loose runtime shape of a rolled-up issue as the various reports consume it. Columns read a
@@ -74,6 +75,11 @@ export interface RenderContext {
    * mode; the "Percent Complete" column wires its cell to this when present.
    */
   onPercentBreakdown?: (issue: TableIssue) => void;
+  /**
+   * The column's chosen date format (its `⋯` menu → Format). Date renderers read it; `undefined`
+   * means `'date'`. Other renderers ignore it.
+   */
+  dateFormat?: DateFormat;
 }
 
 /** Context passed to a column's `renderMeasure` override — see {@link ColumnDefinition.renderMeasure}. */
@@ -82,6 +88,24 @@ export interface RenderMeasureContext {
   members: TableIssue[];
   /** Every issue in the current view, for renderers that need broader context. */
   allIssues?: TableIssue[];
+  /**
+   * Opens a modal listing `issues` under `title`. Supplied by the report for grouped and cross-tab
+   * cells; the Estimate Progress bar wires its segments to it when present.
+   */
+  onShowIssues?: (title: string, issues: TableIssue[]) => void;
+  /** The column's saved value order (⋯ → Order and colors); see `valueOrder.ts`. */
+  valueOrder?: readonly string[];
+  /** The column's picked colours, value → colour id (⋯ → Order and colors); see `chartColors.ts`. */
+  valueColors?: Readonly<Record<string, string>>;
+}
+
+/** How the "Stacked bar" aggregation colours a column's values (see `stackedBar.ts`). */
+export interface BarStyle {
+  /**
+   * The default colour id (see `chartColors.ts`) for a value nobody has picked a colour for, given
+   * one issue with that value. Without it, colours come from the value's name.
+   */
+  defaultColor?: (value: string, issue: TableIssue) => string;
 }
 
 /**
@@ -113,6 +137,8 @@ export interface ColumnDefinition<Value = unknown> {
    * "Count") still falls back to the generic numeric rendering.
    */
   renderMeasure?: Partial<Record<AggregationId, (ctx: RenderMeasureContext) => ReactNode>>;
+  /** Default segment colours for the "Stacked bar" aggregation; picked by value name when absent. */
+  bar?: BarStyle;
 }
 
 /**

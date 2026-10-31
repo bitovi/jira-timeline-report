@@ -24,11 +24,14 @@ import React, { Suspense, useMemo, useState } from 'react';
 import type { CanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import { useCanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import { useJiraIssueFields } from '../../services/jira/useJiraIssueFields';
+import { useAsyncFeatures } from '../../services/features/useFeatures';
 import { linkIssues } from '../../../jira/linked-issue';
 import { FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES } from '../../../jira/rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time';
 import Stats from '../../Stats/Stats';
 import { EstimateBreakdownModal } from './components/EstimateBreakdownModal';
 import { PercentCompleteModal } from '../GanttReport/GanttGrid/components/PercentCompleteModal';
+import { IssueListModal } from '../shared/IssueListModal';
+import { OrderAndColorsModal } from './components/OrderAndColorsModal';
 import { makeGetChildren } from '../GanttReport/GanttGrid/helpers/getChildren';
 import type { IssueOrRelease } from '../GanttReport/GanttGrid/types';
 
@@ -47,22 +50,24 @@ import {
 } from './model/applyView';
 import { buildHierarchyRows } from './model/hierarchyRows';
 import {
-  computeMeasureValue,
   cycleGroupSort,
+  displayMeasureValue,
   effectiveAggregationId,
-  formatMeasureValue,
   getMeasureRenderer,
   groupIssues,
+  isNumericMeasure,
   selectMeasureColumns,
   sortGroups,
 } from './model/grouping';
-import { aggregations, isNumericAggregation } from './model/aggregations';
+import { aggregations } from './model/aggregations';
+import { computePlanningHealth } from './model/planningHealth';
+import { issuesByValue, mergeValueOrder, orderValues, supportsOrderAndColors } from './model/valueOrder';
+import { segmentColor } from './model/stackedBar';
 import { bucketedDateColumn, DATE_GRANULARITIES } from './model/dateBucketing';
 import {
   ALL_ISSUES_ROW_COLUMN,
   buildCrossTab,
   cellMembers,
-  cellValue,
   effectiveMeasures,
   TOTAL_KEY,
   TOTAL_LABEL,
@@ -77,7 +82,11 @@ import type { AggregationId } from './model/aggregations';
 import type { DateGranularity } from './model/dateBucketing';
 import type { ColumnDefinition, TableIssue } from './model/columns';
 import type { FilterState, FilterValue, SortMode, SortState } from './model/applyView';
-import type { AggregationOverrides, GroupSort } from './model/grouping';
+import type { AggregationOverrides, DateFormatOverrides, GroupSort } from './model/grouping';
+import type { DateFormat } from './model/relativeDate';
+import type { PlanningHealth } from './model/planningHealth';
+import type { ValueColors, ValueOrders } from './model/valueOrder';
+import type { OrderAndColors } from './components/OrderAndColorsModal';
 import type { CrossTab } from './model/crosstab';
 import type { HierarchyRow } from './model/hierarchyRows';
 import type { IssueFields } from './model/buildColumnCatalog';
@@ -87,6 +96,11 @@ import {
   buildColumnEntries,
   entriesToAggregationOverrides,
   entriesToColumnIds,
+  entriesToDateFormats,
+  entriesToValueColors,
+  entriesToValueOrders,
+  setEntryFormat,
+  setEntryValueSettings,
   toSortState,
 } from './model/persistence';
 
@@ -203,8 +217,11 @@ function useOptionalObs<T>(obs: CanObservable<T> | undefined, initial: T): CanOb
  * (issues-plan.md #3/#4), and surfaces the raw Jira `issue.fields` map under `fields` for the raw
  * fallback — matching how {@link toHierarchyIssue} already exposes both.
  */
-function toTableIssue(issue: DerivedIssue): TableIssue {
-  return { ...issue, fields: issue.issue?.fields as Record<string, unknown> | undefined };
+function toTableIssue(issue: DerivedIssue, planningHealth?: PlanningHealthLookup): TableIssue {
+  return withPlanningHealth(
+    { ...issue, fields: issue.issue?.fields as Record<string, unknown> | undefined },
+    planningHealth,
+  );
 }
 
 /**
@@ -213,8 +230,17 @@ function toTableIssue(issue: DerivedIssue): TableIssue {
  * team, storyPointsMedian, raw `issue`) and surface Jira fields under `fields` (keyed by display
  * name) the same way flat mode does, so identity/field columns behave identically in both modes.
  */
-function toHierarchyIssue(issue: RollupIssue): TableIssue {
-  return { ...issue, fields: issue.issue?.fields };
+function toHierarchyIssue(issue: RollupIssue, planningHealth?: PlanningHealthLookup): TableIssue {
+  return withPlanningHealth({ ...issue, fields: issue.issue?.fields }, planningHealth);
+}
+
+/** Planning-health values by issue key, or `null` while the `planningHealth` flag is off. */
+type PlanningHealthLookup = Map<string, PlanningHealth> | null;
+
+/** Attach the row's {@link PlanningHealth} (read by the `planning:*` columns) when there is one. */
+function withPlanningHealth(issue: TableIssue, planningHealth?: PlanningHealthLookup): TableIssue {
+  const health = planningHealth && issue.key ? planningHealth.get(issue.key) : undefined;
+  return health ? { ...issue, planningHealth: health } : issue;
 }
 
 /** Distinct rendered-string values a column takes across the issue set (for `select` filters). */
@@ -431,8 +457,20 @@ interface CrossTabTableProps {
   overrides: AggregationOverrides;
   /** Set/clear a measure's per-column aggregation override (the same handler the flat/1D header uses). */
   onAggregationChange: (columnId: string, value: AggregationId) => void;
+  /** Per-column date formats (date measures' Min/Max/Range follow them). */
+  dateFormats: DateFormatOverrides;
+  /** Set a date measure's format (the same handler the flat/1D header uses). */
+  onFormatChange: (columnId: string, value: DateFormat) => void;
   /** Remove a measure column from the shown columns (the same handler the flat/1D header uses). */
   onRemoveColumn: (columnId: string) => void;
+  /** Open the issue-list modal from a cell (e.g. an Estimate Progress bar segment). */
+  onShowIssues: (title: string, issues: TableIssue[]) => void;
+  /** Per-column value orders (Count by value / Stacked bar / Distinct list). */
+  valueOrders: ValueOrders;
+  /** Per-column picked colours (Stacked bar). */
+  valueColors: ValueColors;
+  /** Open a measure's Order and colors editor (the same handler the flat/1D header uses). */
+  onEditOrderAndColors: (columnId: string) => void;
 }
 
 /**
@@ -460,7 +498,13 @@ const CrossTabTable: React.FC<CrossTabTableProps> = ({
   showColTotals,
   overrides,
   onAggregationChange,
+  dateFormats,
+  onFormatChange,
   onRemoveColumn,
+  onShowIssues,
+  valueOrders,
+  valueColors,
+  onEditOrderAndColors,
 }) => {
   const { rowAxis, colAxis, rowTotals, colTotals, grandTotal } = crossTab;
   // Column keys/titles with the synthetic total appended — only when its toggle is on. The right-
@@ -493,6 +537,9 @@ const CrossTabTable: React.FC<CrossTabTableProps> = ({
         aggregationOverride={overrides[measure.id]}
         onAggregationChange={(value) => onAggregationChange(measure.id, value)}
         aggregationActive
+        format={dateFormats[measure.id]}
+        onFormatChange={(value) => onFormatChange(measure.id, value)}
+        onEditOrderAndColors={supportsOrderAndColors(measure) ? () => onEditOrderAndColors(measure.id) : undefined}
       />
     </div>
   );
@@ -500,22 +547,27 @@ const CrossTabTable: React.FC<CrossTabTableProps> = ({
   const cell = (rowKey: string, colKey: string, measure: ColumnDefinition) => {
     const aggId = effectiveAggregationId(measure, overrides[measure.id]);
     const customRender = getMeasureRenderer(measure, aggId);
-    if (customRender) {
-      const members = cellMembers(crossTab, rowKey, colKey);
-      return members.length === 0 ? EMPTY_CELL : customRender({ members });
-    }
-    const value = cellValue(crossTab, rowKey, colKey, measure, overrides);
-    return value == null ? EMPTY_CELL : formatMeasureValue(value);
+    const members = cellMembers(crossTab, rowKey, colKey);
+    if (members.length === 0) return EMPTY_CELL;
+    const valueOrder = valueOrders[measure.id];
+    if (customRender) return customRender({ members, onShowIssues, valueOrder, valueColors: valueColors[measure.id] });
+    const text = displayMeasureValue(measure, members, {
+      aggregation: overrides[measure.id],
+      dateFormat: dateFormats[measure.id],
+      valueOrder,
+    });
+    return text === '' ? EMPTY_CELL : text;
   };
 
   // Right-align only when the measure's effective aggregation always produces a number (sum/avg/
-  // min/max/count) — a `range` (date span) or `distinct` (list) result stays left-aligned. A null
+  // min/max/count, but not min/max over a date) — a `range` (date span) or `distinct` (list) result
+  // stays left-aligned. A null
   // measure (no measures at all — shouldn't normally happen, `effectiveMeasures` always supplies at
   // least the synthetic issue-count measure) renders `EMPTY_CELL` and stays left-aligned.
-  const isNumericMeasure = (measure: ColumnDefinition | null) =>
-    measure != null && isNumericAggregation(effectiveAggregationId(measure, overrides[measure.id]));
+  const isNumericCell = (measure: ColumnDefinition | null) =>
+    measure != null && isNumericMeasure(measure, effectiveAggregationId(measure, overrides[measure.id]));
   const cellClass = (colKey: string, measure: ColumnDefinition | null) =>
-    `p-2 align-top border-b border-neutral-201 ${isNumericMeasure(measure) ? 'text-right' : 'text-left'} ${colKey === TOTAL_KEY ? 'font-semibold bg-neutral-101' : ''}`;
+    `p-2 align-top border-b border-neutral-201 ${isNumericCell(measure) ? 'text-right' : 'text-left'} ${colKey === TOTAL_KEY ? 'font-semibold bg-neutral-101' : ''}`;
 
   // "Hidden" only makes sense with a single measure (there's nowhere left to distinguish a second
   // measure's rows once the "Field" column is gone) — fall back to Down rows otherwise.
@@ -542,7 +594,7 @@ const CrossTabTable: React.FC<CrossTabTableProps> = ({
               {colTitles.map((title, i) => (
                 <th
                   key={colKeys[i]}
-                  className={`p-2 font-semibold ${soleMeasure && isNumericMeasure(soleMeasure) ? 'text-right' : 'text-left'} ${colKeys[i] === TOTAL_KEY ? 'bg-neutral-101' : ''}`}
+                  className={`p-2 font-semibold ${soleMeasure && isNumericCell(soleMeasure) ? 'text-right' : 'text-left'} ${colKeys[i] === TOTAL_KEY ? 'bg-neutral-101' : ''}`}
                   style={stickyHeaderStyle()}
                 >
                   {title}
@@ -682,7 +734,7 @@ const CrossTabTable: React.FC<CrossTabTableProps> = ({
               measures.map((measure, mIdx) => (
                 <th
                   key={`${colKey}-${measure.id}`}
-                  className={`p-2 font-medium text-neutral-801 ${isNumericMeasure(measure) ? 'text-right' : 'text-left'} ${mIdx === 0 ? 'border-l border-neutral-301' : ''} ${colKey === TOTAL_KEY ? 'bg-neutral-101' : ''}`}
+                  className={`p-2 font-medium text-neutral-801 ${isNumericCell(measure) ? 'text-right' : 'text-left'} ${mIdx === 0 ? 'border-l border-neutral-301' : ''} ${colKey === TOTAL_KEY ? 'bg-neutral-101' : ''}`}
                   style={stickyHeaderStyle({ top: HEADER_ROW_H })}
                 >
                   {fieldName(measure)}
@@ -713,7 +765,7 @@ const CrossTabTable: React.FC<CrossTabTableProps> = ({
                 measures.map((measure, mIdx) => (
                   <td
                     key={`${colKey}-${measure.id}`}
-                    className={`p-2 align-top ${isNumericMeasure(measure) ? 'text-right' : 'text-left'} ${mIdx === 0 ? 'border-l border-neutral-301' : ''} ${colKey === TOTAL_KEY ? 'bg-neutral-101' : ''}`}
+                    className={`p-2 align-top ${isNumericCell(measure) ? 'text-right' : 'text-left'} ${mIdx === 0 ? 'border-l border-neutral-301' : ''} ${colKey === TOTAL_KEY ? 'bg-neutral-101' : ''}`}
                     data-testid="table-crosstab-cell"
                   >
                     {cell(rowKey, colKey, measure)}
@@ -750,27 +802,49 @@ const TableReportInner: React.FC<TableReportProps> = ({
   const allRollupIssues = useCanObservable(allIssuesOrReleasesObs ?? EMPTY_OBS) || [];
   const visibleRollupIssues = useCanObservable(visibleIssuesOrReleasesObs ?? allIssuesOrReleasesObs ?? EMPTY_OBS) || [];
   const fields = useJiraIssueFields() as IssueFields;
+  // Not the suspending `useFeatures`: the report already suspends on its field catalog, and a second
+  // suspension re-opens the issues-vs-catalog race `ChildReport.tableChild.test.tsx` guards. Until
+  // the flags load, `planningHealth` reads as off and the planning columns appear a moment later.
+  const planningHealth = useAsyncFeatures().features?.planningHealth ?? false;
 
-  const catalog = useMemo(() => buildColumnCatalog(fields), [fields]);
+  const catalog = useMemo(() => buildColumnCatalog(fields, { planningHealth }), [fields, planningHealth]);
   const catalogById = useMemo(() => new Map(catalog.map((c) => [c.id, c])), [catalog]);
 
   // Flat-mode issue set: the FULL loaded issue set across all hierarchy levels (design fix — flat/sort
   // mode used to be filtered to the top level, hiding most rows). Prefer the rolled-up set so estimation
   // columns have rollup fields; fall back to the linked derived issues (e.g. unit tests with no rollup
   // obs), with no top-level filter.
+  //
+  // Rows carry their planning-health values (spec/044) when the flag is on. They come from every
+  // loaded issue linked by `parentKey`, not from the rollup, which only spans the hierarchy range.
+  const planningHealthByKey = useMemo<PlanningHealthLookup>(
+    () => (planningHealth ? computePlanningHealth(filteredDerivedIssues) : null),
+    [planningHealth, filteredDerivedIssues],
+  );
   const flatIssues = useMemo<TableIssue[]>(() => {
-    if (allRollupIssues.length > 0) return allRollupIssues.map(toHierarchyIssue);
-    return linkIssues(filteredDerivedIssues).map((issue) => toTableIssue(issue as unknown as DerivedIssue));
-  }, [allRollupIssues, filteredDerivedIssues]);
+    if (allRollupIssues.length > 0) return allRollupIssues.map((issue) => toHierarchyIssue(issue, planningHealthByKey));
+    return linkIssues(filteredDerivedIssues).map((issue) =>
+      toTableIssue(issue as unknown as DerivedIssue, planningHealthByKey),
+    );
+  }, [allRollupIssues, filteredDerivedIssues, planningHealthByKey]);
 
   // Hierarchy-mode issue sets (Phase 2): the fully rolled-up roots + full linked set.
-  const hierarchyRoots = useMemo<TableIssue[]>(() => primaryIssues.map(toHierarchyIssue), [primaryIssues]);
-  const hierarchyAll = useMemo<TableIssue[]>(() => allRollupIssues.map(toHierarchyIssue), [allRollupIssues]);
+  const hierarchyRoots = useMemo<TableIssue[]>(
+    () => primaryIssues.map((issue) => toHierarchyIssue(issue, planningHealthByKey)),
+    [primaryIssues, planningHealthByKey],
+  );
+  const hierarchyAll = useMemo<TableIssue[]>(
+    () => allRollupIssues.map((issue) => toHierarchyIssue(issue, planningHealthByKey)),
+    [allRollupIssues, planningHealthByKey],
+  );
   // The tree's children: the full set minus rows the Filters panel hides below Report on. Filter
   // options and the Percent Complete modal keep using the full set, as the Gantt's modal does.
   const hierarchyVisible = useMemo<TableIssue[]>(
-    () => (visibleRollupIssues === allRollupIssues ? hierarchyAll : visibleRollupIssues.map(toHierarchyIssue)),
-    [visibleRollupIssues, allRollupIssues, hierarchyAll],
+    () =>
+      visibleRollupIssues === allRollupIssues
+        ? hierarchyAll
+        : visibleRollupIssues.map((issue) => toHierarchyIssue(issue, planningHealthByKey)),
+    [visibleRollupIssues, allRollupIssues, hierarchyAll, planningHealthByKey],
   );
 
   // --- Phase 5 persisted configuration (route-data observables, with local fallback) ---------------
@@ -806,6 +880,9 @@ const TableReportInner: React.FC<TableReportProps> = ({
     () => entriesToAggregationOverrides(columnEntries),
     [columnEntries],
   );
+  const dateFormats = useMemo(() => entriesToDateFormats(columnEntries), [columnEntries]);
+  const valueOrders = useMemo(() => entriesToValueOrders(columnEntries), [columnEntries]);
+  const valueColors = useMemo(() => entriesToValueColors(columnEntries), [columnEntries]);
   const sort = useMemo<SortState>(() => toSortState(sortColumnId, sortDir), [sortColumnId, sortDir]);
   // `groupBy`/`groupByCol` are null when unset (the rest of the component reasons in terms of null).
   const groupBy = groupByRaw || null;
@@ -821,6 +898,11 @@ const TableReportInner: React.FC<TableReportProps> = ({
   const [collapsedKeys, setCollapsedKeys] = useState<ReadonlySet<string>>(() => new Set());
   const [breakdownIssue, setBreakdownIssue] = useState<TableIssue | null>(null);
   const [percentBreakdownIssue, setPercentBreakdownIssue] = useState<TableIssue | null>(null);
+  // The issue list a grouped/cross-tab cell opened (Estimate Progress bar segments, spec/044).
+  const [issueList, setIssueList] = useState<{ title: string; issues: TableIssue[] } | null>(null);
+  const showIssues = (title: string, issues: TableIssue[]) => setIssueList({ title, issues });
+  // The column whose Order and colors editor is open.
+  const [orderAndColorsColumnId, setOrderAndColorsColumnId] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<ReadonlySet<string>>(() => new Set());
   // Group-ordering control: local-only (not in the Phase 5 persisted schema, plan lines 199-210).
   const [groupSort, setGroupSort] = useState<GroupSort>({ by: 'label', dir: 'asc' });
@@ -1028,6 +1110,27 @@ const TableReportInner: React.FC<TableReportProps> = ({
     writeColumns(columnIds, { ...aggregationOverrides, [columnId]: value });
   };
 
+  const setColumnFormat = (columnId: string, value: DateFormat) => {
+    columnsObs.value = setEntryFormat(columnEntries, columnId, value);
+  };
+
+  // Save Order and colors. An arranged order keeps the saved places of values not loaded right now
+  // (see `mergeValueOrder`) unless the user reset to default. Colours arrive complete: the modal
+  // starts from every saved colour, loaded or not.
+  const setColumnOrderAndColors = (columnId: string, { valueOrder, valueColors: colors, isReset }: OrderAndColors) => {
+    const order = valueOrder && !isReset ? mergeValueOrder(valueOrder, valueOrders[columnId]) : valueOrder;
+    columnsObs.value = setEntryValueSettings(columnEntries, columnId, { valueOrder: order, valueColors: colors });
+  };
+
+  // The open Order and colors editor's column, and its loaded values with an issue each (Status's
+  // default colour reads the issue's status category).
+  const orderAndColorsColumn = orderAndColorsColumnId ? (catalogById.get(orderAndColorsColumnId) ?? null) : null;
+  const orderAndColorsByValue = useMemo(
+    () =>
+      orderAndColorsColumn ? issuesByValue(orderAndColorsColumn, filterSourceIssues) : new Map<string, TableIssue[]>(),
+    [orderAndColorsColumn, filterSourceIssues],
+  );
+
   const showStats = isHierarchy && FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES();
 
   return (
@@ -1063,7 +1166,13 @@ const TableReportInner: React.FC<TableReportProps> = ({
             showColTotals={showColTotals}
             overrides={aggregationOverrides}
             onAggregationChange={setColumnAggregation}
+            dateFormats={dateFormats}
+            onFormatChange={setColumnFormat}
             onRemoveColumn={handleRemoveColumn}
+            onShowIssues={showIssues}
+            valueOrders={valueOrders}
+            valueColors={valueColors}
+            onEditOrderAndColors={setOrderAndColorsColumnId}
           />
         ) : (
           <div className="overflow-x-auto">
@@ -1219,6 +1328,13 @@ const TableReportInner: React.FC<TableReportProps> = ({
                                 : undefined
                             }
                             aggregationActive={isGrouped}
+                            format={dateFormats[column.id]}
+                            onFormatChange={(value) => setColumnFormat(column.id, value)}
+                            onEditOrderAndColors={
+                              measureColumnIds.has(column.id) && supportsOrderAndColors(column)
+                                ? () => setOrderAndColorsColumnId(column.id)
+                                : undefined
+                            }
                             onMoveLeft={canMoveLeft ? () => moveColumnLeft(colIndex) : undefined}
                             onMoveRight={canMoveRight ? () => moveColumnRight(colIndex) : undefined}
                           />
@@ -1280,19 +1396,27 @@ const TableReportInner: React.FC<TableReportProps> = ({
                                 const customRender = getMeasureRenderer(column, aggId);
                                 // Custom renders (e.g. the identity distinct-list, which stacks entries in a
                                 // flex column) manage their own layout, so the long-list wrap style below only
-                                // applies to the plain comma-joined `formatMeasureValue` string.
+                                // applies to the plain comma-joined `displayMeasureValue` string.
                                 const plainContent = customRender
                                   ? null
-                                  : formatMeasureValue(
-                                      computeMeasureValue(column, group.members, aggregationOverrides[column.id]),
-                                    );
+                                  : displayMeasureValue(column, group.members, {
+                                      aggregation: aggregationOverrides[column.id],
+                                      dateFormat: dateFormats[column.id],
+                                      valueOrder: valueOrders[column.id],
+                                    });
                                 const content = customRender
-                                  ? customRender({ members: group.members, allIssues: filterSourceIssues })
+                                  ? customRender({
+                                      members: group.members,
+                                      allIssues: filterSourceIssues,
+                                      onShowIssues: (title, issues) => showIssues(`${group.label}: ${title}`, issues),
+                                      valueOrder: valueOrders[column.id],
+                                      valueColors: valueColors[column.id],
+                                    })
                                   : plainContent;
                                 return (
                                   <td
                                     key={column.id}
-                                    className={`p-2 align-top ${isNumericAggregation(aggId) ? 'text-right' : ''}`}
+                                    className={`p-2 align-top ${isNumericMeasure(column, aggId) ? 'text-right' : ''}`}
                                     data-testid="table-group-measure"
                                     style={plainContent != null ? longListWrapStyle(plainContent) : undefined}
                                   >
@@ -1328,6 +1452,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
                                     {column.render(column.getValue(issue), {
                                       issue,
                                       depth: 0,
+                                      dateFormat: dateFormats[column.id],
                                       allIssues: filterSourceIssues,
                                       onEstimateBreakdown: (i) => setBreakdownIssue(i),
                                       onPercentBreakdown: (i) => setPercentBreakdownIssue(i),
@@ -1345,6 +1470,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
                           const content = column.render(column.getValue(row.issue), {
                             issue: row.issue,
                             depth: row.depth,
+                            dateFormat: dateFormats[column.id],
                             allIssues: filterSourceIssues,
                             onEstimateBreakdown: (issue) => setBreakdownIssue(issue),
                             onPercentBreakdown: (issue) => setPercentBreakdownIssue(issue),
@@ -1391,6 +1517,27 @@ const TableReportInner: React.FC<TableReportProps> = ({
           issue={breakdownIssue as EstimationIssue | null}
           onClose={() => setBreakdownIssue(null)}
         />
+        {orderAndColorsColumn && (
+          <OrderAndColorsModal
+            columnLabel={orderAndColorsColumn.label}
+            values={orderValues(orderAndColorsByValue.keys(), valueOrders[orderAndColorsColumn.id])}
+            defaultValues={orderValues(orderAndColorsByValue.keys())}
+            valueColors={valueColors[orderAndColorsColumn.id] ?? {}}
+            defaultColorFor={(value) =>
+              segmentColor(orderAndColorsColumn, value, orderAndColorsByValue.get(value)?.[0] ?? {})
+            }
+            onSave={(settings) => setColumnOrderAndColors(orderAndColorsColumn.id, settings)}
+            onClose={() => setOrderAndColorsColumnId(null)}
+          />
+        )}
+        {issueList && (
+          <IssueListModal
+            testId="table-issue-list-modal"
+            title={issueList.title}
+            issues={issueList.issues}
+            onClose={() => setIssueList(null)}
+          />
+        )}
         {percentBreakdownIssue && (
           <PercentCompleteModal
             isOpen={!!percentBreakdownIssue}

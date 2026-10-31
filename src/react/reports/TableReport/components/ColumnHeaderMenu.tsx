@@ -12,8 +12,10 @@ import FilterControl from './filters/FilterControl';
 
 import { aggregations } from '../model/aggregations';
 import { applicableAggregations, effectiveAggregationId } from '../model/grouping';
+import { DATE_FORMAT_LABELS } from '../model/relativeDate';
 
 import type { AggregationId } from '../model/aggregations';
+import type { DateFormat } from '../model/relativeDate';
 import type { ColumnDefinition } from '../model/columns';
 import type { FilterValue, SortMode } from '../model/applyView';
 
@@ -55,6 +57,16 @@ interface ColumnHeaderMenuProps {
    * the view is grouped. Defaults to `true`.
    */
   aggregationActive?: boolean;
+  /** A date column's current display format (absent = `'date'`). */
+  format?: DateFormat;
+  /** Set this date column's display format. Presence (on a date column) enables the Format section. */
+  onFormatChange?: (value: DateFormat) => void;
+  /**
+   * Open this column's Order and colors editor (its values' order inside grouped cells, and their
+   * Stacked bar colours). Presence shows the menu item; the report only passes it for measure
+   * columns that support it.
+   */
+  onEditOrderAndColors?: () => void;
   /** Move this column one position toward the start. Omitted/disabled on the first shown column. */
   onMoveLeft?: () => void;
   /** Move this column one position toward the end. Omitted/disabled on the last shown column. */
@@ -74,6 +86,9 @@ export const ColumnHeaderMenu: React.FC<ColumnHeaderMenuProps> = ({
   aggregationOverride,
   onAggregationChange,
   aggregationActive = true,
+  format = 'date',
+  onFormatChange,
+  onEditOrderAndColors,
   onMoveLeft,
   onMoveRight,
 }) => {
@@ -81,6 +96,7 @@ export const ColumnHeaderMenu: React.FC<ColumnHeaderMenuProps> = ({
 
   const aggregationOptions = onAggregationChange ? applicableAggregations(column) : [];
   const currentAggregation = effectiveAggregationId(column, aggregationOverride);
+  const formatOptions: DateFormat[] = onFormatChange && column.filter?.kind === 'date' ? ['date', 'relative'] : [];
 
   // Sort options match the header-click behavior: tree-capable identity columns offer
   // Hierarchy / A→Z / Z→A / Rank; every other column (or any column while grouped, since hierarchy
@@ -146,6 +162,46 @@ export const ColumnHeaderMenu: React.FC<ColumnHeaderMenuProps> = ({
                   >
                     {currentAggregation === id ? '✓ ' : ''}
                     {aggregations[id].label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {onEditOrderAndColors && (
+            <div className="flex flex-col gap-1" data-testid="table-order-and-colors-menu">
+              <span className="text-xs font-semibold text-neutral-801">
+                Values{aggregationActive ? '' : ' (used when grouped)'}
+              </span>
+              <button
+                type="button"
+                data-testid="table-order-and-colors"
+                className="text-left text-sm px-2 py-1 rounded hover:bg-neutral-201 text-neutral-801"
+                onClick={() => {
+                  setIsOpen(false);
+                  onEditOrderAndColors();
+                }}
+              >
+                Order and colors…
+              </button>
+            </div>
+          )}
+          {formatOptions.length > 0 && onFormatChange && (
+            <div className="flex flex-col gap-1" data-testid="table-format-menu">
+              <span className="text-xs font-semibold text-neutral-801">Format</span>
+              <div className="flex flex-col">
+                {formatOptions.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={format === id}
+                    data-testid={`table-format-${id}`}
+                    className={`text-left text-sm px-2 py-1 rounded hover:bg-neutral-201 ${
+                      format === id ? 'font-semibold text-blue-400' : 'text-neutral-801'
+                    }`}
+                    onClick={() => onFormatChange(id)}
+                  >
+                    {format === id ? '✓ ' : ''}
+                    {DATE_FORMAT_LABELS[id]}
                   </button>
                 ))}
               </div>

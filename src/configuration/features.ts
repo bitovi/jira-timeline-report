@@ -47,6 +47,15 @@ export const nonReportsFeatures: Feature[] = [
     featureFlag: 'recursiveBlockers',
     onByDefault: false,
   },
+  // Gates the Table report's two planning-health columns only. Date Min/Max and the "How far out"
+  // date format ship ungated. A saved report naming a `planning:*` column just drops it while the
+  // flag is off. See spec/044-planning-health-mvp.
+  {
+    name: 'Planning health columns',
+    subtitle: 'Adds Rolled-up Due Date and Estimate Progress columns to the Table report.',
+    featureFlag: 'planningHealth',
+    onByDefault: false,
+  },
 ] as const;
 
 export const features = reports

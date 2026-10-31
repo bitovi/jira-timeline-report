@@ -12,13 +12,15 @@ import { fieldValueText } from './fieldValueText';
 import type { AggregationReducer } from './aggregate';
 import type { FilterKind } from './columns';
 
-export type AggregationId = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'range' | 'distinct';
+export type AggregationId = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'range' | 'distinct' | 'tally' | 'bar';
 
 /**
  * Aggregation ids that always reduce to a single number, regardless of the underlying column's
  * type (e.g. `count` on a text column still yields a number). Used to right-align aggregated
  * (group-header / cross-tab) cells per the numeric-column alignment convention — `range` (a date
- * span string) and `distinct` (a string list) are deliberately excluded.
+ * span string), `distinct` (a string list), and `tally`/`bar` (counted lists) are deliberately excluded.
+ * `min`/`max` over a DATE column reduce to an epoch number but display as a date; `isNumericMeasure`
+ * in `grouping.ts` handles that exception.
  */
 export const NUMERIC_AGGREGATION_IDS: ReadonlySet<AggregationId> = new Set(['sum', 'avg', 'min', 'max', 'count']);
 
@@ -36,7 +38,7 @@ export interface AggregationSpec {
 }
 
 /** Coerce a date-ish value (Date | epoch number | parseable string) to epoch ms, or null. */
-function toTime(value: unknown): number | null {
+export function toTime(value: unknown): number | null {
   if (value == null) return null;
   if (value instanceof Date) return value.getTime();
   if (typeof value === 'number') return value;
@@ -51,21 +53,33 @@ function toDateLabel(value: unknown): string {
   return new Date(time).toISOString().slice(0, 10);
 }
 
-const minReducer: AggregationReducer<number, number | null, 'min', number | null> = {
+/**
+ * A min/max item as a number: numbers pass through and date-ish values (Date, parseable string)
+ * reduce to epoch ms via {@link toTime}, so the same reducers serve number and date columns.
+ */
+function toComparable(item: unknown): number | null {
+  if (typeof item === 'number') return Number.isNaN(item) ? null : item;
+  if (item instanceof Date || typeof item === 'string') return toTime(item);
+  return null;
+}
+
+const minReducer: AggregationReducer<unknown, number | null, 'min', number | null> = {
   name: 'min',
   initial: () => null,
   update: (acc, item) => {
-    if (typeof item !== 'number' || Number.isNaN(item)) return acc;
-    return acc == null ? item : Math.min(acc, item);
+    const value = toComparable(item);
+    if (value == null) return acc;
+    return acc == null ? value : Math.min(acc, value);
   },
 };
 
-const maxReducer: AggregationReducer<number, number | null, 'max', number | null> = {
+const maxReducer: AggregationReducer<unknown, number | null, 'max', number | null> = {
   name: 'max',
   initial: () => null,
   update: (acc, item) => {
-    if (typeof item !== 'number' || Number.isNaN(item)) return acc;
-    return acc == null ? item : Math.max(acc, item);
+    const value = toComparable(item);
+    if (value == null) return acc;
+    return acc == null ? value : Math.max(acc, value);
   },
 };
 
@@ -106,14 +120,52 @@ const distinctReducer: AggregationReducer<unknown, string[], 'distinct', string[
   },
 };
 
+/**
+ * Count each value: `"Estimated (1), Partially estimated (2)"`, in first-seen order. Array-valued
+ * columns are flattened like {@link distinctReducer}, so each label of an issue is counted once.
+ *
+ * Shared by "Count by value" (`tally`) and "Stacked bar" (`bar`). The bar's cell is drawn by
+ * `renderStackedBar`; this text is what it sorts by and what shows wherever there is no renderer.
+ */
+function countByValueReducer<Name extends string>(
+  name: Name,
+): AggregationReducer<unknown, Array<[string, number]>, Name, string | null> {
+  return {
+    name,
+    initial: () => [],
+    update: (acc, item) => {
+      const values = Array.isArray(item) ? item : [item];
+      let next = acc;
+      for (const value of values) {
+        const str = fieldValueText(value);
+        if (str === '') continue;
+        const index = next.findIndex(([label]) => label === str);
+        next =
+          index === -1
+            ? [...next, [str, 1]]
+            : next.map((entry, i) => (i === index ? ([entry[0], entry[1] + 1] as [string, number]) : entry));
+      }
+      return next;
+    },
+    finalize: (acc) => (acc.length === 0 ? null : acc.map(([label, count]) => `${label} (${count})`).join(', ')),
+  };
+}
+
 export const aggregations: Record<AggregationId, AggregationSpec> = {
   sum: { id: 'sum', label: 'Sum', applicableTo: ['number'], reducer: sumReducer('sum', (v: number) => v) },
   avg: { id: 'avg', label: 'Average', applicableTo: ['number'], reducer: avgReducer('avg', (v: number) => v) },
-  min: { id: 'min', label: 'Min', applicableTo: ['number'], reducer: minReducer },
-  max: { id: 'max', label: 'Max', applicableTo: ['number'], reducer: maxReducer },
+  min: { id: 'min', label: 'Min', applicableTo: ['number', 'date'], reducer: minReducer },
+  max: { id: 'max', label: 'Max', applicableTo: ['number', 'date'], reducer: maxReducer },
   count: { id: 'count', label: 'Count', applicableTo: '*', reducer: countReducer('count') },
   range: { id: 'range', label: 'Range', applicableTo: ['date'], reducer: rangeReducer },
   distinct: { id: 'distinct', label: 'Distinct list', applicableTo: ['text', 'select'], reducer: distinctReducer },
+  tally: {
+    id: 'tally',
+    label: 'Count by value',
+    applicableTo: ['text', 'select'],
+    reducer: countByValueReducer('tally'),
+  },
+  bar: { id: 'bar', label: 'Stacked bar', applicableTo: ['text', 'select'], reducer: countByValueReducer('bar') },
 };
 
 /**

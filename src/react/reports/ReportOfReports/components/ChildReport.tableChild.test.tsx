@@ -144,19 +144,28 @@ const TABLE_PARAMS = new URLSearchParams({
   tableSortDir: 'tree',
 }).toString();
 
+/** Nothing saved: the Table report reads its feature flags (spec/044) from storage. */
+const EMPTY_STORAGE = {
+  get: async () => ({}),
+  update: async () => {},
+  storageInitialized: async () => true,
+} as any;
+
 const renderTableChild = () =>
   render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <JiraProvider jira={{ fetchJiraFields: () => fields.promise } as any}>
-        <Suspense fallback="loading">
-          <ChildReport
-            report={{ id: 'r', name: 'Order Table', queryParams: TABLE_PARAMS }}
-            parent={makeParent()}
-            components={{ table: TableReport }}
-          />
-        </Suspense>
-      </JiraProvider>
-    </QueryClientProvider>,
+    <StorageProvider storage={EMPTY_STORAGE}>
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <JiraProvider jira={{ fetchJiraFields: () => fields.promise } as any}>
+          <Suspense fallback="loading">
+            <ChildReport
+              report={{ id: 'r', name: 'Order Table', queryParams: TABLE_PARAMS }}
+              parent={makeParent()}
+              components={{ table: TableReport }}
+            />
+          </Suspense>
+        </JiraProvider>
+      </QueryClientProvider>
+    </StorageProvider>,
   );
 
 const rows = () => screen.findByText('language packs');

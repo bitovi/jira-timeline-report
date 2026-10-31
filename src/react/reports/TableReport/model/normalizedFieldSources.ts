@@ -15,11 +15,11 @@
  * This is what makes `parent`/`team`/`project`/`status` group and render sensibly instead of
  * showing `[object Object]` or collapsing into one bucket.
  */
-import { statusRender } from './normalizedRenderers';
+import { statusChartColor, statusRender } from './normalizedRenderers';
 
 import type { ReactNode } from 'react';
 import type { AggregationId } from './aggregations';
-import type { FilterDescriptor, RenderContext, TableIssue } from './columns';
+import type { BarStyle, FilterDescriptor, RenderContext, TableIssue } from './columns';
 
 /**
  * A normalized accessor for one field concept. `getValue` reads the flattened property off the
@@ -32,7 +32,14 @@ export interface NormalizedFieldSource {
   defaultAggregate?: AggregationId;
   /** Optional richer renderer (e.g. Status → coloured Lozenge); falls back to the type-registry render. */
   render?: (value: unknown, ctx: RenderContext) => ReactNode;
+  /** Optional "Stacked bar" colours (e.g. Status by status category). */
+  bar?: BarStyle;
 }
+
+/** Status segments in their status category's colour family, like the Status Lozenge. */
+export const STATUS_BAR: BarStyle = {
+  defaultColor: (status, issue) => statusChartColor(status, issue.statusCategory as string | undefined),
+};
 
 /** Read `issue.team.name` off the (object-valued) normalized team property. */
 function teamName(issue: TableIssue): unknown {
@@ -50,7 +57,10 @@ function joinList(value: unknown): unknown {
  * matches on (all lowercased). Order doesn't matter — matching is by exact alias.
  */
 const SOURCES: ReadonlyArray<{ aliases: readonly string[]; source: NormalizedFieldSource }> = [
-  { aliases: ['status'], source: { getValue: (i) => i.status, render: statusRender, filter: { kind: 'select' } } },
+  {
+    aliases: ['status'],
+    source: { getValue: (i) => i.status, render: statusRender, filter: { kind: 'select' }, bar: STATUS_BAR },
+  },
   // Parent is an object in raw fields (`.key`/`.fields.summary`); normalized flattens to `parentKey`.
   { aliases: ['parent', 'parent link'], source: { getValue: (i) => i.parentKey } },
   { aliases: ['project', 'project key'], source: { getValue: (i) => i.projectKey } },
