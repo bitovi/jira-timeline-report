@@ -213,6 +213,39 @@ export function matchesLevelFilter(
   return true;
 }
 
+/**
+ * Reports that read issues before rollup (`filteredDerivedIssues`) yet take the full Filters panel.
+ * There, All items covers every loaded level and each level's tab filters that level's issues by
+ * their own Jira dates. Nothing is rolled up, so Rollup Status rows are ignored.
+ */
+const BEFORE_ROLLUP_REPORTS = new Set(['flow-metrics', 'time-in-status']);
+
+export function filtersApplyBeforeRollup(reportType: string | undefined): boolean {
+  return BEFORE_ROLLUP_REPORTS.has(reportType ?? '');
+}
+
+/** `issues` minus those failing All items or their own level's filter. See {@link filtersApplyBeforeRollup}. */
+export function filterBeforeRollup<
+  T extends LevelFilterableIssue & { hierarchyLevel?: number; derivedTiming?: LevelDates },
+>(issues: T[], levels: LevelFilters, hierarchy: HierarchyLevel[] | null | undefined): T[] {
+  const withoutRollupRows = (filter: LevelFilter | undefined) =>
+    filter && { ...filter, rows: (filter.rows ?? []).filter(({ field }) => field !== 'rollupStatus') };
+  const all = withoutRollupRows(levels[ALL_LEVELS]);
+  const byLevel = new Map((hierarchy ?? []).map(({ name, hierarchyLevel }) => [hierarchyLevel, name]));
+  const active = [all, ...[...byLevel.values()].map((name) => levels[name])].some(isLevelFilterActive);
+  if (!active) {
+    return issues;
+  }
+  return issues.filter((issue) => {
+    const name = issue.hierarchyLevel == null ? undefined : byLevel.get(issue.hierarchyLevel);
+    const options = { dates: issue.derivedTiming ?? {} };
+    return (
+      matchesLevelFilter(issue, all, options) &&
+      (!name || matchesLevelFilter(issue, withoutRollupRows(levels[name]), options))
+    );
+  });
+}
+
 /** The overlap of several ISO ranges: the latest start and the earliest end. */
 export function intersectDateRange(...filters: (LevelFilter | undefined)[]): { start: string; end: string } {
   // ISO `YYYY-MM-DD` strings sort chronologically.
@@ -253,12 +286,20 @@ export function findAncestorAtLevel<T extends { parentKey?: string | null; hiera
  */
 export function levelScope(
   key: LevelKey,
-  config: LevelFiltersConfig,
+  config: LevelFiltersConfig & { primaryReportType?: string },
 ): { hierarchyLevels: Set<number>; includesReleases: boolean; isAbove: boolean } {
   const isRelease = config.primaryIssueType === RELEASE_LEVEL;
   const { above, below } = splitLevels(config);
   const hierarchy = config.issueHierarchy ?? [];
 
+  if (filtersApplyBeforeRollup(config.primaryReportType)) {
+    const levels = key === ALL_LEVELS ? hierarchy : hierarchy.filter(({ name }) => name === key);
+    return {
+      hierarchyLevels: new Set(levels.map(({ hierarchyLevel }) => hierarchyLevel)),
+      includesReleases: false,
+      isAbove: false,
+    };
+  }
   if (key === ALL_LEVELS) {
     const reportOn = isRelease ? [] : hierarchy.filter(({ name }) => name === config.primaryIssueType);
     return {
@@ -285,9 +326,13 @@ export function levelScope(
  *   with a Filters control reads.
  * - Below Report on: it hides child rows, which only Gantt, Cards and Table's tree render.
  * - All items: both of the above for the levels it covers.
+ * Every tab's range applies in the reports {@link filtersApplyBeforeRollup} names.
  */
 export function dueDateRangeApplies(key: LevelKey, config: LevelFiltersConfig & { primaryReportType?: string }) {
   const report = config.primaryReportType ?? '';
+  if (filtersApplyBeforeRollup(report)) {
+    return true;
+  }
   const appliesToReportOn = report === 'due' || report === 'start-due';
   const appliesToChildren = report === 'start-due' || report === 'cards' || report === 'table';
 

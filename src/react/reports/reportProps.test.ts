@@ -62,6 +62,8 @@ const SHELL_PROP_KEYS_ADDED_SINCE = [
   'cardsChildFilterRowsObs',
   // 2026-10-27 — Filters per hierarchy level. spec/043-filters-redesign/plan.md Phase 1.
   'visibleIssuesOrReleasesObs',
+  // 2026-10-29 — the full Filters panel on Flow Metrics and Time in Status. spec/043-filters-redesign.
+  'levelFilteredDerivedIssuesObs',
 ];
 
 // A stand-in for routeData / ChildReportConfig — propsFor only ever reads named properties off it.

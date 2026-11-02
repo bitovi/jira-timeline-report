@@ -3,6 +3,7 @@ import {
   childLevelKey,
   countActiveFilters,
   dueDateRangeApplies,
+  filterBeforeRollup,
   findAncestorAtLevel,
   intersectDateRange,
   LevelFiltersConfig,
@@ -145,6 +146,65 @@ describe('levelScope', () => {
     expect(levelScope('Initiative', config()).isAbove).toBe(true);
     expect(levelScope('Story', config()).isAbove).toBe(false);
   });
+
+  it('scopes All items to every level, with nothing above, in reports that filter before rollup', () => {
+    const flow = (overrides: Partial<LevelFiltersConfig> = {}) => ({
+      ...config(overrides),
+      primaryReportType: 'flow-metrics',
+    });
+    expect(levelScope('all', flow())).toEqual({
+      hierarchyLevels: new Set([2, 1, 0]),
+      includesReleases: false,
+      isAbove: false,
+    });
+    expect(levelScope('all', flow({ primaryIssueType: 'Release', secondaryIssueType: 'Epic' })).includesReleases).toBe(
+      false,
+    );
+    expect(levelScope('Initiative', flow()).isAbove).toBe(false);
+  });
+});
+
+describe('filterBeforeRollup', () => {
+  const issues = [
+    { key: 'I-1', type: 'Initiative', hierarchyLevel: 2, status: 'Done' },
+    { key: 'E-1', type: 'Epic', hierarchyLevel: 1, status: 'Done', derivedTiming: { start: day('2026-01-01') } },
+    { key: 'E-2', type: 'Epic', hierarchyLevel: 1, status: 'Todo' },
+    { key: 'S-1', type: 'Bug', hierarchyLevel: 0, status: 'Todo' },
+  ];
+  const keys = (levelFilters: Record<string, { rows: FilterRow[]; hideWithoutDates?: boolean }>) =>
+    filterBeforeRollup(issues, levelFilters, hierarchy).map(({ key }) => key);
+
+  it('returns the same list when nothing is filtered', () => {
+    expect(filterBeforeRollup(issues, {}, hierarchy)).toBe(issues);
+  });
+
+  it('applies All items to every level, above Report on included', () => {
+    expect(keys({ all: { rows: [row({ value: ['Todo'] })] } })).toEqual(['E-2', 'S-1']);
+  });
+
+  it("applies a level's filter to that level only", () => {
+    expect(keys({ Epic: { rows: [row()] } })).toEqual(['I-1', 'E-1', 'S-1']);
+    expect(keys({ Story: { rows: [row({ field: 'issueType', operator: 'is not', value: ['Bug'] })] } })).toEqual([
+      'I-1',
+      'E-1',
+      'E-2',
+    ]);
+  });
+
+  it('judges dates by derivedTiming', () => {
+    expect(keys({ Epic: { rows: [], hideWithoutDates: true } })).toEqual(['I-1', 'S-1']);
+  });
+
+  // Nothing is rolled up, so a Rollup Status row (from another report, or the legacy params) would
+  // otherwise hide every issue.
+  it('ignores Rollup Status rows', () => {
+    expect(keys({ all: { rows: [row({ field: 'rollupStatus', value: ['complete'] })] } })).toEqual([
+      'I-1',
+      'E-1',
+      'E-2',
+      'S-1',
+    ]);
+  });
 });
 
 describe('dueDateRangeApplies', () => {
@@ -172,6 +232,15 @@ describe('dueDateRangeApplies', () => {
     expect(
       ['start-due', 'cards', 'table', 'due', 'estimate-analysis'].map((report) => applies('Story', report)),
     ).toEqual([true, true, true, false, false]);
+  });
+
+  it('applies on every tab in reports that filter before rollup', () => {
+    expect(['all', 'Initiative', 'Epic', 'Story'].map((key) => applies(key, 'time-in-status'))).toEqual([
+      true,
+      true,
+      true,
+      true,
+    ]);
   });
 
   it('applies to All items wherever Report on or children use it', () => {

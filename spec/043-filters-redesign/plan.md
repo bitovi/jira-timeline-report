@@ -23,8 +23,15 @@ Originally gated behind a `filtersPanel` Features flag; the flag and the dropdow
 
 Exclude statuses (`statusesToExclude`) moved from Sources to the All items tab. It still removes
 issues before rollup, unlike the panel's other filters, and Clear all filters resets it.
-Estimation Progress, Flow Metrics and Time in Status read issues before rollup, so their Filters
-button opens an exclude-only panel (no tabs); there, Clear all filters clears only the exclusions.
+Estimation Progress reads issues before rollup, so its Filters button opens an exclude-only panel
+(no tabs); there, Clear all filters clears only the exclusions.
+
+Flow Metrics and Time in Status also read issues before rollup, but get the full panel (2026-10-29).
+They read `levelFilteredDerivedIssues` (`filterBeforeRollup`): All items covers every loaded level,
+each level tab filters that level's issues by their own Jira dates, and there's no Releases tab or
+Rollup Status field (Rollup Status rows saved elsewhere are ignored). Filtering a level doesn't hide
+the issues below it. Status categories, project options and colors still come from the unfiltered
+list.
 
 ## Decisions (agreed)
 

@@ -13,6 +13,8 @@ import { InfoTooltip } from './Tooltip';
 
 interface FlowMetricsProps {
   filteredDerivedIssuesObs: CanObservable<Array<DerivedIssue>>;
+  /** `filteredDerivedIssues` with the Filters panel applied. Falls back to the unfiltered list. */
+  levelFilteredDerivedIssuesObs?: CanObservable<Array<DerivedIssue>>;
   flowMetricsCycleTimeRangeObs: CanObservable<number>;
   flowMetricsStatusFilterObs: CanObservable<string[]>;
   flowMetricsIssueTypeFilterObs: CanObservable<string[]>;
@@ -24,6 +26,7 @@ type ModalState = { issues: ModalIssueRow[]; highlightKeys: Set<string> } | null
 
 export const FlowMetrics: React.FC<FlowMetricsProps> = (props) => {
   const derivedIssues = useCanObservable(props.filteredDerivedIssuesObs);
+  const panelFilteredIssues = useCanObservable(props.levelFilteredDerivedIssuesObs ?? props.filteredDerivedIssuesObs);
   const cycleTimeRange = useCanObservable(props.flowMetricsCycleTimeRangeObs);
   const statusFilter = useCanObservable(props.flowMetricsStatusFilterObs);
   const issueTypeFilter = useCanObservable(props.flowMetricsIssueTypeFilterObs);
@@ -96,7 +99,7 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = (props) => {
   };
 
   const filteredIssues = useMemo(() => {
-    let issues = derivedIssues ?? [];
+    let issues = panelFilteredIssues ?? [];
     if (statusFilter?.length) {
       issues = issues.filter((i) => statusFilter.includes(i.status ?? ''));
     } else {
@@ -110,7 +113,7 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = (props) => {
     if (projectFilter?.length) issues = issues.filter((i) => projectFilter.includes(i.projectKey));
     if (teamFilter?.length) issues = issues.filter((i) => teamFilter.includes(i.team?.name ?? ''));
     return issues;
-  }, [derivedIssues, statusFilter, issueTypeFilter, projectFilter, teamFilter]);
+  }, [panelFilteredIssues, statusFilter, issueTypeFilter, projectFilter, teamFilter]);
 
   const allProjectKeys = useMemo(
     () => [...new Set((derivedIssues ?? []).map((i) => i.projectKey))].sort(),

@@ -19,8 +19,9 @@ export interface FiltersPanelProps {
   /** All rolled-up issues/releases — Rollup Status and Issue Type options come from it. */
   rolledupAndRolledBackIssuesAndReleasesObs?: CanObservable<MinimalLevelIssue[]>;
   /**
-   * Show only Exclude statuses, with no tabs. For reports that read `filteredDerivedIssues` directly
-   * (Estimation Progress, Flow Metrics, Time in Status): it's the only filter that affects them.
+   * Show only Exclude statuses, with no tabs. For Estimation Progress, which reads
+   * `filteredDerivedIssues` directly: it's the only filter that affects it. (Flow Metrics and Time in
+   * Status read the same list with the panel applied; see `filtersApplyBeforeRollup`.)
    */
   excludeStatusesOnly?: boolean;
 }

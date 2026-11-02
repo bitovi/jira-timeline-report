@@ -295,9 +295,9 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({ rolledupAndRolledBac
         <div className="self-end pb-1">
           <ViewSettings />
         </div>
-        {/* These reports read issues before rollup, where only Exclude statuses applies. */}
+        {/* No rolled-up issues: this report reads issues before rollup, so Rollup Status isn't offered. */}
         <div className="self-end pb-1">
-          <Filters excludeStatusesOnly />
+          <Filters />
         </div>
       </>
     );
@@ -318,9 +318,9 @@ export const ReportControls: FC<Partial<FiltersProps>> = ({ rolledupAndRolledBac
         <div className="self-end pb-1">
           <ViewSettings />
         </div>
-        {/* These reports read issues before rollup, where only Exclude statuses applies. */}
+        {/* No rolled-up issues: this report reads issues before rollup, so Rollup Status isn't offered. */}
         <div className="self-end pb-1">
-          <Filters excludeStatusesOnly />
+          <Filters />
         </div>
       </>
     );

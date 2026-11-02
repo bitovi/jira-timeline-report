@@ -7,15 +7,14 @@ import { ChecklistDropdown } from '../FlowMetrics/ChecklistDropdown';
 export const TimeInStatusViewSettings: FC = () => {
   const [derivedIssues] = useRouteData<DerivedIssue[] | undefined>('derivedIssues');
   const [statusFilter, setStatusFilter] = useRouteData<string[] | undefined>('timeInStatusStatusFilter');
-  const [issueTypeFilter, setIssueTypeFilter] = useRouteData<string[] | undefined>('timeInStatusIssueTypeFilter');
 
-  const { statusOptions, issueTypeOptions } = useMemo(() => {
+  // Which status columns the charts show, not which issues: the Filters panel filters issues.
+  // Includes past statuses from the changelog, which the panel's Jira Status field doesn't list.
+  const statusOptions = useMemo(() => {
     const issues = derivedIssues ?? [];
     const statuses = new Set<string>();
-    const issueTypes = new Set<string>();
     for (const issue of issues) {
       if (issue.status) statuses.add(issue.status);
-      if (issue.type) issueTypes.add(issue.type);
       for (const entry of (issue as any).issue?.changelog ?? []) {
         for (const item of entry.items ?? []) {
           if (item.field === 'status') {
@@ -25,10 +24,7 @@ export const TimeInStatusViewSettings: FC = () => {
         }
       }
     }
-    return {
-      statusOptions: [...statuses].sort(),
-      issueTypeOptions: [...issueTypes].sort(),
-    };
+    return [...statuses].sort();
   }, [derivedIssues]);
 
   const row = 'grid grid-cols-[150px_1fr] gap-6 py-4';
@@ -37,12 +33,8 @@ export const TimeInStatusViewSettings: FC = () => {
   return (
     <div>
       <div className={row}>
-        <p className={label}>Status</p>
+        <p className={label}>Show statuses</p>
         <ChecklistDropdown options={statusOptions} value={statusFilter} onChange={setStatusFilter} />
-      </div>
-      <div className={row}>
-        <p className={label}>Issue type</p>
-        <ChecklistDropdown options={issueTypeOptions} value={issueTypeFilter} onChange={setIssueTypeFilter} />
       </div>
     </div>
   );

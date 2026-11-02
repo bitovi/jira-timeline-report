@@ -17,6 +17,8 @@ export const propsFor = (vm: any, config: any) => ({
   allIssuesOrReleasesObs: value.from(vm, 'rolledupAndRolledBackIssuesAndReleases'),
   rollupTimingLevelsAndCalculationsObs: value.from(vm, 'rollupTimingLevelsAndCalculations'),
   filteredDerivedIssuesObs: value.from(vm, 'filteredDerivedIssues'),
+  // `filteredDerivedIssues` with the Filters panel applied, for Flow Metrics and Time in Status.
+  levelFilteredDerivedIssuesObs: value.from(vm, 'levelFilteredDerivedIssues'),
   // The rolled-up list with rows below Report on hidden by the Filters panel (spec/043). Gantt
   // expanded rows and Cards read their children from it; everything else keeps the full list.
   visibleIssuesOrReleasesObs: value.from(vm, 'visibleIssuesOrReleases'),
