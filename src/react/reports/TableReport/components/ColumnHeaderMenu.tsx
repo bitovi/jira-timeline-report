@@ -169,9 +169,7 @@ export const ColumnHeaderMenu: React.FC<ColumnHeaderMenuProps> = ({
           )}
           {onEditOrderAndColors && (
             <div className="flex flex-col gap-1" data-testid="table-order-and-colors-menu">
-              <span className="text-xs font-semibold text-neutral-801">
-                Values{aggregationActive ? '' : ' (used when grouped)'}
-              </span>
+              <span className="text-xs font-semibold text-neutral-801">Values</span>
               <button
                 type="button"
                 data-testid="table-order-and-colors"

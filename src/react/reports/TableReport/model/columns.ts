@@ -80,6 +80,11 @@ export interface RenderContext {
    * means `'date'`. Other renderers ignore it.
    */
   dateFormat?: DateFormat;
+  /**
+   * The colours picked for this column's values (⋯ → Order and colors), value → colour id. Cells that
+   * draw a coloured value (Estimate Progress) read it so they match the column's Stacked bar.
+   */
+  valueColors?: Readonly<Record<string, string>>;
 }
 
 /** Context passed to a column's `renderMeasure` override — see {@link ColumnDefinition.renderMeasure}. */

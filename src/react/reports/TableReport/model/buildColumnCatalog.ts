@@ -30,6 +30,7 @@ import {
 import { compareToLast } from './diffRender';
 import { computePercentComplete } from '../../GanttReport/GanttGrid/helpers/percentComplete';
 import { ESTIMATE_PROGRESS_ORDER } from '../../shared/estimationProgress';
+import { segmentColor } from './stackedBar';
 
 import type { BarStyle, ColumnDefinition, ColumnGroup, FilterDescriptor, RenderContext, TableIssue } from './columns';
 import type { ReactNode } from 'react';
@@ -194,6 +195,27 @@ function planningHealthOf(issue: TableIssue): PlanningHealth | undefined {
 }
 
 /**
+ * Rolled-up Start Date — the earliest start date among the row's children (recursively), else its
+ * own: the Rolled-up Due Date's counterpart. Only levels that are loaded count. A date column like
+ * any other; groups default to Min.
+ */
+function buildRolledUpStartColumn(): ColumnDefinition {
+  const entry = getFieldTypeEntry('date');
+  return {
+    id: 'planning:rolledUpStart',
+    label: 'Rolled-up Start Date',
+    group: 'Report Fields',
+    source: { kind: 'computed', computedId: 'rolledUpStart' },
+    getValue: (issue) => planningHealthOf(issue)?.rolledUpStart ?? null,
+    render: entry.render,
+    compare: entry.compare,
+    filter: entry.filter,
+    aggregate: 'min',
+    defaultAggregate: 'min',
+  };
+}
+
+/**
  * Rolled-up Due Date — the latest due date among the row's children (recursively), else its own
  * (spec/044-planning-health-mvp §5). Only levels that are loaded count: without the level below
  * loaded, a row shows its own due date. A date column like any other, so it gets Min/Max/Range and
@@ -215,17 +237,9 @@ function buildRolledUpDueColumn(): ColumnDefinition {
   };
 }
 
-/** The Estimation Progress report's colour for each label. */
-const ESTIMATE_PROGRESS_CLASSES: Record<EstimateProgress, string> = {
-  Estimated: 'color-text-and-bg-complete',
-  'Partially estimated': 'color-text-and-bg-ontrack',
-  Unestimated: 'color-text-and-bg-behind',
-  'No children': 'color-text-and-bg-notstarted',
-};
-
 /**
- * The same colours as Stacked bar defaults: the report theme colours behind those classes, so they
- * follow Settings → Theme.
+ * Estimate Progress's default colours, for its pills and Stacked bar: the report theme colours the
+ * Estimation Progress report uses, so they follow Settings → Theme. Order and colors overrides them.
  */
 const ESTIMATE_PROGRESS_COLORS: Record<EstimateProgress, string> = {
   Estimated: 'theme.complete',
@@ -244,27 +258,39 @@ const ESTIMATE_PROGRESS_COLORS: Record<EstimateProgress, string> = {
 function buildEstimateProgressColumn(): ColumnDefinition<EstimateProgress | undefined> {
   const rank = (value: EstimateProgress | undefined) => (value == null ? -1 : ESTIMATE_PROGRESS_ORDER.indexOf(value));
   const getValue = (issue: TableIssue) => planningHealthOf(issue)?.estimateProgress;
-  return {
+  const column: ColumnDefinition<EstimateProgress | undefined> = {
     id: 'planning:estimateProgress',
     label: 'Estimate Progress',
     group: 'Report Fields',
     source: { kind: 'computed', computedId: 'estimateProgress' },
     getValue,
-    render: (value) =>
-      value == null
-        ? ''
-        : createElement('span', { className: `px-1 rounded ${ESTIMATE_PROGRESS_CLASSES[value]}` }, value),
+    // The pill takes the same colour as the value's Stacked bar segment: the colour picked in Order and
+    // colors, else the default above.
+    render: (value, ctx) => {
+      if (value == null) return '';
+      const color = segmentColor(column as ColumnDefinition, value, ctx.issue, ctx.valueColors);
+      return createElement(
+        'span',
+        {
+          className: 'px-1 rounded',
+          'data-color': color.id,
+          style: { backgroundColor: color.background, color: color.text },
+        },
+        value,
+      );
+    },
     compare: (a, b) => rank(a) - rank(b),
     filter: { kind: 'select', options: [...ESTIMATE_PROGRESS_ORDER] },
     aggregate: 'bar',
     defaultAggregate: 'bar',
     bar: { defaultColor: (value) => ESTIMATE_PROGRESS_COLORS[value as EstimateProgress] },
   };
+  return column;
 }
 
 /** Options that add or remove catalog columns. */
 export interface ColumnCatalogOptions {
-  /** The `planningHealth` feature flag: adds Rolled-up Due Date and Estimate Progress. */
+  /** The `planningHealth` feature flag: adds Rolled-up Start Date, Rolled-up Due Date and Estimate Progress. */
   planningHealth?: boolean;
 }
 
@@ -365,7 +391,9 @@ export function buildColumnCatalog(fields: IssueFields, options: ColumnCatalogOp
     buildEstimationColumn('rolledUpDays', 'Rolled Up Days', rolledUpDaysValue),
     buildPercentCompleteColumn(),
   ];
-  if (options.planningHealth) estimation.push(buildRolledUpDueColumn(), buildEstimateProgressColumn());
+  if (options.planningHealth) {
+    estimation.push(buildRolledUpStartColumn(), buildRolledUpDueColumn(), buildEstimateProgressColumn());
+  }
 
   return [...identity, ...builtin, ...reportFields, ...estimation, ...fieldColumns];
 }

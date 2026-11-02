@@ -24,7 +24,7 @@ import { createStableObjectKey, groupByKeys } from './group';
 import { aggregations, isNumericAggregation } from './aggregations';
 import { formatDateValue, formatHowFarOut } from './relativeDate';
 import { renderStackedBar } from './stackedBar';
-import { issuesByValue, orderValues } from './valueOrder';
+import { issuesByValue, orderValues, supportsOrderAndColors } from './valueOrder';
 
 import type { AggregationId } from './aggregations';
 import type { DateFormat } from './relativeDate';
@@ -118,10 +118,12 @@ export function selectMeasureColumns(
 
 /**
  * The effective aggregation id for a column: per-column override (from the `⋯` menu) → the column's
- * own `aggregate` → its `defaultAggregate` → `count` as a last resort.
+ * own `aggregate` → its `defaultAggregate` → `count` as a last resort. An override the column no
+ * longer offers (e.g. a saved Stacked bar on Issue key) is ignored.
  */
 export function effectiveAggregationId(column: ColumnDefinition, override?: AggregationId): AggregationId {
-  return override ?? column.aggregate ?? column.defaultAggregate ?? 'count';
+  const usable = override != null && applicableAggregations(column).includes(override) ? override : undefined;
+  return usable ?? column.aggregate ?? column.defaultAggregate ?? 'count';
 }
 
 /**
@@ -226,10 +228,15 @@ export function displayMeasureValue(
   return formatMeasureValue(computeMeasureValue(column, members, aggregation));
 }
 
-/** The aggregations that make sense for a column, based on its filter kind / `applicableTo`. */
+/**
+ * The aggregations that make sense for a column, based on its filter kind / `applicableTo`. Stacked
+ * bar goes with ⋯ → Order and colors, which sets its segments' order and colours: no Stacked bar
+ * without it (identity columns such as Issue key, where every value is unique).
+ */
 export function applicableAggregations(column: ColumnDefinition): AggregationId[] {
   const kind = column.filter?.kind;
   return (Object.keys(aggregations) as AggregationId[]).filter((id) => {
+    if (id === 'bar' && !supportsOrderAndColors(column)) return false;
     const applicable = aggregations[id].applicableTo;
     if (applicable === '*') return true;
     return kind != null && applicable.includes(kind);

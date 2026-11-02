@@ -118,6 +118,12 @@ describe('effectiveAggregationId', () => {
     expect(effectiveAggregationId({ ...pointsCol, aggregate: 'avg' })).toBe('avg');
     expect(effectiveAggregationId(pointsCol, 'max')).toBe('max');
   });
+
+  test('ignores an override the column does not offer, e.g. a saved Stacked bar on Issue key', () => {
+    const issueKey = { ...keyCol, filter: { kind: 'text' as const }, defaultAggregate: 'distinct' as const };
+    expect(effectiveAggregationId(issueKey, 'bar')).toBe('distinct');
+    expect(effectiveAggregationId(pointsCol, 'tally')).toBe('sum');
+  });
 });
 
 describe('computeMeasureValue', () => {
@@ -163,6 +169,10 @@ describe('applicableAggregations', () => {
   });
   test('select column offers count, distinct, tally + bar', () => {
     expect(applicableAggregations(statusCol)).toEqual(['count', 'distinct', 'tally', 'bar']);
+  });
+  test('identity text column (Issue key) has no Stacked bar, as it has no Order and colors', () => {
+    const issueKey = { ...keyCol, filter: { kind: 'text' as const } };
+    expect(applicableAggregations(issueKey)).toEqual(['count', 'distinct', 'tally']);
   });
 });
 

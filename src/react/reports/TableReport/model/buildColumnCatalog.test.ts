@@ -352,10 +352,25 @@ describe('buildColumnCatalog — planning health columns (spec/044)', () => {
     ).toEqual([]);
     const on = buildColumnCatalog(fields, { planningHealth: true });
     expect(ids(on).filter((id) => id.startsWith('planning:'))).toEqual([
+      'planning:rolledUpStart',
       'planning:rolledUpDue',
       'planning:estimateProgress',
     ]);
     expect(on.filter((c) => c.id.startsWith('planning:')).every((c) => c.group === 'Report Fields')).toBe(true);
+  });
+
+  test('Rolled-up Start Date is a date column that defaults to Min', () => {
+    const column = buildColumnCatalog(fields, { planningHealth: true }).find((c) => c.id === 'planning:rolledUpStart')!;
+    const start = new Date(2026, 10, 1);
+    const issue: TableIssue = {
+      key: 'A',
+      planningHealth: { rolledUpStart: start, rolledUpDue: null, estimateProgress: 'Estimated' },
+    };
+    expect(column.label).toBe('Rolled-up Start Date');
+    expect(column.getValue(issue)).toBe(start);
+    expect(column.getValue({ key: 'B' })).toBeNull();
+    expect(column.filter).toEqual({ kind: 'date' });
+    expect(column.defaultAggregate).toBe('min');
   });
 
   test('Rolled-up Due Date is a date column that defaults to Max', () => {

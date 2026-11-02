@@ -58,7 +58,8 @@ export const OrderAndColorsModal: React.FC<OrderAndColorsModalProps> = ({
       </ModalHeader>
       <ModalBody>
         <p className="pb-3 text-sm text-neutral-801">
-          When this column is grouped, its values appear in this order. Colors are used by Stacked bar.
+          When this column is grouped, its values appear in this order. Colors are used by Stacked bar and by colored
+          cells.
         </p>
         {items.length === 0 ? (
           <p className="text-sm text-neutral-801">No values loaded.</p>

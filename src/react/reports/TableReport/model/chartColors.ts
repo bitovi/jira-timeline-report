@@ -59,7 +59,6 @@ export const THEME_COLORS: readonly ChartColor[] = [
 ];
 
 const SHADES = ['bold', 'bolder', 'boldest'] as const;
-export type Shade = (typeof SHADES)[number];
 
 /** Light-theme values of `color.chart.<family>.<shade>`, from `@atlaskit/tokens`. */
 const FAMILY_FALLBACKS = {
@@ -112,9 +111,4 @@ function hashText(text: string): number {
 /** The default colour id for a value with no colour of its own: picked by its name, so it never moves. */
 export function colorForName(name: string): string {
   return NAME_DEFAULTS[hashText(name) % NAME_DEFAULTS.length].id;
-}
-
-/** A shade of `family`, picked by `name` so different values in one family differ. */
-export function familyShadeForName(family: ChartFamily, name: string): string {
-  return `color.chart.${family}.${SHADES[hashText(name) % SHADES.length]}`;
 }

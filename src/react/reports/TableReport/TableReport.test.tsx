@@ -1489,4 +1489,30 @@ describe('TableReport planning health (spec/044)', () => {
       .find((s) => s.getAttribute('aria-label') === 'Estimated (1)')!;
     expect(estimated).toHaveAttribute('data-color', 'color.chart.purple.boldest');
   });
+
+  test('ungrouped Estimate Progress pills use the same colours as the stacked bar, picked or default', () => {
+    mockFeatures.planningHealth = true;
+    const tableObs = renderPlanning();
+    const pill = (summary: string) => {
+      const row = screen
+        .getAllByRole('row')
+        .find((r) => r.querySelector('td') && within(r).queryByText(summary, { selector: 'a' }))!;
+      return row.querySelector('[data-color]')!;
+    };
+    // Defaults: the report theme colours.
+    expect(pill('inc2')).toHaveAttribute('data-color', 'theme.complete');
+    expect(pill('inc1')).toHaveAttribute('data-color', 'theme.ontrack');
+
+    act(() =>
+      tableObs.tableColumnsObs.set(
+        PLANNING_COLUMNS.map((c) =>
+          c.sourceId === 'planning:estimateProgress'
+            ? { ...c, valueColors: { Estimated: 'color.chart.purple.boldest' } }
+            : c,
+        ),
+      ),
+    );
+    expect(pill('inc2')).toHaveAttribute('data-color', 'color.chart.purple.boldest');
+    expect(pill('inc1')).toHaveAttribute('data-color', 'theme.ontrack');
+  });
 });

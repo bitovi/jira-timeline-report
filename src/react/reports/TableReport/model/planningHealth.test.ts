@@ -8,7 +8,16 @@ const day = (y: number, m: number, d: number) => new Date(y, m - 1, d);
 
 /** An issue with no estimate, no confidence and no due date unless given. */
 function issue(key: string, parentKey: string | null, extra: Partial<Fixture> = {}): Fixture {
-  return { key, parentKey, dueDate: null, storyPoints: null, storyPointsMedian: null, confidence: null, ...extra };
+  return {
+    key,
+    parentKey,
+    startDate: null,
+    dueDate: null,
+    storyPoints: null,
+    storyPointsMedian: null,
+    confidence: null,
+    ...extra,
+  };
 }
 
 const estimated = { storyPoints: 5, confidence: 80 };
@@ -59,6 +68,38 @@ describe('computePlanningHealth — rolled-up due date', () => {
     expect(cycleDates).toContain(health.get('A')?.rolledUpDue?.getTime());
     expect(cycleDates).toContain(health.get('B')?.rolledUpDue?.getTime());
     expect(health.get('C')?.rolledUpDue).toEqual(day(2027, 1, 1));
+  });
+});
+
+describe('computePlanningHealth — rolled-up start date', () => {
+  test('is the earliest start date among the children, recursively', () => {
+    const health = computePlanningHealth([
+      issue('OUT-1', null, { startDate: day(2026, 12, 1) }),
+      issue('INIT-1', 'OUT-1', { startDate: day(2026, 11, 15) }),
+      issue('EPIC-1', 'INIT-1', { startDate: day(2027, 1, 1) }),
+      issue('EPIC-2', 'INIT-1', { startDate: day(2026, 10, 1) }),
+      issue('EPIC-3', 'INIT-1'),
+    ]);
+    expect(health.get('INIT-1')?.rolledUpStart).toEqual(day(2026, 10, 1));
+    expect(health.get('OUT-1')?.rolledUpStart).toEqual(day(2026, 10, 1));
+  });
+
+  test("falls back to the issue's own start date when no child has one", () => {
+    const health = computePlanningHealth([
+      issue('INIT-1', null, { startDate: day(2026, 11, 1) }),
+      issue('EPIC-1', 'INIT-1'),
+    ]);
+    expect(health.get('INIT-1')?.rolledUpStart).toEqual(day(2026, 11, 1));
+    expect(health.get('EPIC-1')?.rolledUpStart).toBeNull();
+  });
+
+  test('is independent of the due date rollup', () => {
+    const health = computePlanningHealth([
+      issue('INIT-1', null),
+      issue('EPIC-1', 'INIT-1', { startDate: day(2026, 11, 1), dueDate: day(2026, 12, 1) }),
+      issue('EPIC-2', 'INIT-1', { startDate: day(2027, 1, 1), dueDate: day(2027, 3, 1) }),
+    ]);
+    expect(health.get('INIT-1')).toMatchObject({ rolledUpStart: day(2026, 11, 1), rolledUpDue: day(2027, 3, 1) });
   });
 });
 

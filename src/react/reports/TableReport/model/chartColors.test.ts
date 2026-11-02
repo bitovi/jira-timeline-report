@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { FAMILY_COLORS, THEME_COLORS, chartColor, colorForName, familyShadeForName } from './chartColors';
+import { FAMILY_COLORS, THEME_COLORS, chartColor, colorForName } from './chartColors';
 import { statusChartColor } from './normalizedRenderers';
 
 // Atlassian's light theme, as shipped: the source of each token's fallback.
@@ -47,14 +47,10 @@ describe('default colours are picked by name', () => {
     expect(new Set(names.map(colorForName)).size).toBeGreaterThan(4);
   });
 
-  test('a family shade is stable per name', () => {
-    expect(familyShadeForName('gray', 'Idea')).toMatch(/^color\.chart\.gray\.(bold|bolder|boldest)$/);
-    expect(familyShadeForName('gray', 'Idea')).toBe(familyShadeForName('gray', 'Idea'));
-  });
-
-  test('statuses in one category share a family but not always a shade', () => {
-    const todo = ['Idea', 'Estimating', 'Ready', 'Refined', 'Backlog'].map((s) => statusChartColor(s, 'To Do'));
-    for (const id of todo) expect(id).toMatch(/^color\.chart\.gray\./);
-    expect(new Set(todo).size).toBeGreaterThan(1);
+  test('statuses default to their category colour, as Jira colours them', () => {
+    const todo = ['Idea', 'Estimating', 'Ready'].map((s) => statusChartColor(s, 'To Do'));
+    expect(new Set(todo)).toEqual(new Set(['color.chart.gray.bolder']));
+    expect(statusChartColor('Doing', 'In Progress')).toBe('color.chart.blue.bolder');
+    expect(statusChartColor('Shipped', 'Done')).toBe('color.chart.green.bolder');
   });
 });
