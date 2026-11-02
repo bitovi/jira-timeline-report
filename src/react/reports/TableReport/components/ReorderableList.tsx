@@ -21,8 +21,6 @@ import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indi
 import { DragHandleButton } from '@atlaskit/pragmatic-drag-and-drop-react-accessibility/drag-handle-button';
 import { announce, cleanup as cleanupLiveRegion } from '@atlaskit/pragmatic-drag-and-drop-live-region';
 
-import { ABOVE_MODAL_Z_INDEX } from './ColorSwatchPicker';
-
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 
 interface ReorderableListProps {
@@ -164,8 +162,9 @@ const ReorderableRow: React.FC<ReorderableRowProps> = ({ item, index, count, ins
     >
       <DropdownMenu
         placement="bottom-start"
-        // The list is used inside a modal; the menu's default z-index would put it behind.
-        zIndex={ABOVE_MODAL_Z_INDEX}
+        // The list is used inside a modal: render the menu there rather than portalled, or the modal's
+        // focus lock pulls keyboard focus back out of it (see SearchablePicker's `shouldRenderToParent`).
+        shouldRenderToParent
         trigger={({ triggerRef, ...triggerProps }) => (
           <DragHandleButton
             {...triggerProps}

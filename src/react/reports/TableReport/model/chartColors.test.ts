@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { FAMILY_COLORS, THEME_COLORS, chartColor, colorForName } from './chartColors';
+import { FAMILY_COLORS, THEME_COLORS, chartColor, colorForName, contrastRatio } from './chartColors';
 import { statusChartColor } from './normalizedRenderers';
 
 // Atlassian's light theme, as shipped: the source of each token's fallback.
@@ -17,6 +17,16 @@ describe('chart colour palette', () => {
     for (const color of FAMILY_COLORS) {
       const fallback = /var\([^,]+,\s*([^)]+)\)/.exec(color.background)?.[1];
       expect({ id: color.id, value: fallback?.toUpperCase() }).toEqual({ id: color.id, value: themeValue(color.id) });
+    }
+  });
+
+  test("every colour's text meets WCAG AA contrast (4.5:1) for small text", () => {
+    for (const color of FAMILY_COLORS) {
+      const background = /var\([^,]+,\s*([^)]+)\)/.exec(color.background)![1];
+      expect({ id: color.id, passes: contrastRatio(background, color.text) >= 4.5 }).toEqual({
+        id: color.id,
+        passes: true,
+      });
     }
   });
 

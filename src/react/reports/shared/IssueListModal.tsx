@@ -3,7 +3,7 @@
  * and the Table report's grouped Estimate Progress bar reuses (spec/044-planning-health-mvp).
  */
 import React from 'react';
-import ModalDialog, { ModalHeader, ModalBody, ModalFooter } from '@atlaskit/modal-dialog';
+import ModalDialog, { ModalHeader, ModalBody, ModalFooter, ModalTitle } from '@atlaskit/modal-dialog';
 import Button from '@atlaskit/button';
 
 export interface IssueListModalIssue {
@@ -22,7 +22,8 @@ interface IssueListModalProps {
 export const IssueListModal: React.FC<IssueListModalProps> = ({ title, issues, onClose, testId }) => (
   <ModalDialog testId={testId} onClose={onClose} width="medium">
     <ModalHeader>
-      <h2 className="text-lg pb-4">{title}</h2>
+      {/* ModalTitle, not a plain heading: it names the dialog for screen readers. */}
+      <ModalTitle>{title}</ModalTitle>
     </ModalHeader>
     <ModalBody>
       <ul>

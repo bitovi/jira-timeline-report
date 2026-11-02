@@ -20,7 +20,10 @@ export interface ChartColor {
   text: string;
 }
 
-const DARK_TEXT = '#172B4D';
+// Black rather than Atlassian's navy text (#172B4D): on the mid-tone chart colours navy falls short of
+// WCAG AA's 4.5:1 for small text (bars and pills), and black reaches it on every one. Plain hex, not
+// `color.text` tokens, which would flip in dark mode while the chart colours here do not.
+const DARK_TEXT = '#000000';
 const LIGHT_TEXT = '#FFFFFF';
 
 /** Relative luminance of a `#RRGGBB` colour (WCAG). */
@@ -30,13 +33,15 @@ function luminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-/** Whichever of dark or light text contrasts more with `hex`. */
+/** WCAG contrast ratio between two `#RRGGBB` colours (1 to 21). */
+export function contrastRatio(a: string, b: string): number {
+  const [lighter, darker] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/** Whichever of black or white text contrasts more with `hex`. */
 function textFor(hex: string): string {
-  const l = luminance(hex);
-  const contrast = (other: number) => (Math.max(l, other) + 0.05) / (Math.min(l, other) + 0.05);
-  return contrast(luminance(DARK_TEXT)) >= contrast(luminance(LIGHT_TEXT))
-    ? token('color.text', DARK_TEXT)
-    : token('color.text.inverse', LIGHT_TEXT);
+  return contrastRatio(hex, DARK_TEXT) >= contrastRatio(hex, LIGHT_TEXT) ? DARK_TEXT : LIGHT_TEXT;
 }
 
 function chartToken(name: string, label: string, fallback: string): ChartColor {

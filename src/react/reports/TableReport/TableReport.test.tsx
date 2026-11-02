@@ -1239,13 +1239,18 @@ describe('TableReport (sticky headers / frozen label columns)', () => {
   });
 });
 
-/** The z-index of the nearest positioned layer around `element` (portalled popups set it inline). */
-const zIndexOf = (element: HTMLElement): number => {
-  for (let el: HTMLElement | null = element; el; el = el.parentElement) {
-    const z = parseInt(el.style.zIndex, 10);
-    if (!Number.isNaN(z)) return z;
-  }
-  return 0;
+/**
+ * Keyboard focus can reach `element` inside the modal: it renders inside the modal (a portalled
+ * popup sits outside the modal's focus lock, which pulls focus straight back out of it) and keeps
+ * focus once given it.
+ */
+const expectFocusableInModal = async (modal: HTMLElement, element: HTMLElement) => {
+  const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+  expect(modal).toContainElement(element);
+  await settle(); // the popup moves focus onto its own panel as it opens
+  act(() => element.focus());
+  await settle();
+  expect(element).toHaveFocus();
 };
 
 describe('TableReport planning health (spec/044)', () => {
@@ -1382,7 +1387,8 @@ describe('TableReport planning health (spec/044)', () => {
 
     fireEvent.click(segments[2]);
     const modal = screen.getByTestId('table-issue-list-modal');
-    expect(within(modal).getByText('outcomeA: Partially estimated (1)')).toBeInTheDocument();
+    // The title names the dialog for screen readers.
+    expect(screen.getByRole('dialog', { name: 'outcomeA: Partially estimated (1)' })).toBe(modal);
     expect(within(modal).getByRole('link', { name: 'inc1' })).toHaveAttribute('href', 'https://example.test/inc1');
   });
 
@@ -1419,7 +1425,7 @@ describe('TableReport planning health (spec/044)', () => {
 
     // Keyboard path: the drag handle is also a menu button.
     fireEvent.click(within(modal).getByRole('button', { name: 'Reorder No children' }));
-    expect(zIndexOf(await screen.findByText('Move to top'))).toBeGreaterThan(510);
+    await expectFocusableInModal(modal, (await screen.findByText('Move to top')).closest('button')!);
     fireEvent.click(await screen.findByText('Move to top'));
     expect(rowNames()).toEqual(['No children', 'Estimated', 'Partially estimated']);
 
@@ -1471,8 +1477,7 @@ describe('TableReport planning health (spec/044)', () => {
     // Starts on the column's default: the report theme colour.
     const trigger = within(modal).getByRole('button', { name: 'Color for Estimated: Complete (default)' });
     fireEvent.click(trigger);
-    // Above the modal (z-index 510), not behind it: Atlaskit popups default to 400.
-    expect(zIndexOf(await screen.findByTestId('color-swatch-picker'))).toBeGreaterThan(510);
+    await expectFocusableInModal(modal, await screen.findByRole('button', { name: 'Purple boldest' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Purple boldest' }));
     expect(within(modal).getByRole('button', { name: 'Color for Estimated: Purple boldest' })).toBeInTheDocument();
 

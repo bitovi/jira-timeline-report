@@ -21,7 +21,7 @@ import { aggregateGroup } from './aggregate';
 import { fieldValueText } from './fieldValueText';
 import { createStableObjectKey, groupByKeys } from './group';
 
-import { aggregations, isNumericAggregation } from './aggregations';
+import { aggregations, isNumericAggregation, toTime } from './aggregations';
 import { formatDateValue, formatHowFarOut } from './relativeDate';
 import { renderStackedBar } from './stackedBar';
 import { issuesByValue, orderValues, supportsOrderAndColors } from './valueOrder';
@@ -181,6 +181,27 @@ function isDateMinMax(column: ColumnDefinition, aggId: AggregationId): boolean {
 }
 
 /**
+ * The earliest (`min`) or latest (`max`) of the members' dates, as that member's own value rather
+ * than the epoch the reducers compare by. "How far out" then reads a date-only Jira value
+ * (`2026-10-30`) as that local calendar day, as the ungrouped cell does; as an epoch it is UTC
+ * midnight, which is the day before anywhere west of UTC.
+ */
+function extremeDate(column: ColumnDefinition, members: TableIssue[], which: 'min' | 'max'): unknown {
+  let best: unknown = null;
+  let bestTime: number | null = null;
+  for (const issue of members) {
+    const value = column.getValue(issue);
+    const time = toTime(value);
+    if (time == null || Number.isNaN(time)) continue;
+    if (bestTime == null || (which === 'min' ? time < bestTime : time > bestTime)) {
+      best = value;
+      bestTime = time;
+    }
+  }
+  return best;
+}
+
+/**
  * Whether an aggregated cell holds a number and so right-aligns: {@link isNumericAggregation}, except
  * Min/Max over a date column, which display as a date and stay left-aligned like the ungrouped cell.
  */
@@ -211,10 +232,14 @@ export function displayMeasureValue(
   { aggregation, dateFormat, valueOrder, today = new Date() }: MeasureDisplayOptions = {},
 ): string {
   const id = effectiveAggregationId(column, aggregation);
-  if (isDateMinMax(column, id)) return formatDateValue(computeMeasureValue(column, members, id), dateFormat, today);
+  if (isDateMinMax(column, id)) {
+    return dateFormat === 'relative'
+      ? formatHowFarOut(extremeDate(column, members, id as 'min' | 'max'), today)
+      : formatDateValue(computeMeasureValue(column, members, id), dateFormat, today);
+  }
   if (column.filter?.kind === 'date' && id === 'range' && dateFormat === 'relative') {
-    const min = computeMeasureValue(column, members, 'min');
-    const max = computeMeasureValue(column, members, 'max');
+    const min = extremeDate(column, members, 'min');
+    const max = extremeDate(column, members, 'max');
     if (min == null || max == null) return '';
     return `${formatHowFarOut(min, today)} – ${formatHowFarOut(max, today)}`;
   }

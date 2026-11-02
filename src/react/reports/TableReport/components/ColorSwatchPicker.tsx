@@ -24,12 +24,6 @@ interface ColorSwatchPickerProps {
 
 const SWATCH = 20;
 
-/**
- * Atlaskit popups default to the "layer" z-index (400), below modals (510), and this picker opens
- * from the Order and colors modal — so it would render behind it. One above the modal layer.
- */
-export const ABOVE_MODAL_Z_INDEX = 511;
-
 const Swatch: React.FC<{ color: ChartColor; selected: boolean; onClick: () => void }> = ({
   color,
   selected,
@@ -65,7 +59,10 @@ export const ColorSwatchPicker: React.FC<ColorSwatchPickerProps> = ({ name, valu
       isOpen={isOpen}
       onClose={() => setIsOpen(false)}
       placement="bottom-start"
-      zIndex={ABOVE_MODAL_Z_INDEX}
+      // Opens from the Order and colors modal: render it there rather than portalled, so it sits above
+      // the modal and the modal's focus lock lets keyboard focus in (see SearchablePicker's
+      // `shouldRenderToParent`).
+      shouldRenderToParent
       content={() => (
         <div className="p-3 flex flex-col gap-2" data-testid="color-swatch-picker">
           <button
