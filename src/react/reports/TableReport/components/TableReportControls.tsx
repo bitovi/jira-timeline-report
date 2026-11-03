@@ -22,6 +22,7 @@ import ChevronRightIcon from '@atlaskit/icon/utility/chevron-right';
 import { useRouteData } from '../../../hooks/useRouteData';
 import { useSubmenuSafeDropdown } from '../../../hooks/useSubmenuSafeDropdown';
 import { useJiraIssueFields } from '../../../services/jira/useJiraIssueFields';
+import { useAsyncFeatures } from '../../../services/features/useFeatures';
 import { buildColumnCatalog } from '../model/buildColumnCatalog';
 import { addColumn } from '../model/applyView';
 import { DATE_GRANULARITIES, DATE_GRANULARITY_LABELS } from '../model/dateBucketing';
@@ -141,7 +142,9 @@ const TableReportControlsInner: FC = () => {
   const [sortDir = 'asc', setSortDir] = useRouteData<string>('tableSortDir');
 
   const fields = useJiraIssueFields() as IssueFields;
-  const catalog = useMemo(() => buildColumnCatalog(fields), [fields]);
+  // Non-suspending, like the report body (see TableReport.tsx).
+  const planningHealth = useAsyncFeatures().features?.planningHealth ?? false;
+  const catalog = useMemo(() => buildColumnCatalog(fields, { planningHealth }), [fields, planningHealth]);
   const catalogById = useMemo(() => new Map(catalog.map((c) => [c.id, c])), [catalog]);
 
   const columnIds = useMemo(() => entriesToColumnIds(columns), [columns]);

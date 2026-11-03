@@ -43,6 +43,11 @@
   "license": "ISC",
   "dependencies": {
     "@atlaskit/editor-wikimarkup-transformer": "^12.1.0",
+    "@atlaskit/pragmatic-drag-and-drop": "^1.4.0",
+    "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.0.3",
+    "@atlaskit/pragmatic-drag-and-drop-live-region": "^1.1.0",
+    "@atlaskit/pragmatic-drag-and-drop-react-accessibility": "1.2.0",
+    "@atlaskit/pragmatic-drag-and-drop-react-drop-indicator": "^4.1.1",
     "@forge/kvs": "^2.0.6",
     "@forge/resolver": "^2.0.0",
     "@sentry/node": "^8.51.0",

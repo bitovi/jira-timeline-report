@@ -8,6 +8,9 @@ import Lozenge from '@atlaskit/lozenge';
 
 import { JiraImage } from '../../../components/JiraImage';
 
+import { chartColor } from './chartColors';
+
+import type { ChartFamily } from './chartColors';
 import type { RenderContext } from './columns';
 
 type LozengeAppearance = 'default' | 'inprogress' | 'moved' | 'new' | 'removed' | 'success';
@@ -32,12 +35,46 @@ function statusAppearance(status: string, category?: string): LozengeAppearance 
   return 'default';
 }
 
-/** Render a status value as a coloured Atlaskit Lozenge (design system component). */
+/** The chart colour family matching each Lozenge appearance. */
+const APPEARANCE_FAMILY: Record<LozengeAppearance, ChartFamily> = {
+  success: 'green',
+  inprogress: 'blue',
+  removed: 'red',
+  moved: 'yellow',
+  new: 'purple',
+  default: 'gray',
+};
+
+/**
+ * A status's default colour id (Stacked bar, Order and colors): its Lozenge's colour family — grey,
+ * blue, green or red, as Jira colours statuses by category.
+ */
+export function statusChartColor(status: string, category?: string): string {
+  return `color.chart.${APPEARANCE_FAMILY[statusAppearance(status, category)]}.bolder`;
+}
+
+/** The Status Category column's colour id: one per category, as for {@link statusChartColor}. */
+export function statusCategoryChartColor(category: string): string {
+  return statusChartColor('', category);
+}
+
+/**
+ * Render a status value as a coloured Atlaskit Lozenge (design system component). A colour picked in
+ * ⋯ → Order and colors overrides it; otherwise it keeps Jira's own category colour.
+ */
 export function statusRender(value: unknown, ctx: RenderContext): React.ReactNode {
   if (value == null || value === '') return '';
   const status = String(value);
   const category = (ctx.issue as { statusCategory?: string } | undefined)?.statusCategory;
-  return <Lozenge appearance={statusAppearance(status, category)}>{status}</Lozenge>;
+  const picked = chartColor(ctx.valueColors?.[status]);
+  return (
+    <Lozenge
+      appearance={statusAppearance(status, category)}
+      style={picked && { backgroundColor: picked.background, color: picked.text }}
+    >
+      {status}
+    </Lozenge>
+  );
 }
 
 /** Render an issue-type icon URL as a 16×16 `<img>` (parity with the `identity:issueType` column). */

@@ -97,5 +97,8 @@ export default defineConfig({
     globalSetup: './vitest-global.ts',
     setupFiles: './vitest.setup.ts',
     globals: true,
+    // Tests pinned to a time zone (`*.tz.test.ts`) set `process.env.TZ` themselves, which only takes
+    // effect in a child process, not a worker thread.
+    poolMatchGlobs: [['**/*.tz.test.ts', 'forks']],
   },
 });

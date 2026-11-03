@@ -2,9 +2,9 @@ import React, { useMemo, useState, useCallback } from 'react';
 import type { CanObservable } from '../../hooks/useCanObservable/useCanObservable';
 import type { DerivedIssue } from '../../../jira/derived/derive';
 import { useCanObservable } from '../../hooks/useCanObservable/useCanObservable';
-import ModalDialog, { ModalHeader, ModalBody, ModalFooter } from '@atlaskit/modal-dialog';
-import Button from '@atlaskit/button';
 import { JiraImage } from '../../components/JiraImage';
+import { isEstimated } from '../shared/estimationProgress';
+import { IssueListModal } from '../shared/IssueListModal';
 
 const interactableClasses = 'hover:text-blue-400 cursor-pointer text-right inline-block';
 
@@ -157,11 +157,8 @@ function getReportingData(issues: DerivedIssue[]) {
     if (hierarchyLevel < 1) continue;
 
     if (hierarchyLevel === 1) {
-      const estimate = issue.storyPoints ?? issue.storyPointsMedian ?? null;
-      const confidence = issue.confidence ?? null;
-      const isEstimated = estimate != null && confidence != null;
       issue.rollups.epic.total++;
-      if (isEstimated) {
+      if (isEstimated(issue)) {
         issue.rollups.epic.estimated++;
         issue.rollups.epic.estimatedIssues.push(issue);
       } else {
@@ -248,7 +245,7 @@ const EstimationProgress: React.FC<EstimationProgressProps> = ({ filteredDerived
               unestimated: 'Unestimated Epics',
             },
             aboveEpic: {
-              noEpic: aboveEpicTypeName + 's that have no epics',
+              noEpics: aboveEpicTypeName + 's that have no epics',
               onlyUnestimated: aboveEpicTypeName + 's whose epics have no estimates',
               someEstimated: aboveEpicTypeName + 's that are partially estimated',
               fullyEstimated: aboveEpicTypeName + 's that are fully estimated',
@@ -494,27 +491,12 @@ const EstimationProgress: React.FC<EstimationProgressProps> = ({ filteredDerived
         </div>
       </div>
       {!!modalIssues && (
-        <ModalDialog testId="estimation-progress-modal" onClose={handleDialogClose} width="medium">
-          <ModalHeader>
-            <h2 className="text-lg pb-4">{modalTitle}</h2>
-          </ModalHeader>
-          <ModalBody>
-            <ul>
-              {modalIssues.map((issue, idx) => (
-                <li key={idx}>
-                  <a target="_blank" rel="noopener noreferrer" href={issue.url}>
-                    {issue.summary}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </ModalBody>
-          <ModalFooter>
-            <Button appearance="default" onClick={handleDialogClose} autoFocus>
-              Close
-            </Button>
-          </ModalFooter>
-        </ModalDialog>
+        <IssueListModal
+          testId="estimation-progress-modal"
+          title={modalTitle}
+          issues={modalIssues}
+          onClose={handleDialogClose}
+        />
       )}
     </>
   );
