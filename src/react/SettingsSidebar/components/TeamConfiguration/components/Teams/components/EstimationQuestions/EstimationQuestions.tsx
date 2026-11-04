@@ -196,16 +196,17 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
     write(withTracks({ estimateTeamShare: next, pointsPerPersonDay: null }));
   };
 
+  // On a team, Story Points' points per sprint are a measured number, so a headcount change is a
+  // correction that keeps them: X is re-anchored to the new headcount. The global defaults keep
+  // scaling, or every team with its own headcount that inherits the global X would change velocity.
+  const keepsVelocity = mode !== 'global' && unit === 'storyPoints';
+
   const saveHeadcount = (next: number) => {
     if (!Number.isFinite(next) || !(next > 0)) return;
 
     // Story Points' points per sprint follow the headcount, so a level inheriting them customizes them
     // too: it would otherwise read "inheriting" next to a number the inherited answer doesn't have.
     const customizesCapacity = mode !== 'global' && unit === 'storyPoints' && isCapacityInheriting;
-    // On a team, Story Points' points per sprint are a measured number, so a headcount edit is a
-    // correction that keeps them: X is re-anchored, as for a first headcount. The global defaults keep
-    // scaling, or every team with its own headcount that inherits the global X would change velocity.
-    const keepsVelocity = mode !== 'global' && unit === 'storyPoints';
     const anchored =
       pointsPerPersonDayForHeadcount(values, next, hasSavedHeadcount && !keepsVelocity) ??
       (customizesCapacity ? pointsPerPersonDay : undefined);
@@ -292,10 +293,22 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
   const [isEnteringFirstHeadcount, setEnteringFirstHeadcount] = useState(false);
   // Once a headcount is in the chain, Customize saves the inherited one, pinning a derived X.
   const pinnedOnCustomize = pointsPerPersonDayForHeadcount(values, teamMembers, true);
+  /**
+   * A Story Points headcount returning to inheritance keeps points per sprint, as typing the inherited
+   * headcount would (`saveHeadcount`) — when X is this level's own. An inherited X already matches the
+   * inherited headcount.
+   */
+  const keepVelocityOnInheritedHeadcount = (parent: Configuration): Partial<Configuration> =>
+    keepsVelocity && savedUserData.pointsPerPersonDay != null
+      ? { pointsPerPersonDay: (pointsPerPersonDay * teamMembers) / getTeamMembers(parent) }
+      : {};
   const headcountInheritance = ownInheritance(
     'teamMembers',
     plural(roundTo(teamMembers, 2), 'developer', 'developers'),
-    pinnedOnCustomize === undefined ? {} : { onCustomize: { pointsPerPersonDay: pinnedOnCustomize } },
+    {
+      onInherit: keepVelocityOnInheritedHeadcount,
+      ...(pinnedOnCustomize !== undefined && { onCustomize: { pointsPerPersonDay: pinnedOnCustomize } }),
+    },
   );
   const firstHeadcountInheritance = headcountInheritance && {
     ...headcountInheritance,

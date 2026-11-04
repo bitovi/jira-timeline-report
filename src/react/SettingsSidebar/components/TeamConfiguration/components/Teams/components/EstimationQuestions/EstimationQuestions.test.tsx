@@ -822,6 +822,62 @@ describe('EstimationQuestions', () => {
       });
     });
 
+    describe('Story Points headcount returning to inheritance', () => {
+      // Edited from an inherited 10 to 11 developers, keeping 21 points per 10-day sprint: X = 21 / 110.
+      const values = resolved({ pointsPerPersonDay: 21 / 110, teamMembers: 11 });
+      const parent = { ...values, teamMembers: 10 };
+
+      /** The patch the toggle saves alongside, given the parent's values. */
+      const inheritHeadcount = async (saved: Configuration) => {
+        const toggleInheritance = vi.fn();
+        render(<Harness mode="inheriting" values={values} saved={saved} toggleInheritance={toggleInheritance} />);
+
+        await toggle(MEMBERS_QUESTION);
+
+        const [field, customize, alsoWrite] = toggleInheritance.mock.calls.at(-1)!;
+        expect([field, customize]).toEqual(['teamMembers', false]);
+        return (alsoWrite as Exclude<AlsoWrite, Partial<Configuration>>)(parent);
+      };
+
+      it("keeps points per sprint by recomputing this level's X for the inherited headcount", async () => {
+        const patch = await inheritHeadcount({
+          ...createEmptyConfiguration(),
+          teamMembers: 11,
+          pointsPerPersonDay: 21 / 110,
+        });
+
+        expect(patch.pointsPerPersonDay).toBeCloseTo(0.21);
+        expect(getEffectiveVelocity({ ...parent, ...patch })).toBeCloseTo(21);
+      });
+
+      it('falls back to the default headcount when nothing in the chain saved one', async () => {
+        const toggleInheritance = vi.fn();
+        render(
+          <Harness
+            mode="inheriting"
+            values={values}
+            saved={{ ...createEmptyConfiguration(), teamMembers: 11, pointsPerPersonDay: 21 / 110 }}
+            toggleInheritance={toggleInheritance}
+          />,
+        );
+
+        await toggle(MEMBERS_QUESTION);
+
+        const alsoWrite = toggleInheritance.mock.calls.at(-1)![2] as Exclude<AlsoWrite, Partial<Configuration>>;
+        const unsavedParent = { ...values, teamMembers: null };
+        const patch = alsoWrite(unsavedParent);
+
+        // The default 5 developers.
+        expect(getEffectiveVelocity({ ...unsavedParent, ...patch })).toBeCloseTo(21);
+      });
+
+      it('leaves an inherited X alone', async () => {
+        const patch = await inheritHeadcount({ ...createEmptyConfiguration(), teamMembers: 11 });
+
+        expect(patch).toEqual({});
+      });
+    });
+
     it('a level with only a legacy velocity counts as customizing its capacity', () => {
       render(
         <Harness
