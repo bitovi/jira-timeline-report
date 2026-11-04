@@ -428,7 +428,7 @@ const AutoScheduler: FC<AutoSchedulerProps> = ({ primaryIssuesOrReleasesObs, all
             />
 
             <div
-              className="pl-2 pt-2 pb-1 pr-1 flex sticky left-0 bg-neutral-20"
+              className="p-2 flex sticky left-0 bg-neutral-20"
               style={{ zIndex: gridLayer.labelColumn, gridRow: 2, gridColumnStart: 'what' }}
             >
               <div className="text-base grow font-semibold">Summary</div>
@@ -560,7 +560,7 @@ const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> 
       />
 
       <div
-        className={`pl-2 pt-2 pb-1 pr-1 flex max-w-sm sticky top-0 left-0 ${isDirty ? 'bg-[#fff3eb]' : 'bg-neutral-20'}`}
+        className={`p-2 flex max-w-sm sticky top-0 left-0 ${isDirty ? 'bg-[#fff3eb]' : 'bg-neutral-20'}`}
         style={{ zIndex: gridLayer.teamHeaderLabel, gridRow: team.style.gridRowStart, gridColumnStart: 'what' }}
       >
         {/* `min-w-0` lets the flex item shrink below its text width so `truncate` can clip it. */}
@@ -594,7 +594,18 @@ const TeamHeaderRow: FC<{ team: GridifiedStatsTeam; gridNumberOfDays: number }> 
             />
           </Suspense>
         </ErrorBoundary>
-        <TeamCapacityOutputs totalWorkingDays={totalWorkingDays(team) / teamData.parallelWorkLimit} />
+        <TeamCapacityOutputs
+          totalWorkingDays={totalWorkingDays(team) / teamData.parallelWorkLimit}
+          rates={{
+            teamName: team.team,
+            hierarchyLevel: team.hierarchyLevel,
+            estimateUnit: teamData.estimateUnit,
+            periodDays: teamData.daysPerSprint,
+            savedPointsPerPersonDay: teamData.pointsPerPersonDay,
+            savedTracks: teamData.parallelWorkLimit,
+            savedTeamMembers: teamData.teamMembers,
+          }}
+        />
       </div>
     </>
   );

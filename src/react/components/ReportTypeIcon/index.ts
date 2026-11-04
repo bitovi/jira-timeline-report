@@ -1,2 +1,2 @@
-export { ReportTypeIcon, default } from './ReportTypeIcon';
-export type { ReportTypeIconProps } from './ReportTypeIcon';
+export { ReportTypeBadge, ReportTypeIcon, default } from './ReportTypeIcon';
+export type { ReportTypeBadgeProps, ReportTypeIconProps } from './ReportTypeIcon';

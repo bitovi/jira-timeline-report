@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import type { LinkBuilderFactory } from '../../routing/common';
 
-import React, { Suspense, useMemo } from 'react';
+import React, { Suspense } from 'react';
 
 import { createPortal } from 'react-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -84,13 +84,8 @@ interface ViewReportSkeletonProps {
 const numberOfSkeletonRows = 5;
 
 const ViewReportSkeleton: FC<ViewReportSkeletonProps> = ({ onBackButtonClicked }) => {
-  const selectedReportExists = useMemo(() => {
-    const params = new URLSearchParams(window.location.search);
-    return !!params.get('report');
-  }, []);
-
   return (
-    <ViewReportLayout onBackButtonClicked={onBackButtonClicked} reportInfo={selectedReportExists ? <Skeleton /> : null}>
+    <ViewReportLayout onBackButtonClicked={onBackButtonClicked}>
       <div className="flex flex-col gap-1">
         {[...Array.from({ length: numberOfSkeletonRows }).keys()].map((i) => (
           <Skeleton key={i} height="48px" />

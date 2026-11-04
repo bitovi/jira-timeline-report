@@ -290,7 +290,7 @@ const ViewReports: FC<ViewReportProps> = ({
     <>
       <ViewReportsLayout
         onBackButtonClicked={onBackButtonClicked}
-        reportInfo={selectedReportName ? <p>{selectedReportName}</p> : null}
+        reportName={selectedReportName || undefined}
         actions={
           <Button appearance="primary" onClick={onCreateReportClicked}>
             Create new report

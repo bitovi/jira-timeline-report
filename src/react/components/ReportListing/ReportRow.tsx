@@ -4,7 +4,7 @@ import type { DescribedReport } from './describe-report';
 import React from 'react';
 
 import Link from '../../services/routing/Link';
-import { ReportTypeIcon } from '../ReportTypeIcon';
+import { ReportTypeBadge, ReportTypeIcon } from '../ReportTypeIcon';
 import { HighlightedText } from './HighlightedText';
 
 interface ReportRowBaseProps {
@@ -48,12 +48,11 @@ export const ReportRow: FC<ReportRowProps> = ({
   const content = (
     <>
       {/* Fixed width so the names line up whatever the type; the longest badges truncate. */}
-      <span className="flex w-[170px] flex-none items-center gap-2">
-        <ReportTypeIcon tone={described.tone} />
-        {described.typeName && (
-          <span className="min-w-0 truncate whitespace-nowrap rounded-full bg-neutral-20 px-2 py-0.5 text-xs font-semibold text-neutral-801">
-            {described.typeName}
-          </span>
+      <span className="flex w-[170px] flex-none items-center">
+        {described.typeName ? (
+          <ReportTypeBadge tone={described.tone} name={described.typeName} />
+        ) : (
+          <ReportTypeIcon tone={described.tone} />
         )}
       </span>
       <span className="min-w-0 flex-1">

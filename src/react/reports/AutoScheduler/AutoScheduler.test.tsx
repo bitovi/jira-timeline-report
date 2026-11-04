@@ -300,8 +300,9 @@ describe('AutoScheduler team capacity row', () => {
     renderScheduler();
 
     expect(screen.getByRole('button', { name: /21 Story Points per sprint/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Developers, 10 developers/ })).toBeInTheDocument();
-    expect(screen.getByTestId('per-team')).toHaveTextContent('21Story Points / sprint (team)');
+    expect(screen.queryByRole('button', { name: /^Developers,/ })).not.toBeInTheDocument();
+    expect(screen.getByTestId('team-sprint-capacity')).toHaveTextContent('21Capacity / sprint');
+    expect(screen.queryByTestId('per-team')).not.toBeInTheDocument();
     expect(screen.getByText('Total working days')).toBeInTheDocument();
   });
 

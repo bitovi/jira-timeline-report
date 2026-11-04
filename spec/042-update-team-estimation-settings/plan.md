@@ -166,13 +166,13 @@ Fractional days are expected: a week of work for 5 people is 25 person-days, so 
 
 Does more developers mean less total working days?
 
-| Unit                        | AutoScheduler what-if | Saving the headcount (settings, or Commit)                                                                                    |
-| --------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Story Points                | yes, X held fixed     | yes — except the first headcount a team ever enters, which re-anchors. Commit saves directly.                                 |
-| Dev Days                    | yes                   | yes, X is always 1. Commit saves directly.                                                                                    |
-| Team Days / Weeks / Sprints | yes, X held fixed     | no — X follows the saved headcount, so each estimate grows with the team. **Commit doesn't save**; it shows the manual steps. |
+| Unit                        | AutoScheduler what-if                        | Saving the headcount (settings, or Commit)                                                                                          |
+| --------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Story Points                | no — the bar edits Capacity / sprint instead | no on a team: X is re-anchored so points per sprint hold. Yes on the global defaults, except the first headcount, which re-anchors. |
+| Dev Days                    | yes                                          | yes, X is always 1. Commit saves directly.                                                                                          |
+| Team Days / Weeks / Sprints | yes, X held fixed                            | no — X follows the saved headcount, so each estimate grows with the team. **Commit doesn't save**; it shows the manual steps.       |
 
-**Story Points: a headcount change customizes inherited velocity.** Once the headcount is the team's own, X × N × sprint days is the team's own number. A level still inheriting X writes X and the unit alongside a new headcount (settings and Commit), so the velocity field never reads "inheriting" next to a value the inherited answer doesn't have, and a later global change can't silently rescale it. A level that already has its own X writes only the headcount.
+**Story Points: points per sprint are the measured number.** On a team's settings, a headcount edit is a correction, not a what-if: X is re-anchored (`velocity / (N × sprint days)`) so Capacity / sprint stays as typed. A level still inheriting X writes X and the unit alongside the new headcount, so the velocity field never reads "inheriting" next to a value the inherited answer doesn't have. The global defaults keep scaling: re-anchoring the global X would change the velocity of every team that has its own headcount but inherits that X. The AutoScheduler bar has no headcount field for Story Points; its lever is Capacity / sprint, which rewrites X at the saved headcount.
 
 **Team-time units: manual steps on Commit.** Committing the what-if would redefine "half team" as half of the new team, and the speedup would vanish. Instead, Commit opens `HeadcountCommitSteps`:
 
@@ -211,7 +211,6 @@ The estimates shrink by 10/11 and the team rate stays the same, so total working
 | What units do you use to estimate {as a team \| Epics}? `[Story Points, Dev Days, Team Working Days, Team Weeks, Team Sprints]` | `estimateUnit`      | always                     |
 | How many weeks are in a sprint? (stored as working days)                                                                        | `sprintLength`      | Story Points, Team Sprints |
 | How much of the team does one estimate assume? `[Full team, Half team, One third team, Quarter team]`                           | `estimateTeamShare` | team-time units            |
-| _One week is 5 working days._ (static)                                                                                          | —                   | Team Weeks                 |
 
 Hints under the unit: "The {Estimate Field} your team puts on your {Epics} represent {unit}." (not for Story Points) and "{Epics} without estimates default to {10 working days}." Under the share: "Half team of 10 developers: estimates assume 5 people."
 

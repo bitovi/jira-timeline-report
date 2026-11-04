@@ -125,7 +125,7 @@ describe('ViewReports', () => {
     const onCreateReportClicked = vi.fn();
     await renderPage({ reports: MIXED, props: { onCreateReportClicked } });
 
-    expect(await screen.findByText('Back to report')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /^Back to/ })).toBeInTheDocument();
     expect(screen.getByText('Saved Reports')).toBeInTheDocument();
     expect(await search()).toHaveAttribute('placeholder', 'Search by name or JQL');
     expect(await screen.findByRole('link', { name: 'Alpha' })).toHaveAttribute('href', '?report=1');

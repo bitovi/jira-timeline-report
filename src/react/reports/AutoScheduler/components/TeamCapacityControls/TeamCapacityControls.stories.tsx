@@ -45,7 +45,18 @@ const Row = ({ width, estimateUnit, pointsPerPersonDay = 0.21, teamMembers = 10,
           savedTeamMembers={teamMembers}
         />
       </span>
-      <TeamCapacityOutputs totalWorkingDays={38} />
+      <TeamCapacityOutputs
+        totalWorkingDays={38}
+        rates={{
+          teamName: 'ORDER',
+          hierarchyLevel: 7,
+          periodDays,
+          estimateUnit,
+          savedPointsPerPersonDay: pointsPerPersonDay,
+          savedTracks: 1,
+          savedTeamMembers: teamMembers,
+        }}
+      />
     </div>
   </div>
 );

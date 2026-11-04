@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -31,19 +31,25 @@ import { itemLabelFor } from '../../../../SettingsSidebar/components/TeamConfigu
 type InputsProps = Partial<React.ComponentProps<typeof TeamCapacityInputs>>;
 
 // Story Points, 21 per 10-day sprint with 10 developers: X = 0.21.
-const inputs = (props: InputsProps = {}) => (
-  <CapacityOverridesProvider>
-    <TeamCapacityInputs
-      teamName="ORDER"
-      hierarchyLevel={7}
-      periodDays={10}
-      savedPointsPerPersonDay={0.21}
-      savedTeamMembers={10}
-      savedTracks={1}
-      {...props}
-    />
-  </CapacityOverridesProvider>
-);
+const inputs = (props: InputsProps = {}) => {
+  const team = {
+    teamName: 'ORDER',
+    hierarchyLevel: 7,
+    periodDays: 10,
+    savedPointsPerPersonDay: 0.21,
+    savedTeamMembers: 10,
+    savedTracks: 1,
+    ...props,
+  };
+
+  // The whole row, as the report renders it: the rates live in the outputs' tooltip.
+  return (
+    <CapacityOverridesProvider>
+      <TeamCapacityInputs {...team} />
+      <TeamCapacityOutputs totalWorkingDays={34} rates={team} />
+    </CapacityOverridesProvider>
+  );
+};
 
 const renderInputs = (props: InputsProps = {}) => render(inputs(props));
 
@@ -59,8 +65,30 @@ const editInline = async (button: RegExp, next: string) => {
 const setCapacity = (next: string) => editInline(/Story Points per sprint/i, next);
 const setDevelopers = (next: string) => editInline(/^Developers,/, next);
 
-/** A readout's text with its spans run together, e.g. "0.04 / day (person)". */
-const readout = (testId: 'per-developer' | 'per-team') => screen.getByTestId(testId).textContent;
+/** Hovers "Total working days" and returns the rates tooltip. */
+const ratesTooltip = async () => {
+  await userEvent.hover(screen.getByText('Total working days'));
+
+  return screen.findByRole('tooltip');
+};
+
+/** A rate from the tooltip under "Total working days", e.g. "0.04 Story Points / day (person)". */
+const readout = async (testId: 'per-developer' | 'per-team') => {
+  const text = within(await ratesTooltip()).getByTestId(testId).textContent;
+  await userEvent.unhover(screen.getByText('Total working days'));
+
+  return text;
+};
+
+/** Hovers the stepper's label and reads the headcount split out of its tooltip. */
+const peoplePerTrackTooltip = async (label: RegExp) => {
+  const stepper = screen.getAllByText(label).find((element) => !element.closest('[role="tooltip"]'))!;
+  await userEvent.hover(stepper);
+  const text = within(await screen.findByRole('tooltip')).getByTestId('people-per-track').textContent;
+  await userEvent.unhover(stepper);
+
+  return text;
+};
 
 const addTrack = () => userEvent.click(screen.getByRole('button', { name: /work on one more work item in parallel/i }));
 
@@ -81,7 +109,6 @@ describe('TeamCapacityInputs', () => {
     renderInputs();
 
     expect(screen.getByRole('button', { name: /21 Story Points per sprint/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Developers, 10 developers/ })).toBeInTheDocument();
     expect(screen.getByText('1 work item in parallel')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Reset' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Commit' })).not.toBeInTheDocument();
@@ -170,14 +197,14 @@ describe('TeamCapacityInputs', () => {
   // The commit captures its values at click time, so an edit landing before the write returns would
   // be thrown away by the success handler with no sign it ever existed.
   describe('while the commit is in flight', () => {
-    const startCommit = async () => {
-      const { rerender } = renderInputs();
+    const startCommit = async (props: InputsProps = {}) => {
+      const { rerender } = renderInputs(props);
 
       await addTrack();
       await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
 
       isSaving = true;
-      rerender(inputs());
+      rerender(inputs(props));
     };
 
     it('disables every control on the row', async () => {
@@ -189,10 +216,17 @@ describe('TeamCapacityInputs', () => {
       expect(screen.getByRole('button', { name: 'Commit' })).toBeDisabled();
     });
 
-    it('refuses to open the capacity or headcount editor', async () => {
+    it('refuses to open the capacity editor', async () => {
       await startCommit();
 
       await userEvent.click(screen.getByRole('button', { name: /Story Points per sprint/i }));
+
+      expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    });
+
+    it('refuses to open the headcount editor', async () => {
+      await startCommit({ estimateUnit: 'devDays', savedPointsPerPersonDay: 1 });
+
       await userEvent.click(screen.getByRole('button', { name: /^Developers,/ }));
 
       expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
@@ -272,20 +306,22 @@ describe('TeamCapacityInputs headcount and readout', () => {
     expect(screen.getByText('1 Epic in parallel')).toBeInTheDocument();
   });
 
-  it('labels every rate with the Estimate Field name, resolved from its id', () => {
+  it('labels every rate with the Estimate Field name, resolved from its id', async () => {
     renderInputs();
 
-    expect(readout('per-developer')).toBe('0.21Story Points / day (person)');
-    expect(readout('per-team')).toBe('21Story Points / sprint (team)');
+    expect(await readout('per-developer')).toBe('0.21 Story Points / day (person)');
+    expect(await readout('per-team')).toBe('2.1 Story Points / day (team)');
+    expect(screen.getByRole('button', { name: /Capacity, 21 Story Points per sprint/ })).toBeInTheDocument();
+    expect(screen.getByTestId('team-sprint-capacity')).toHaveTextContent('21Capacity / sprint');
   });
 
-  it('falls back to "estimates" with no Estimate Field', () => {
+  it('falls back to "estimates" with no Estimate Field', async () => {
     savedUserAllTeamData = { __GLOBAL__: { defaults: {} }, ORDER: { defaults: { teamMembers: 10 } } };
     // Nothing matches the defaults' name-based lookup either.
     jiraFields = [];
     renderInputs();
 
-    expect(readout('per-team')).toBe('21estimates / sprint (team)');
+    expect(screen.getByRole('button', { name: /Capacity, 21 estimates per sprint/ })).toBeInTheDocument();
   });
 
   it('a Story Points edit of points per sprint overrides X at the current headcount', async () => {
@@ -296,7 +332,7 @@ describe('TeamCapacityInputs headcount and readout', () => {
 
     // 35 / (10 developers × 10 days)
     expect(commit).toHaveBeenCalledWith('ORDER', 7, { pointsPerPersonDay: 0.35 }, expect.anything());
-    expect(readout('per-developer')).toBe('0.35Story Points / day (person)');
+    expect(await readout('per-developer')).toBe('0.35 Story Points / day (person)');
   });
 
   // Team Weeks, 5 people per estimate: X = 1 / (5 × 5) = 0.04.
@@ -305,13 +341,13 @@ describe('TeamCapacityInputs headcount and readout', () => {
   it('10 → 11 developers raises the team total by 10% and leaves the per-developer rate alone', async () => {
     renderInputs(teamWeeks);
 
-    expect(readout('per-developer')).toBe('0.04Story Points / day (person)');
-    expect(readout('per-team')).toBe('0.4Story Points / day (team)');
+    expect(await readout('per-developer')).toBe('0.04 Story Points / day (person)');
+    expect(await readout('per-team')).toBe('0.4 Story Points / day (team)');
 
     await setDevelopers('11');
 
-    expect(readout('per-developer')).toBe('0.04Story Points / day (person)');
-    expect(readout('per-team')).toBe('0.44Story Points / day (team)');
+    expect(await readout('per-developer')).toBe('0.04 Story Points / day (person)');
+    expect(await readout('per-team')).toBe('0.44 Story Points / day (team)');
   });
 
   it('a headcount edit reads as uncommitted and leaves tracks alone', async () => {
@@ -348,7 +384,7 @@ describe('TeamCapacityInputs headcount and readout', () => {
       expect(steps()).toContain('Make 11 developers your team size');
       expect(steps()).toContain('Your estimates assume half team: 5 people of 10 developers.');
       expect(steps()).toContain(
-        'In Jira, multiply each Story Points estimate by 10 ÷ 11. For example, 3 becomes 2.73.',
+        'In Jira, multiply each Story Points estimate by 0.909 (old team size / new team size). For example, 3 becomes 2.73.',
       );
       expect(steps()).toContain('set the developers to 11. Estimates will then assume half team: 5.5 people.');
     });
@@ -358,10 +394,10 @@ describe('TeamCapacityInputs headcount and readout', () => {
 
       await setDevelopers('11');
       await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
-      await userEvent.click(screen.getByRole('button', { name: 'Got it' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Done' }));
 
       expect(screen.queryByTestId('headcount-commit-steps')).not.toBeInTheDocument();
-      expect(readout('per-team')).toBe('0.44Story Points / day (team)');
+      expect(await readout('per-team')).toBe('0.44 Story Points / day (team)');
       expect(screen.getByRole('button', { name: 'Reset' })).toBeInTheDocument();
     });
 
@@ -381,14 +417,19 @@ describe('TeamCapacityInputs headcount and readout', () => {
     await setDevelopers('5.5');
 
     expect(screen.getByRole('button', { name: /Developers, 5.5 developers/ })).toBeInTheDocument();
-    expect(readout('per-team')).toBe('5.5Story Points / day (team)');
+    expect(await readout('per-team')).toBe('5.5 Story Points / day (team)');
   });
 
-  it.each([
-    ['storyPoints', 0.21],
-    ['devDays', 1],
-  ] as const)('%s commits its developers directly', async (estimateUnit, savedPointsPerPersonDay) => {
-    renderInputs({ estimateUnit, savedPointsPerPersonDay });
+  it('Story Points edits its capacity per sprint, not its developers', () => {
+    renderInputs();
+
+    expect(screen.getByRole('button', { name: /Capacity, 21 Story Points per sprint/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Developers,/ })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('team-capacity')).not.toBeInTheDocument();
+  });
+
+  it('Dev Days commits its developers directly', async () => {
+    renderInputs({ estimateUnit: 'devDays', savedPointsPerPersonDay: 1 });
 
     await setDevelopers('11');
     await userEvent.click(screen.getByRole('button', { name: 'Commit' }));
@@ -413,49 +454,37 @@ describe('TeamCapacityInputs headcount and readout', () => {
     },
   );
 
-  it('Dev Days reads one per developer per day', () => {
+  it('Dev Days reads one per developer per day', async () => {
     renderInputs({ estimateUnit: 'devDays', savedPointsPerPersonDay: 1 });
 
-    expect(readout('per-developer')).toBe('1Story Point / day (person)');
-    expect(readout('per-team')).toBe('10Story Points / day (team)');
+    expect(await readout('per-developer')).toBe('1 Story Point / day (person)');
+    expect(await readout('per-team')).toBe('10 Story Points / day (team)');
   });
 
-  it('Team Sprints reads per day for the person and the team', () => {
+  it('Team Sprints reads per day for the person and the team', async () => {
     renderInputs({ estimateUnit: 'teamSprints', savedPointsPerPersonDay: 0.02 });
 
-    expect(readout('per-developer')).toBe('0.02Story Points / day (person)');
-    expect(readout('per-team')).toBe('0.2Story Points / day (team)');
+    expect(await readout('per-developer')).toBe('0.02 Story Points / day (person)');
+    expect(await readout('per-team')).toBe('0.2 Story Points / day (team)');
   });
 
   it('explains what one unit of the field means in the tooltip', async () => {
     renderInputs(teamWeeks);
 
-    await userEvent.hover(screen.getByTestId('per-developer'));
-
-    expect(await screen.findByRole('tooltip')).toHaveTextContent(
-      '1 Story Point = 1 week of work for 5 people (50% of the team)',
-    );
+    expect(await ratesTooltip()).toHaveTextContent('1 Story Point = 1 week of work for 5 people (50% of the team)');
   });
 
   it('the tooltip share follows an edited headcount, the people per estimate do not', async () => {
     renderInputs(teamWeeks);
 
     await setDevelopers('11');
-    await userEvent.hover(screen.getByTestId('per-developer'));
-
-    expect(await screen.findByRole('tooltip')).toHaveTextContent(
-      '1 Story Point = 1 week of work for 5 people (45% of the team)',
-    );
+    expect(await ratesTooltip()).toHaveTextContent('1 Story Point = 1 week of work for 5 people (45% of the team)');
   });
 
   it('a Story Points tooltip names the points per sprint and the headcount', async () => {
     renderInputs();
 
-    await userEvent.hover(screen.getByTestId('per-developer'));
-
-    expect(await screen.findByRole('tooltip')).toHaveTextContent(
-      '21 Story Points per 2-week sprint with 10 developers',
-    );
+    expect(await ratesTooltip()).toHaveTextContent('21 Story Points per 2-week sprint with 10 developers');
   });
 
   describe('a team that never entered a headcount', () => {
@@ -474,12 +503,12 @@ describe('TeamCapacityInputs headcount and readout', () => {
     it('scales from the first edit: per-developer stays, the team grows', async () => {
       renderInputs(unentered);
 
-      expect(readout('per-team')).toBe('0.4Story Points / day (team)');
+      expect(await readout('per-team')).toBe('0.4 Story Points / day (team)');
 
       await setDevelopers('10');
 
-      expect(readout('per-developer')).toBe('0.08Story Points / day (person)');
-      expect(readout('per-team')).toBe('0.8Story Points / day (team)');
+      expect(await readout('per-developer')).toBe('0.08 Story Points / day (person)');
+      expect(await readout('per-team')).toBe('0.8 Story Points / day (team)');
     });
 
     it('Commit lists the manual steps from the saved people per estimate', async () => {
@@ -490,7 +519,7 @@ describe('TeamCapacityInputs headcount and readout', () => {
 
       expect(commit).not.toHaveBeenCalled();
       expect(screen.getByTestId('headcount-commit-steps').textContent).toContain(
-        'multiply each Story Points estimate by 5 ÷ 10. For example, 3 becomes 1.5.',
+        'multiply each Story Points estimate by 0.5 (old team size / new team size). For example, 3 becomes 1.5.',
       );
     });
 
@@ -499,7 +528,7 @@ describe('TeamCapacityInputs headcount and readout', () => {
 
       await setDevelopers('10');
 
-      expect(readout('per-team')).toBe('10Story Points / day (team)');
+      expect(await readout('per-team')).toBe('10 Story Points / day (team)');
     });
   });
 
@@ -511,21 +540,21 @@ describe('TeamCapacityInputs headcount and readout', () => {
       itemLabel: itemLabelFor('Epic'),
     });
 
-    expect(screen.getByTestId('people-per-track')).toHaveTextContent('(5 people each)');
+    expect(await peoplePerTrackTooltip(/Epics? in parallel$/)).toBe('5 people each');
 
     await userEvent.click(screen.getByRole('button', { name: /work on one more Epic in parallel/i }));
 
-    expect(screen.getByTestId('people-per-track')).toHaveTextContent('(3.3 people each)');
+    expect(await peoplePerTrackTooltip(/Epics? in parallel$/)).toBe('3.3 people each');
   });
 
   it('follows an edited headcount in the split', async () => {
     renderInputs({ estimateUnit: 'devDays', savedPointsPerPersonDay: 1, savedTeamMembers: 4, savedTracks: 4 });
 
-    expect(screen.getByTestId('people-per-track')).toHaveTextContent('(1 person each)');
+    expect(await peoplePerTrackTooltip(/work items in parallel$/)).toBe('1 person each');
 
     await setDevelopers('8');
 
-    expect(screen.getByTestId('people-per-track')).toHaveTextContent('(2 people each)');
+    expect(await peoplePerTrackTooltip(/work items in parallel$/)).toBe('2 people each');
   });
 });
 
@@ -536,6 +565,54 @@ describe('TeamCapacityOutputs', () => {
     expect(screen.getByText('Total working days')).toBeInTheDocument();
     expect(screen.getByText('34')).toBeInTheDocument();
   });
+});
+
+const stepperTooltip = async (label: RegExp) => {
+  await userEvent.hover(screen.getAllByText(label).find((element) => !element.closest('[role="tooltip"]'))!);
+
+  return screen.findByRole('tooltip');
+};
+
+describe('the tracks tooltip', () => {
+  it('points Story Points at Capacity / sprint', async () => {
+    renderInputs();
+
+    const tooltip = await stepperTooltip(/work item in parallel$/);
+    expect(tooltip).toHaveTextContent(
+      'How many work items your team works on at the same time. More in parallel spreads the same capacity across more work, so each work item takes longer. To finish work items faster, raise Capacity / sprint.',
+    );
+    expect(tooltip).not.toHaveTextContent('add developers');
+  });
+
+  it.each(['devDays', 'teamDays', 'teamWeeks', 'teamSprints'] as const)(
+    '%s points at developers',
+    async (estimateUnit) => {
+      renderInputs({ estimateUnit, savedPointsPerPersonDay: 1 });
+
+      const tooltip = await stepperTooltip(/work item in parallel$/);
+      expect(tooltip).toHaveTextContent('To finish work items faster, add developers.');
+      expect(tooltip).not.toHaveTextContent('Capacity / sprint');
+    },
+  );
+});
+
+describe('the row stays compact', () => {
+  it('shows no rates or headcount split on the row itself', () => {
+    renderInputs();
+
+    expect(screen.queryByTestId('team-rates')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('people-per-track')).not.toBeInTheDocument();
+    expect(screen.queryByText(/each\)/)).not.toBeInTheDocument();
+  });
+
+  it.each(['devDays', 'teamDays', 'teamWeeks', 'teamSprints'] as const)(
+    '%s has no capacity per sprint field',
+    (estimateUnit) => {
+      renderInputs({ estimateUnit, savedPointsPerPersonDay: 1 });
+
+      expect(screen.queryByTestId('team-sprint-capacity')).not.toBeInTheDocument();
+    },
+  );
 });
 
 describe('peoplePerTrack', () => {

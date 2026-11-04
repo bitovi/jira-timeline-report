@@ -59,10 +59,8 @@ export const HeadcountCommitSteps: FC<HeadcountCommitStepsProps> = ({
           <ol className="list-decimal space-y-1.5 pl-5">
             <li>
               In Jira, multiply each {field.plural} estimate by{' '}
-              <span className="font-semibold">
-                {from} ÷ {to}
-              </span>
-              . For example, 3 becomes <span className="font-semibold">{roundTo((3 * from) / to, 2)}</span>.
+              <span className="font-semibold">{roundTo(from / to, 3)}</span> (old team size / new team size). For
+              example, 3 becomes <span className="font-semibold">{roundTo((3 * from) / to, 2)}</span>.
             </li>
             <li>
               In Team settings, set the developers to <span className="font-semibold">{to}</span>. Estimates will then
@@ -71,7 +69,7 @@ export const HeadcountCommitSteps: FC<HeadcountCommitStepsProps> = ({
           </ol>
           <div className="flex justify-end">
             <Button appearance="primary" spacing="compact" onClick={() => setIsOpen(false)}>
-              Got it
+              Done
             </Button>
           </div>
         </div>

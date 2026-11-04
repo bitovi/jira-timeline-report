@@ -202,8 +202,12 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
     // Story Points' points per sprint follow the headcount, so a level inheriting them customizes them
     // too: it would otherwise read "inheriting" next to a number the inherited answer doesn't have.
     const customizesCapacity = mode !== 'global' && unit === 'storyPoints' && isCapacityInheriting;
+    // On a team, Story Points' points per sprint are a measured number, so a headcount edit is a
+    // correction that keeps them: X is re-anchored, as for a first headcount. The global defaults keep
+    // scaling, or every team with its own headcount that inherits the global X would change velocity.
+    const keepsVelocity = mode !== 'global' && unit === 'storyPoints';
     const anchored =
-      pointsPerPersonDayForHeadcount(values, next, hasSavedHeadcount) ??
+      pointsPerPersonDayForHeadcount(values, next, hasSavedHeadcount && !keepsVelocity) ??
       (customizesCapacity ? pointsPerPersonDay : undefined);
     // A team-time unit's X follows its share of the saved team, so a stored one would pin it.
     const clearsStoredX = isTeamTimeUnit(unit) && savedUserData.pointsPerPersonDay != null;
@@ -322,8 +326,25 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
 
   const showsOverstaffWarning = unit === 'devDays' && Number(values.tracks) > teamMembers;
 
+  const unitHint = (
+    <div className="grid gap-0.5 text-xs text-slate-500">
+      {/* The unit says what the estimate field's numbers mean; it does not convert them. Story points
+          mean story points, so the sentence would only repeat the answer. */}
+      {unit !== 'storyPoints' && (
+        <p data-testid="unit-hint">
+          The {estimateField ? <Em>{estimateField}</Em> : 'estimates'} your team puts on your <Em>{items.plural}</Em>{' '}
+          represent <Em>{unitLabel}</Em>.
+        </p>
+      )}
+      <p data-testid="unestimated-hint">
+        <Em>{unestimated.items}</Em> without estimates default to <Em>{unestimated.period}</Em>.
+      </p>
+    </div>
+  );
+
   const unitSelectProps = {
     name: 'estimateUnit' as const,
+    hint: unitHint,
     label: `What units do you use to estimate ${estimateScope}?`,
     jiraFields: ESTIMATE_UNIT_OPTIONS,
     control,
@@ -333,6 +354,12 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
   const velocity = roundTo(getVelocityPerSprint(values), 2);
   const shareSelectProps = {
     name: 'estimateTeamShare' as const,
+    hint: peoplePerEstimate != null && (
+      <p className="text-xs text-slate-500" data-testid="people-share">
+        {capitalize(SHARE_PHRASE[share])} of {plural(roundTo(teamMembers, 2), 'developer', 'developers')}: estimates
+        assume <Em>{plural(roundTo(peoplePerEstimate, 2), 'person', 'people')}</Em>.
+      </p>
+    ),
     label: 'How much of the team does one estimate assume?',
     jiraFields: ESTIMATE_TEAM_SHARE_OPTIONS,
     control,
@@ -351,19 +378,6 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
           onInheritanceChange={capacityInheritance('estimateUnit')}
         />
       )}
-      <div className="grid gap-0.5 text-xs text-slate-500">
-        {/* The unit says what the estimate field's numbers mean; it does not convert them. Story points
-            mean story points, so the sentence would only repeat the answer. */}
-        {unit !== 'storyPoints' && (
-          <p data-testid="unit-hint">
-            The {estimateField ? <Em>{estimateField}</Em> : 'estimates'} your team puts on your <Em>{items.plural}</Em>{' '}
-            represent <Em>{unitLabel}</Em>.
-          </p>
-        )}
-        <p data-testid="unestimated-hint">
-          <Em>{unestimated.items}</Em> without estimates default to <Em>{unestimated.period}</Em>.
-        </p>
-      </div>
       {usesSprintLength(unit) && (
         // Asked in weeks, stored in working days: the scheduler and every saved config read days.
         <DerivedNumberField
@@ -379,26 +393,16 @@ const EstimationQuestions: FC<EstimationQuestionsProps> = ({
           )}
         />
       )}
-      {isTeamTimeUnit(unit) && (
-        <>
-          {mode === 'global' ? (
-            <Select {...shareSelectProps} />
-          ) : (
-            <InheritanceSelect
-              {...shareSelectProps}
-              isInheriting={isCapacityInheriting}
-              onInheritanceChange={capacityInheritance('estimateTeamShare')}
-            />
-          )}
-          {peoplePerEstimate != null && (
-            <p className="text-xs text-slate-500" data-testid="people-share">
-              {capitalize(SHARE_PHRASE[share])} of {plural(roundTo(teamMembers, 2), 'developer', 'developers')}:
-              estimates assume <Em>{plural(roundTo(peoplePerEstimate, 2), 'person', 'people')}</Em>.
-            </p>
-          )}
-        </>
-      )}
-      {unit === 'teamWeeks' && <p className="text-xs text-slate-500">One week is 5 working days.</p>}
+      {isTeamTimeUnit(unit) &&
+        (mode === 'global' ? (
+          <Select {...shareSelectProps} />
+        ) : (
+          <InheritanceSelect
+            {...shareSelectProps}
+            isInheriting={isCapacityInheriting}
+            onInheritanceChange={capacityInheritance('estimateTeamShare')}
+          />
+        ))}
 
       <SectionHeading>Team capacity</SectionHeading>
       <DerivedNumberField

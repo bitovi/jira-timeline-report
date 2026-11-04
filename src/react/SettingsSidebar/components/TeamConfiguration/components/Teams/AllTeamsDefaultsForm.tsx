@@ -8,7 +8,6 @@ import { Flex } from '@atlaskit/primitives';
 
 import Select from './components/Select';
 import { FormToggle } from './components/Toggle';
-import { RequiredAsterisk } from './components/Label';
 import { buildSelectableFields } from './shared/selectable-fields';
 import EstimationQuestions from './components/EstimationQuestions';
 import AdvancedSettings from './components/AdvancedSettings';
@@ -51,9 +50,6 @@ const AllTeamsDefaultForm: FC<AllTeamsDefaultFormProps> = ({ save, savedUserData
       })}
     >
       <Flex direction="column" gap="space.100">
-        <span className="text-xs text-slate-500">
-          <RequiredAsterisk /> indicates a required field
-        </span>
         <EstimationQuestions
           mode="global"
           control={control}

@@ -61,7 +61,16 @@ export const CapacityField: FC<CapacityFieldProps> = ({
         editView={({ errorMessage, ...fieldProps }) => (
           <Textfield {...fieldProps} type="number" min={0} step="any" autoFocus width={56} />
         )}
-        readView={() => <span className="font-semibold tabular-nums">{value}</span>}
+        // A dotted underline marks the number as editable: InlineEdit's own cue is only a hover background.
+        readView={() => (
+          <span
+            className={`font-semibold tabular-nums underline decoration-dotted underline-offset-2 ${
+              isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
+            }`}
+          >
+            {value}
+          </span>
+        )}
       />
     </div>
   );
