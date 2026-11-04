@@ -88,7 +88,7 @@ const DerivedNumberField: FC<DerivedNumberFieldProps> = ({
 
   return (
     <div>
-      <Field name={name} label={label} isRequired>
+      <Field name={name} label={label}>
         {({ fieldProps }) => input(fieldProps.id)}
       </Field>
       {children}

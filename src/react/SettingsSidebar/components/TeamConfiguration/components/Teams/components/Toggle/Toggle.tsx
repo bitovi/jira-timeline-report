@@ -30,11 +30,7 @@ const Toggle: FC<ToggleProps> = ({
 
   return (
     <div>
-      {!hideLabel && (
-        <Label htmlFor={id} isRequired>
-          {label}
-        </Label>
-      )}
+      {!hideLabel && <Label htmlFor={id}>{label}</Label>}
       <div className="flex justify-between align-center">
         <div className="w-10">
           <AtlasToggle id={id} onChange={onChange} isChecked={isChecked} isDisabled={isDisabled} />

@@ -95,7 +95,7 @@ const TextField: FC<TextFieldProps> = ({
 
   // `Field` renders the label with `htmlFor` its own generated id, so the input has to carry it.
   return (
-    <Field name={name} label={label} isRequired>
+    <Field name={name} label={label}>
       {({ fieldProps }) => renderInput(fieldProps.id)}
     </Field>
   );

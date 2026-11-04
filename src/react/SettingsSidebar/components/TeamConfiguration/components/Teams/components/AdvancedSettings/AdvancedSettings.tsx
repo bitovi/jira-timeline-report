@@ -4,9 +4,9 @@ import React, { useId, useState } from 'react';
 import ChevronRightIcon from '@atlaskit/icon/glyph/chevron-right';
 import ChevronDownIcon from '@atlaskit/icon/glyph/chevron-down';
 
-/** The settings most teams never change — field mappings and spread effort — collapsed by default. */
+/** The settings most teams never change — field mappings and spread effort — open by default, collapsible. */
 const AdvancedSettings: FC<{ children: ReactNode }> = ({ children }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const contentId = useId();
 
   const Icon = isOpen ? ChevronDownIcon : ChevronRightIcon;

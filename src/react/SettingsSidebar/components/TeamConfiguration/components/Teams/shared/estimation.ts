@@ -43,7 +43,7 @@ export const DEFAULT_TEAM_MEMBERS = 5;
 /** The share shortcuts for "How many people does one estimate assume?", and the legacy saved shares. */
 export const SHARE: Record<EstimateTeamShare, number> = { full: 1, half: 1 / 2, third: 1 / 3, quarter: 1 / 4 };
 
-/** "One week is 5 working days." Also how the form's sprint length, asked in weeks, is stored in days. */
+/** Working days in a week: a Team Weeks estimate, and how the form's sprint length, asked in weeks, is stored in days. */
 export const DAYS_PER_WEEK = 5;
 
 /**

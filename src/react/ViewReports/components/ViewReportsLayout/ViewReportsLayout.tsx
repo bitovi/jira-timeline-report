@@ -1,31 +1,33 @@
 import type { FC, ReactNode } from 'react';
 
 import React from 'react';
-
-import SidebarButton from '../../../components/SidebarButton';
-import ArrowLeftCircleIcon from '@atlaskit/icon/glyph/arrow-left-circle';
+import { IconButton } from '@atlaskit/button/new';
+import ArrowLeftIcon from '@atlaskit/icon/core/arrow-left';
 import Heading from '@atlaskit/heading';
 
 interface ViewReportsLayoutProps {
   onBackButtonClicked: () => void;
-  reportInfo?: ReactNode;
+  /** The report Back returns to, named in the button's label and tooltip. */
+  reportName?: string;
   /** Buttons on the right of the title row, e.g. "Create new report". */
   actions?: ReactNode;
   children?: ReactNode;
 }
 
-const ViewReportsLayout: FC<ViewReportsLayoutProps> = ({ onBackButtonClicked, reportInfo, actions, children }) => {
+const ViewReportsLayout: FC<ViewReportsLayoutProps> = ({ onBackButtonClicked, reportName, actions, children }) => {
   return (
     <div className="p-6 flex flex-col h-screen">
-      <SidebarButton className="flex items-center" onClick={onBackButtonClicked}>
-        <ArrowLeftCircleIcon label="go back" />
-        <div className="flex-col gap-1">
-          Back to report
-          {reportInfo}
+      <div className="pb-4 flex items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <IconButton
+            icon={ArrowLeftIcon}
+            label={reportName ? `Back to ${reportName}` : 'Back to report'}
+            appearance="subtle"
+            onClick={onBackButtonClicked}
+            isTooltipDisabled={false}
+          />
+          <Heading size="large">Saved Reports</Heading>
         </div>
-      </SidebarButton>
-      <div className="py-4 flex items-center justify-between gap-4">
-        <Heading size="large">Saved Reports</Heading>
         {actions}
       </div>
       {children}

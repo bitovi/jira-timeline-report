@@ -133,4 +133,31 @@ export const ReportTypeIcon: FC<ReportTypeIconProps> = ({ tone, label, size = 32
   );
 };
 
+export interface ReportTypeBadgeProps {
+  tone: ReportTypeTone;
+  name: string;
+}
+
+/**
+ * A report type as one chip: the tone's tinted background with its icon and name inside. The name
+ * stays dark — the tone colors are icon colors, too light for small text on their own tint.
+ */
+export const ReportTypeBadge: FC<ReportTypeBadgeProps> = ({ tone, name }) => {
+  const icon = toneIcons[tone];
+
+  return (
+    <span
+      className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold text-neutral-800"
+      style={{ background: toneStyles[tone].background }}
+    >
+      <span aria-hidden className="flex-none" style={{ color: toneStyles[tone].color }}>
+        {isValidElement<{ width?: number; height?: number; style?: object }>(icon)
+          ? cloneElement(icon, { width: 14, height: 14, style: { display: 'block' } })
+          : icon}
+      </span>
+      <span className="min-w-0 truncate whitespace-nowrap">{name}</span>
+    </span>
+  );
+};
+
 export default ReportTypeIcon;

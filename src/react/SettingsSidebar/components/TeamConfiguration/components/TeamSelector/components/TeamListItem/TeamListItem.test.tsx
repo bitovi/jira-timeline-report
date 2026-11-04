@@ -27,13 +27,13 @@ describe('<TeamListItem />', () => {
   it.each(['reportOnly', 'storageOnly'] as const)('marks no dot on a %s team', (status) => {
     render(<TeamListItem {...defaultProps} team={{ ...defaultProps.team, status }} />);
 
-    expect(screen.queryByText('Has custom settings')).not.toBeInTheDocument();
+    expect(screen.queryByText('Contains overrides')).not.toBeInTheDocument();
   });
 
   it('marks a team in the report with saved settings with a dot', () => {
     render(<TeamListItem {...defaultProps} team={{ ...defaultProps.team, status: 'storageAndReport' }} />);
 
-    expect(screen.getByText('Has custom settings')).toBeInTheDocument();
+    expect(screen.getByText('Contains overrides')).toBeInTheDocument();
   });
 
   it('calls setSelectedTeam when the item is clicked', async () => {

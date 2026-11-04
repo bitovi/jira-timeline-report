@@ -3,17 +3,19 @@ import type { FC, ReactNode } from 'react';
 import React from 'react';
 
 import ToggleButton from '../../../../../../../components/ToggleButton';
-import { RequiredAsterisk } from '../Label';
+import { OptionalMarker } from '../Label';
 
 export interface InheritanceRowProps {
   /** The customized input's id. An inherited value is plain text, so the label then points at nothing. */
   id: string;
   label: string;
-  isRequired?: boolean;
+  isOptional?: boolean;
   isInheriting: boolean;
   onInheritanceChange: (newInheritance: boolean) => void;
   /** The inherited value as text — shown instead of the input while the level inherits. */
   inheritedValue: ReactNode;
+  /** Small print under the answer, inside the row so it sits with its question. */
+  hint?: ReactNode;
   children: ReactNode;
 }
 
@@ -24,16 +26,17 @@ export interface InheritanceRowProps {
 const InheritanceRow: FC<InheritanceRowProps> = ({
   id,
   label,
-  isRequired = true,
+  isOptional = false,
   isInheriting,
   onInheritanceChange,
   inheritedValue,
+  hint,
   children,
 }) => (
-  <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 border-b border-slate-200 py-3">
+  <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 py-3">
     <div className="col-span-2">
       <label htmlFor={isInheriting ? undefined : id} className="text-sm font-semibold text-slate-900">
-        {label} {!isInheriting && isRequired && <RequiredAsterisk />}
+        {label} {isOptional && <OptionalMarker />}
       </label>
     </div>
     <div className="min-w-0">
@@ -51,6 +54,7 @@ const InheritanceRow: FC<InheritanceRowProps> = ({
       inactiveLabel={isInheriting ? 'Inheriting' : 'Inherit'}
       activeLabel={isInheriting ? 'Customize' : 'Customized'}
     />
+    {hint && <div className="col-span-2">{hint}</div>}
   </div>
 );
 

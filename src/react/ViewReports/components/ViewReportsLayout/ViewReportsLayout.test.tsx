@@ -11,18 +11,18 @@ describe('<ViewReportsLayout />', () => {
   it('renders without crashing with minimal props', () => {
     render(<ViewReportsLayout onBackButtonClicked={mockOnBackButtonClicked} />);
 
-    expect(screen.getByText('Back to report')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Back to report' })).toBeInTheDocument();
     expect(screen.getByText('Saved Reports')).toBeInTheDocument();
   });
 
-  it('renders reportInfo and children when provided', () => {
+  it('names the report Back returns to, and renders children', () => {
     render(
-      <ViewReportsLayout onBackButtonClicked={mockOnBackButtonClicked} reportInfo={<span>Report Info</span>}>
+      <ViewReportsLayout onBackButtonClicked={mockOnBackButtonClicked} reportName="Q3 Roadmap">
         <div>Child Content</div>
       </ViewReportsLayout>,
     );
 
-    expect(screen.getByText('Report Info')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Back to Q3 Roadmap' })).toBeInTheDocument();
 
     expect(screen.getByText('Child Content')).toBeInTheDocument();
   });

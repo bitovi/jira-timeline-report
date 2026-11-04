@@ -13,7 +13,6 @@ import InheritanceToggleField from './components/InheritanceToggleField';
 import InheritanceSelect from './components/InheritanceSelect';
 import EstimationQuestions from './components/EstimationQuestions';
 import AdvancedSettings from './components/AdvancedSettings';
-import { RequiredAsterisk } from './components/Label';
 import { buildSelectableFields } from './shared/selectable-fields';
 
 export interface ConfigureTeamsFormProps {
@@ -54,9 +53,6 @@ const ConfigureTeamsForm: FC<ConfigureTeamsFormProps> = ({
   return (
     <div className="py-2">
       <Flex direction="column" gap="space.100">
-        <span className="text-xs text-slate-500">
-          <RequiredAsterisk /> indicates a required field
-        </span>
         <EstimationQuestions
           mode="inheriting"
           control={control}

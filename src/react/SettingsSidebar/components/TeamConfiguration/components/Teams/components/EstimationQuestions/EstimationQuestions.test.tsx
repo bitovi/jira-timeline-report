@@ -15,7 +15,6 @@ import EstimationQuestions from './EstimationQuestions';
 const UNIT_QUESTION = /What units do you use to estimate/;
 const SPRINT_QUESTION = 'How many weeks are in a sprint?';
 const SHARE_QUESTION = 'How much of the team does one estimate assume?';
-const WEEK_NOTE = 'One week is 5 working days.';
 const POINTS_QUESTION = 'On average, how many story points does your team complete per sprint?';
 const MEMBERS_QUESTION = 'How many developers are on the team?';
 const PARALLEL_QUESTION = /can your team work on in parallel, on average\?/;
@@ -141,15 +140,6 @@ describe('EstimationQuestions', () => {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
     expect(screen.getAllByText('Full team').length).toBeGreaterThan(0);
-  });
-
-  it('notes the length of a week only for Team Weeks', () => {
-    const { unmount } = render(<Harness values={resolved({ estimateUnit: 'teamWeeks' })} />);
-    expect(screen.getByText(WEEK_NOTE)).toBeInTheDocument();
-    unmount();
-
-    render(<Harness values={resolved({ estimateUnit: 'teamDays' })} />);
-    expect(screen.queryByText(WEEK_NOTE)).not.toBeInTheDocument();
   });
 
   it('a config with no unit asks the story point questions', () => {
@@ -297,7 +287,7 @@ describe('EstimationQuestions', () => {
       expect(pointsInput()).toHaveValue(21);
     });
 
-    it('a headcount change scales points per sprint and leaves the parallel count alone', async () => {
+    it('on the global defaults, a headcount change scales points per sprint and leaves the parallel count alone', async () => {
       const updateFields = vi.fn();
       render(<Harness values={resolved({ pointsPerPersonDay: 0.21, tracks: 3 })} updateFields={updateFields} />);
 
@@ -306,6 +296,27 @@ describe('EstimationQuestions', () => {
       expect(lastPatch(updateFields)).toEqual({ teamMembers: 11 });
       expect(pointsInput()).toHaveValue(23.1);
       expect(parallelInput()).toHaveValue(3);
+    });
+
+    it('on a team, a headcount change keeps points per sprint by re-anchoring X', async () => {
+      const updateFields = vi.fn();
+      render(
+        <Harness
+          mode="inheriting"
+          values={resolved({ pointsPerPersonDay: 0.21, tracks: 3 })}
+          saved={{ ...createEmptyConfiguration(), teamMembers: 10, pointsPerPersonDay: 0.21 }}
+          updateFields={updateFields}
+        />,
+      );
+
+      await retype(membersInput(), '11');
+
+      const patch = lastPatch(updateFields);
+      expect(patch.teamMembers).toBe(11);
+      // 21 / (11 developers × 10 days)
+      expect(patch.pointsPerPersonDay).toBeCloseTo(21 / 110);
+      expect(getEffectiveVelocity({ ...resolved({ pointsPerPersonDay: 0.21 }), ...patch })).toBeCloseTo(21);
+      expect(patch).not.toHaveProperty('tracks');
     });
 
     it('customizes inherited points per sprint along with a headcount change, so they never read as inherited', async () => {
@@ -321,27 +332,9 @@ describe('EstimationQuestions', () => {
 
       await retype(membersInput(), '11');
 
-      expect(lastPatch(updateFields)).toEqual({
-        teamMembers: 11,
-        estimateUnit: 'storyPoints',
-        pointsPerPersonDay: 0.21,
-      });
-    });
-
-    it('writes only the headcount when the level already has its own points per sprint', async () => {
-      const updateFields = vi.fn();
-      render(
-        <Harness
-          mode="inheriting"
-          values={resolved({ pointsPerPersonDay: 0.21 })}
-          saved={{ ...createEmptyConfiguration(), teamMembers: 10, pointsPerPersonDay: 0.21 }}
-          updateFields={updateFields}
-        />,
-      );
-
-      await retype(membersInput(), '11');
-
-      expect(lastPatch(updateFields)).toEqual({ teamMembers: 11 });
+      const patch = lastPatch(updateFields);
+      expect(patch).toEqual({ teamMembers: 11, estimateUnit: 'storyPoints', pointsPerPersonDay: expect.any(Number) });
+      expect(getEffectiveVelocity({ ...resolved({ pointsPerPersonDay: 0.21 }), ...patch })).toBeCloseTo(21);
     });
   });
 
@@ -824,6 +817,62 @@ describe('EstimationQuestions', () => {
 
       it('leaves an inherited X alone', async () => {
         const patch = await inheritSprintLength({ ...createEmptyConfiguration(), sprintLength: 15 });
+
+        expect(patch).toEqual({});
+      });
+    });
+
+    describe('Story Points headcount returning to inheritance', () => {
+      // Edited from an inherited 10 to 11 developers, keeping 21 points per 10-day sprint: X = 21 / 110.
+      const values = resolved({ pointsPerPersonDay: 21 / 110, teamMembers: 11 });
+      const parent = { ...values, teamMembers: 10 };
+
+      /** The patch the toggle saves alongside, given the parent's values. */
+      const inheritHeadcount = async (saved: Configuration) => {
+        const toggleInheritance = vi.fn();
+        render(<Harness mode="inheriting" values={values} saved={saved} toggleInheritance={toggleInheritance} />);
+
+        await toggle(MEMBERS_QUESTION);
+
+        const [field, customize, alsoWrite] = toggleInheritance.mock.calls.at(-1)!;
+        expect([field, customize]).toEqual(['teamMembers', false]);
+        return (alsoWrite as Exclude<AlsoWrite, Partial<Configuration>>)(parent);
+      };
+
+      it("keeps points per sprint by recomputing this level's X for the inherited headcount", async () => {
+        const patch = await inheritHeadcount({
+          ...createEmptyConfiguration(),
+          teamMembers: 11,
+          pointsPerPersonDay: 21 / 110,
+        });
+
+        expect(patch.pointsPerPersonDay).toBeCloseTo(0.21);
+        expect(getEffectiveVelocity({ ...parent, ...patch })).toBeCloseTo(21);
+      });
+
+      it('falls back to the default headcount when nothing in the chain saved one', async () => {
+        const toggleInheritance = vi.fn();
+        render(
+          <Harness
+            mode="inheriting"
+            values={values}
+            saved={{ ...createEmptyConfiguration(), teamMembers: 11, pointsPerPersonDay: 21 / 110 }}
+            toggleInheritance={toggleInheritance}
+          />,
+        );
+
+        await toggle(MEMBERS_QUESTION);
+
+        const alsoWrite = toggleInheritance.mock.calls.at(-1)![2] as Exclude<AlsoWrite, Partial<Configuration>>;
+        const unsavedParent = { ...values, teamMembers: null };
+        const patch = alsoWrite(unsavedParent);
+
+        // The default 5 developers.
+        expect(getEffectiveVelocity({ ...unsavedParent, ...patch })).toBeCloseTo(21);
+      });
+
+      it('leaves an inherited X alone', async () => {
+        const patch = await inheritHeadcount({ ...createEmptyConfiguration(), teamMembers: 11 });
 
         expect(patch).toEqual({});
       });

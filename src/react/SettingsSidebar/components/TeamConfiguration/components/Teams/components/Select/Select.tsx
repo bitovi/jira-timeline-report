@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import type { FC, ReactNode } from 'react';
 import type { Control } from 'react-hook-form';
 import type { Configuration } from '../../services/team-configuration';
 import type { FieldUpdates } from '../../ConfigureTeamsForm';
@@ -10,7 +10,8 @@ import AtlasSelect from '@atlaskit/select';
 import Label from '../Label';
 
 const isSingle = (obj: SelectProps['jiraFields']): obj is Array<{ label: string; value: string }> => {
-  return 'value' in obj[0];
+  // An empty list (no Jira fields yet) is flat too; reading `obj[0]` would throw.
+  return obj.length === 0 || 'value' in obj[0];
 };
 
 type SelectField = { label: string; value: string };
@@ -21,6 +22,8 @@ interface SelectProps {
   hideLabel?: boolean;
   id?: string;
   optional?: boolean;
+  /** Small print directly under the select. */
+  hint?: ReactNode;
   control: Control<Configuration>;
   name: keyof Configuration;
   label: string;
@@ -36,6 +39,7 @@ const Select: FC<SelectProps> = ({
   onSave,
   disabled = false,
   optional = false,
+  hint,
   hideLabel = false,
   id: providedId,
 }) => {
@@ -57,7 +61,7 @@ const Select: FC<SelectProps> = ({
         return (
           <div className={hideLabel ? undefined : 'mt-2'}>
             {!hideLabel && (
-              <Label htmlFor={id} isRequired={!optional}>
+              <Label htmlFor={id} isOptional={optional}>
                 {label}
               </Label>
             )}
@@ -78,6 +82,7 @@ const Select: FC<SelectProps> = ({
                 onSave({ name, value: option?.value });
               }}
             />
+            {hint && <div className="mt-1">{hint}</div>}
           </div>
         );
       }}

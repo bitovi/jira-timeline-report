@@ -11,7 +11,7 @@ import { token } from '@atlaskit/tokens';
 import Tooltip from '@atlaskit/tooltip';
 
 import Link from '../../services/routing/Link';
-import { ReportTypeIcon } from '../ReportTypeIcon';
+import { ReportTypeBadge, ReportTypeIcon } from '../ReportTypeIcon';
 import { HighlightedText } from './HighlightedText';
 import { REPORT_TABLE_GRID } from './ReportTableHeader';
 import { formatRelativeTime } from '../../../utils/date/format-relative-time';
@@ -132,13 +132,8 @@ export const ReportTableRow: FC<ReportTableRowProps> = ({
           onClick={onToggleStar}
         />
       </span>
-      <span role="cell" className="flex min-w-0 items-center gap-2">
-        <ReportTypeIcon tone={tone} size={32} />
-        {typeName && (
-          <span className="inline-block min-w-0 truncate whitespace-nowrap rounded-full bg-neutral-20 px-2 py-0.5 text-xs font-semibold text-neutral-801 group-hover:bg-white">
-            {typeName}
-          </span>
-        )}
+      <span role="cell" className="flex min-w-0 items-center">
+        {typeName ? <ReportTypeBadge tone={tone} name={typeName} /> : <ReportTypeIcon tone={tone} size={32} />}
       </span>
       <span role="cell" className="flex min-w-0 items-center">
         <span className="min-w-0 flex-1">

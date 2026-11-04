@@ -79,15 +79,7 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({
   const [selected, setSelected] = useState(0);
   const reset = useResetTeamSettings(teamName, onUpdate);
 
-  const hierarchyLevels = Object.keys(inheritedTeamData)
-    // defaults first, then highest level to lowest
-    .sort((lhs, rhs) => {
-      if (lhs === 'defaults') return -1;
-      if (rhs === 'defaults') return 1;
-
-      return parseInt(rhs) - parseInt(lhs);
-    })
-    .filter((level): level is keyof TeamConfiguration => level in inheritedTeamData);
+  const hierarchyLevels = tabLevels(inheritedTeamData);
 
   // The global defaults have nothing to inherit from, so a dot there would say nothing.
   const hasCustomSettings = (level: keyof TeamConfiguration) =>
@@ -178,5 +170,20 @@ const ConfigureTeams: FC<ConfigureTeamsProps> = ({
     </div>
   );
 };
+
+/**
+ * The levels that get a tab: defaults first, then highest level to lowest, ending at 0 (Story).
+ * Sub-task levels (below 0) aren't scheduled or estimated on their own, so they get no tab.
+ */
+export function tabLevels(teamData: Partial<TeamConfiguration>): Array<keyof TeamConfiguration> {
+  return Object.keys(teamData)
+    .filter((level) => level === 'defaults' || parseInt(level) >= 0)
+    .sort((lhs, rhs) => {
+      if (lhs === 'defaults') return -1;
+      if (rhs === 'defaults') return 1;
+
+      return parseInt(rhs) - parseInt(lhs);
+    }) as Array<keyof TeamConfiguration>;
+}
 
 export default ConfigureTeams;
