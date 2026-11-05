@@ -84,7 +84,7 @@ import type { ColumnDefinition, TableIssue } from './model/columns';
 import type { FilterState, FilterValue, SortMode, SortState } from './model/applyView';
 import type { AggregationOverrides, DateFormatOverrides, GroupSort } from './model/grouping';
 import type { DateFormat } from './model/relativeDate';
-import type { PlanningHealth } from './model/planningHealth';
+import type { PlanningHealth, TimingCalculation } from './model/planningHealth';
 import type { ValueColors, ValueOrders } from './model/valueOrder';
 import type { OrderAndColors } from './components/OrderAndColorsModal';
 import type { CrossTab } from './model/crosstab';
@@ -114,6 +114,11 @@ type RollupIssue = Record<string, unknown> & {
 export interface TableReportProps {
   filteredDerivedIssuesObs: CanObservable<DerivedIssue[]>;
   rollupTimingLevelsAndCalculationsObs: CanObservable<Array<{ hierarchyLevel: number }>>;
+  /**
+   * Every hierarchy level's Timing Calculation (not just the hierarchy range's), for the Rolled-up
+   * Start/Due Date columns. Absent → each level uses the pipeline default (children, then parent).
+   */
+  issueTimingCalculationsObs?: CanObservable<TimingCalculation[]>;
   /** Roots for hierarchy mode (top-level rolled-up issues). Spread from TimelineReport baseProps. */
   primaryIssuesOrReleasesObs?: CanObservable<RollupIssue[]>;
   /** The full linked set for hierarchy mode (with `reportingHierarchy.childKeys` + rollups). */
@@ -169,6 +174,10 @@ const EMPTY_OBS: CanObservable<RollupIssue[]> = {
   off: () => {},
   set: () => {},
 } as unknown as CanObservable<RollupIssue[]>;
+
+/** No Timing Calculation settings: every level uses the pipeline default. */
+const NO_TIMING: TimingCalculation[] = [];
+const EMPTY_TIMING_OBS = EMPTY_OBS as unknown as CanObservable<TimingCalculation[]>;
 
 /**
  * A minimal writable CanObservable backed by a plain closure — the local fallback used when a
@@ -782,6 +791,7 @@ const CrossTabTable: React.FC<CrossTabTableProps> = ({
 
 const TableReportInner: React.FC<TableReportProps> = ({
   filteredDerivedIssuesObs,
+  issueTimingCalculationsObs,
   primaryIssuesOrReleasesObs,
   allIssuesOrReleasesObs,
   visibleIssuesOrReleasesObs,
@@ -798,6 +808,7 @@ const TableReportInner: React.FC<TableReportProps> = ({
   tableShowColTotalsObs,
 }) => {
   const filteredDerivedIssues = useCanObservable(filteredDerivedIssuesObs) || [];
+  const issueTimingCalculations = useCanObservable(issueTimingCalculationsObs ?? EMPTY_TIMING_OBS) || NO_TIMING;
   const primaryIssues = useCanObservable(primaryIssuesOrReleasesObs ?? EMPTY_OBS) || [];
   const allRollupIssues = useCanObservable(allIssuesOrReleasesObs ?? EMPTY_OBS) || [];
   const visibleRollupIssues = useCanObservable(visibleIssuesOrReleasesObs ?? allIssuesOrReleasesObs ?? EMPTY_OBS) || [];
@@ -816,10 +827,11 @@ const TableReportInner: React.FC<TableReportProps> = ({
   // obs), with no top-level filter.
   //
   // Rows carry their planning-health values (spec/044) when the flag is on. They come from every
-  // loaded issue linked by `parentKey`, not from the rollup, which only spans the hierarchy range.
+  // loaded issue linked by `parentKey`, not from the rollup, which only spans the hierarchy range; the
+  // rolled-up dates apply each level's Timing Calculation along the way.
   const planningHealthByKey = useMemo<PlanningHealthLookup>(
-    () => (planningHealth ? computePlanningHealth(filteredDerivedIssues) : null),
-    [planningHealth, filteredDerivedIssues],
+    () => (planningHealth ? computePlanningHealth(filteredDerivedIssues, issueTimingCalculations) : null),
+    [planningHealth, filteredDerivedIssues, issueTimingCalculations],
   );
   const flatIssues = useMemo<TableIssue[]>(() => {
     if (allRollupIssues.length > 0) return allRollupIssues.map((issue) => toHierarchyIssue(issue, planningHealthByKey));

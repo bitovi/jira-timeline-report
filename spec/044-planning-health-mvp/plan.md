@@ -207,6 +207,15 @@ unknown `sourceId`s, and add a test either way.
    (`childrenFirstThenParent`) falls back to the parent's own date only when it has **no children**,
    so an initiative whose epics are all undated would show blank, not its own date.
 
+   **Resolved 2026-11-05: yes, at every loaded level, regardless of the hierarchy range.** The
+   `parentKey` walk ignored the settings, so with Increment = "From Epics" and Epic = "From Epic"
+   the table showed story or increment due dates ("years out") where the Gantt showed no bar. The
+   walk now applies each issue's level method from `dates.ts` (the Gantt pipeline's own functions)
+   to its `derivedTiming` and its children's results, using the full `issueTimingCalculations`
+   (new `issueTimingCalculationsObs` prop). The range only picks rows: loaded epics still count
+   for "From Epics" under an Increment → Increment range. Rows outside the walk (releases) fall
+   back to the pipeline's `rollupDates`.
+
 ## Out of scope / follow-ups
 
 - **Possible date off-by-one:** `dateEntry` and `toDateLabel` format local-midnight dates with

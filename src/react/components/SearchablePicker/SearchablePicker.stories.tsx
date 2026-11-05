@@ -30,7 +30,7 @@ const catalog: PickerItem[] = [
   ...of('Derived', 'Latest Comment'),
   ...of('Identity', 'Issue Key', 'Issue Type', 'Summary', 'Hierarchy'),
   ...of('Common', 'Summary', 'Status', 'Assignee', 'Reporter', 'Priority', 'Issue Type', 'Due Date', 'Labels'),
-  ...of('Report Fields', 'Start Date', 'Due Date', 'Estimated Days', 'Timed Days', 'Rolled Up Days'),
+  ...of('Report Fields', 'Start Date', 'Due Date', 'Estimated Days', 'Timed Days', 'Rolled-up Days'),
   ...of(
     'Fields',
     'Acceptance Criteria',

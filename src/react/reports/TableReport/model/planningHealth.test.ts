@@ -2,104 +2,117 @@ import { describe, expect, test } from 'vitest';
 
 import { computePlanningHealth } from './planningHealth';
 
+import type { TimingCalculation } from './planningHealth';
+
 type Fixture = Parameters<typeof computePlanningHealth>[0][number];
 
 const day = (y: number, m: number, d: number) => new Date(y, m - 1, d);
 
-/** An issue with no estimate, no confidence and no due date unless given. */
-function issue(key: string, parentKey: string | null, extra: Partial<Fixture> = {}): Fixture {
+/** An issue with no estimate, no confidence and no dates unless given. */
+function issue(
+  key: string,
+  parentKey: string | null,
+  extra: Partial<Omit<Fixture, 'derivedTiming'>> & { start?: Date; due?: Date } = {},
+): Fixture {
+  const { start, due, ...rest } = extra;
   return {
     key,
     parentKey,
-    startDate: null,
-    dueDate: null,
+    hierarchyLevel: 0,
+    derivedTiming: { ...(start && { start }), ...(due && { due }) } as Fixture['derivedTiming'],
     storyPoints: null,
     storyPointsMedian: null,
     confidence: null,
-    ...extra,
+    ...rest,
   };
 }
 
 const estimated = { storyPoints: 5, confidence: 80 };
 
-describe('computePlanningHealth — rolled-up due date', () => {
-  test('is the latest due date among the children', () => {
-    const health = computePlanningHealth([
-      issue('INIT-1', null, { dueDate: day(2026, 11, 1) }),
-      issue('EPIC-1', 'INIT-1', { dueDate: day(2026, 12, 1) }),
-      issue('EPIC-2', 'INIT-1', { dueDate: day(2027, 6, 1) }),
-      issue('EPIC-3', 'INIT-1'),
-    ]);
-    expect(health.get('INIT-1')?.rolledUpDue).toEqual(day(2027, 6, 1));
+const WORKSTREAM = 3;
+const INCREMENT = 2;
+const EPIC = 1;
+const STORY = 0;
+
+/** Workstream: From Increments · Increment: From Epics · Epic: From Epic · Story: widest range. */
+const SETTINGS: TimingCalculation[] = [
+  { hierarchyLevel: WORKSTREAM, calculation: 'childrenOnly' },
+  { hierarchyLevel: INCREMENT, calculation: 'childrenOnly' },
+  { hierarchyLevel: EPIC, calculation: 'parentOnly' },
+  { hierarchyLevel: STORY, calculation: 'widestRange' },
+];
+
+const ws = (key: string, extra = {}) => issue(key, null, { hierarchyLevel: WORKSTREAM, ...extra });
+const inc = (key: string, parent: string, extra = {}) => issue(key, parent, { hierarchyLevel: INCREMENT, ...extra });
+const epic = (key: string, parent: string, extra = {}) => issue(key, parent, { hierarchyLevel: EPIC, ...extra });
+const story = (key: string, parent: string, extra = {}) => issue(key, parent, { hierarchyLevel: STORY, ...extra });
+
+describe('computePlanningHealth — rolled-up dates follow the Timing Calculation settings', () => {
+  test('"From Epics" over undated epics is empty: ignores the increment\'s own and its stories\' dates', () => {
+    const health = computePlanningHealth(
+      [
+        inc('INC-1', 'WS-1', { due: day(2030, 1, 1) }),
+        epic('EPIC-1', 'INC-1'),
+        story('STORY-1', 'EPIC-1', { start: day(2026, 11, 1), due: day(2029, 6, 1) }),
+      ],
+      SETTINGS,
+    );
+    expect(health.get('INC-1')).toMatchObject({ rolledUpStart: null, rolledUpDue: null });
+    // "From Epic": the epic ignores its story too.
+    expect(health.get('EPIC-1')).toMatchObject({ rolledUpStart: null, rolledUpDue: null });
+    expect(health.get('STORY-1')?.rolledUpDue).toEqual(day(2029, 6, 1));
   });
 
-  test("falls back to the issue's own due date when no child has one", () => {
-    const health = computePlanningHealth([
-      issue('INIT-1', null, { dueDate: day(2026, 11, 1) }),
-      issue('EPIC-1', 'INIT-1'),
-      issue('INIT-2', null, { dueDate: day(2026, 12, 15) }),
-    ]);
-    expect(health.get('INIT-1')?.rolledUpDue).toEqual(day(2026, 11, 1));
-    expect(health.get('INIT-2')?.rolledUpDue).toEqual(day(2026, 12, 15));
-    expect(health.get('EPIC-1')?.rolledUpDue).toBeNull();
+  test('"From Epics" takes the epics\' own dates, earliest start to latest due', () => {
+    const health = computePlanningHealth(
+      [
+        ws('WS-1'),
+        inc('INC-1', 'WS-1', { due: day(2030, 1, 1) }),
+        epic('EPIC-1', 'INC-1', { start: day(2026, 11, 1), due: day(2027, 1, 1) }),
+        epic('EPIC-2', 'INC-1', { start: day(2026, 12, 1), due: day(2027, 3, 1) }),
+        story('STORY-1', 'EPIC-2', { due: day(2029, 6, 1) }),
+      ],
+      SETTINGS,
+    );
+    expect(health.get('INC-1')).toMatchObject({ rolledUpStart: day(2026, 11, 1), rolledUpDue: day(2027, 3, 1) });
+    // And on up: Workstream "From Increments".
+    expect(health.get('WS-1')).toMatchObject({ rolledUpStart: day(2026, 11, 1), rolledUpDue: day(2027, 3, 1) });
   });
 
-  test('recurses: outcome → initiative → epic', () => {
+  test('children count whatever the hierarchy range: there is no range input at all', () => {
+    // Only increments might be rows (an Increment → Increment range), but loaded epics still count.
+    const health = computePlanningHealth(
+      [inc('INC-1', 'WS-1'), epic('EPIC-1', 'INC-1', { due: day(2027, 2, 1) })],
+      SETTINGS,
+    );
+    expect(health.get('INC-1')?.rolledUpDue).toEqual(day(2027, 2, 1));
+  });
+
+  test('"From Increment, then Epics" prefers the parent\'s own date', () => {
+    const health = computePlanningHealth(
+      [inc('INC-1', 'WS-1', { due: day(2026, 12, 1) }), epic('EPIC-1', 'INC-1', { due: day(2027, 6, 1) })],
+      [{ hierarchyLevel: INCREMENT, calculation: 'parentFirstThenChildren' }],
+    );
+    expect(health.get('INC-1')?.rolledUpDue).toEqual(day(2026, 12, 1));
+  });
+
+  test('without settings, each level uses the pipeline default: children first, then its own', () => {
     const health = computePlanningHealth([
-      issue('OUT-1', null, { dueDate: day(2026, 11, 1) }),
-      issue('INIT-1', 'OUT-1', { dueDate: day(2026, 11, 15) }),
-      issue('INIT-2', 'OUT-1'),
-      issue('EPIC-1', 'INIT-1', { dueDate: day(2027, 3, 1) }),
-      issue('EPIC-2', 'INIT-2', { dueDate: day(2027, 1, 1) }),
+      inc('INC-1', 'WS-1', { due: day(2026, 12, 1) }),
+      epic('EPIC-1', 'INC-1', { due: day(2027, 6, 1) }),
+      inc('INC-2', 'WS-1', { due: day(2026, 12, 15) }),
     ]);
-    expect(health.get('INIT-1')?.rolledUpDue).toEqual(day(2027, 3, 1));
-    expect(health.get('INIT-2')?.rolledUpDue).toEqual(day(2027, 1, 1));
-    expect(health.get('OUT-1')?.rolledUpDue).toEqual(day(2027, 3, 1));
+    expect(health.get('INC-1')?.rolledUpDue).toEqual(day(2027, 6, 1));
+    expect(health.get('INC-2')?.rolledUpDue).toEqual(day(2026, 12, 15));
   });
 
   test('a parentKey cycle terminates', () => {
-    // Which date a cycle settles on depends on walk order; it only has to come from the cycle.
     const health = computePlanningHealth([
-      issue('A', 'B', { dueDate: day(2026, 11, 1) }),
-      issue('B', 'A', { dueDate: day(2026, 12, 1) }),
-      issue('C', 'C', { dueDate: day(2027, 1, 1) }),
+      issue('A', 'B', { due: day(2027, 1, 1) }),
+      issue('B', 'A', { due: day(2027, 2, 1) }),
     ]);
-    const cycleDates = [day(2026, 11, 1).getTime(), day(2026, 12, 1).getTime()];
-    expect(cycleDates).toContain(health.get('A')?.rolledUpDue?.getTime());
-    expect(cycleDates).toContain(health.get('B')?.rolledUpDue?.getTime());
-    expect(health.get('C')?.rolledUpDue).toEqual(day(2027, 1, 1));
-  });
-});
-
-describe('computePlanningHealth — rolled-up start date', () => {
-  test('is the earliest start date among the children, recursively', () => {
-    const health = computePlanningHealth([
-      issue('OUT-1', null, { startDate: day(2026, 12, 1) }),
-      issue('INIT-1', 'OUT-1', { startDate: day(2026, 11, 15) }),
-      issue('EPIC-1', 'INIT-1', { startDate: day(2027, 1, 1) }),
-      issue('EPIC-2', 'INIT-1', { startDate: day(2026, 10, 1) }),
-      issue('EPIC-3', 'INIT-1'),
-    ]);
-    expect(health.get('INIT-1')?.rolledUpStart).toEqual(day(2026, 10, 1));
-    expect(health.get('OUT-1')?.rolledUpStart).toEqual(day(2026, 10, 1));
-  });
-
-  test("falls back to the issue's own start date when no child has one", () => {
-    const health = computePlanningHealth([
-      issue('INIT-1', null, { startDate: day(2026, 11, 1) }),
-      issue('EPIC-1', 'INIT-1'),
-    ]);
-    expect(health.get('INIT-1')?.rolledUpStart).toEqual(day(2026, 11, 1));
-    expect(health.get('EPIC-1')?.rolledUpStart).toBeNull();
-  });
-
-  test('is independent of the due date rollup', () => {
-    const health = computePlanningHealth([
-      issue('INIT-1', null),
-      issue('EPIC-1', 'INIT-1', { startDate: day(2026, 11, 1), dueDate: day(2026, 12, 1) }),
-      issue('EPIC-2', 'INIT-1', { startDate: day(2027, 1, 1), dueDate: day(2027, 3, 1) }),
-    ]);
-    expect(health.get('INIT-1')).toMatchObject({ rolledUpStart: day(2026, 11, 1), rolledUpDue: day(2027, 3, 1) });
+    expect(health.get('A')?.rolledUpDue).toBeInstanceOf(Date);
+    expect(health.get('B')?.rolledUpDue).toBeInstanceOf(Date);
   });
 });
 

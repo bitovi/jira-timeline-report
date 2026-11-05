@@ -16,6 +16,8 @@ export const propsFor = (vm: any, config: any) => ({
   primaryIssuesOrReleasesObs: value.from(vm, 'primaryIssuesOrReleases'),
   allIssuesOrReleasesObs: value.from(vm, 'rolledupAndRolledBackIssuesAndReleases'),
   rollupTimingLevelsAndCalculationsObs: value.from(vm, 'rollupTimingLevelsAndCalculations'),
+  // Every level's Timing Calculation, not just the hierarchy range's (the Table's rolled-up dates).
+  issueTimingCalculationsObs: value.from(config, 'issueTimingCalculations'),
   filteredDerivedIssuesObs: value.from(vm, 'filteredDerivedIssues'),
   // `filteredDerivedIssues` with the Filters panel applied, for Flow Metrics and Time in Status.
   levelFilteredDerivedIssuesObs: value.from(vm, 'levelFilteredDerivedIssues'),

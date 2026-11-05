@@ -1263,6 +1263,7 @@ describe('TableReport planning health (spec/044)', () => {
       ...makeIssue(key, key),
       parentKey: parent?.key ?? null,
       dueDate: null,
+      derivedTiming: {},
       storyPoints: null,
       storyPointsMedian: null,
       confidence: null,
@@ -1285,15 +1286,23 @@ describe('TableReport planning health (spec/044)', () => {
   const estimated = { storyPoints: 5, confidence: 80 };
   const outcome = { key: 'OUT-1', summary: 'outcomeA' };
 
+  /** `due` as the issue's own timing (`derivedTiming`), which the Timing Calculation methods read. */
+  const due = (date: Date) => ({ dueDate: date, derivedTiming: { due: date } });
+
   // Three initiatives under one outcome. The epics are loaded too (they're what the columns count),
-  // but the outcome itself is not.
+  // but the outcome itself is not. Initiatives roll up "From Epics", epics "From Epic".
   const ISSUES = [
-    derived('inc1', outcome, { hierarchyLevel: 2, dueDate: day(2026, 11, 1) }),
+    derived('inc1', outcome, { hierarchyLevel: 2, ...due(day(2026, 11, 1)) }),
     derived('inc2', outcome, { hierarchyLevel: 2 }),
-    derived('inc3', outcome, { hierarchyLevel: 2, dueDate: day(2026, 12, 1) }),
-    derived('E1', { key: 'inc1', summary: 'inc1' }, { ...estimated, dueDate: day(2027, 1, 15) }),
-    derived('E2', { key: 'inc1', summary: 'inc1' }),
-    derived('E3', { key: 'inc2', summary: 'inc2' }, { ...estimated, dueDate: day(2027, 6, 1) }),
+    // No epics loaded: "From Epics" gives no date, so its own far-future one must not win the Max.
+    derived('inc3', outcome, { hierarchyLevel: 2, ...due(day(2030, 12, 1)) }),
+    derived('E1', { key: 'inc1', summary: 'inc1' }, { hierarchyLevel: 1, ...estimated, ...due(day(2027, 1, 15)) }),
+    derived('E2', { key: 'inc1', summary: 'inc1' }, { hierarchyLevel: 1 }),
+    derived('E3', { key: 'inc2', summary: 'inc2' }, { hierarchyLevel: 1, ...estimated, ...due(day(2027, 6, 1)) }),
+  ];
+  const TIMING = [
+    { hierarchyLevel: 2, calculation: 'childrenOnly' },
+    { hierarchyLevel: 1, calculation: 'parentOnly' },
   ];
 
   const PLANNING_COLUMNS = [
@@ -1306,7 +1315,7 @@ describe('TableReport planning health (spec/044)', () => {
   const renderPlanning = () => {
     const tableObs = makeTableObs();
     tableObs.tableColumnsObs.set([...PLANNING_COLUMNS]);
-    renderReport(ISSUES, tableObs);
+    renderReport(ISSUES, { ...tableObs, issueTimingCalculationsObs: obs(TIMING) } as typeof tableObs);
     return tableObs;
   };
 
@@ -1323,14 +1332,14 @@ describe('TableReport planning health (spec/044)', () => {
     vi.useRealTimers();
   });
 
-  test('ungrouped, each initiative shows its rolled-up due date and estimate progress', () => {
+  test('ungrouped, each initiative shows its due date per the Timing settings and its estimate progress', () => {
     mockFeatures.planningHealth = true;
     renderPlanning();
 
     expect(rowTexts('inc1')).toEqual(['outcomeA', 'inc1', iso(day(2027, 1, 15)), 'Partially estimated']);
     expect(rowTexts('inc2')).toEqual(['outcomeA', 'inc2', iso(day(2027, 6, 1)), 'Estimated']);
-    // No epics loaded under inc3: its own due date, and "No children".
-    expect(rowTexts('inc3')).toEqual(['outcomeA', 'inc3', iso(day(2026, 12, 1)), 'No children']);
+    // "From Epics" with no epics: no date, and its own due date doesn't show either (as on the Gantt).
+    expect(rowTexts('inc3')).toEqual(['outcomeA', 'inc3', '', 'No children']);
   });
 
   test('grouped by Parent Summary: one row per outcome, Max due date, How far out', () => {

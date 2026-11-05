@@ -4,7 +4,7 @@
  *
  * Phase 1 catalog = identity columns (issue key, summary/tree, issue type) + one field column per
  * Jira field (type-driven via {@link getFieldTypeEntry}) + the Estimation parity columns
- * (Estimated Days, Timed Days, Rolled Up Days). Legacy computed/custom aggregators are deferred to
+ * (Estimated Days, Timed Days, Rolled-up Days). Legacy computed/custom aggregators are deferred to
  * Phase 8 — the {@link ColumnDefinition} shape accepts a {@link ComputedSource}, but none are
  * emitted here.
  */
@@ -195,9 +195,21 @@ function planningHealthOf(issue: TableIssue): PlanningHealth | undefined {
 }
 
 /**
- * Rolled-up Start Date — the earliest start date among the row's children (recursively), else its
- * own: the Rolled-up Due Date's counterpart. Only levels that are loaded count. A date column like
- * any other; groups default to Min.
+ * The row's rolled-up start or due date per the Timing Calculation settings, computed over every
+ * loaded level by {@link computePlanningHealth} (so the hierarchy range doesn't hide children).
+ * Rows it doesn't cover (releases) fall back to the rollup pipeline's `rollupDates`. `null` when the
+ * settings yield no date, e.g. "From Epics" with no dated epics — as on the Gantt.
+ */
+function rolledUpDateValue(issue: TableIssue, which: 'start' | 'due'): Date | null {
+  const health = planningHealthOf(issue);
+  if (health) return (which === 'start' ? health.rolledUpStart : health.rolledUpDue) ?? null;
+  const dates = issue.rollupDates as { start?: Date | null; due?: Date | null } | undefined;
+  return dates?.[which] ?? null;
+}
+
+/**
+ * Rolled-up Start Date — the Rolled-up Due Date's counterpart (see {@link rolledUpDateValue}). A
+ * date column like any other; groups default to Min.
  */
 function buildRolledUpStartColumn(): ColumnDefinition {
   const entry = getFieldTypeEntry('date');
@@ -206,7 +218,7 @@ function buildRolledUpStartColumn(): ColumnDefinition {
     label: 'Rolled-up Start Date',
     group: 'Report Fields',
     source: { kind: 'computed', computedId: 'rolledUpStart' },
-    getValue: (issue) => planningHealthOf(issue)?.rolledUpStart ?? null,
+    getValue: (issue) => rolledUpDateValue(issue, 'start'),
     render: entry.render,
     compare: entry.compare,
     filter: entry.filter,
@@ -216,10 +228,9 @@ function buildRolledUpStartColumn(): ColumnDefinition {
 }
 
 /**
- * Rolled-up Due Date — the latest due date among the row's children (recursively), else its own
- * (spec/044-planning-health-mvp §5). Only levels that are loaded count: without the level below
- * loaded, a row shows its own due date. A date column like any other, so it gets Min/Max/Range and
- * the "How far out" format; groups default to Max.
+ * Rolled-up Due Date — the row's due date per the Timing Calculation settings, over every loaded
+ * level below it (see {@link rolledUpDateValue}; spec/044-planning-health-mvp §5). A date column like
+ * any other, so it gets Min/Max/Range and the "How far out" format; groups default to Max.
  */
 function buildRolledUpDueColumn(): ColumnDefinition {
   const entry = getFieldTypeEntry('date');
@@ -228,7 +239,7 @@ function buildRolledUpDueColumn(): ColumnDefinition {
     label: 'Rolled-up Due Date',
     group: 'Report Fields',
     source: { kind: 'computed', computedId: 'rolledUpDue' },
-    getValue: (issue) => planningHealthOf(issue)?.rolledUpDue ?? null,
+    getValue: (issue) => rolledUpDateValue(issue, 'due'),
     render: entry.render,
     compare: entry.compare,
     filter: entry.filter,
@@ -388,7 +399,7 @@ export function buildColumnCatalog(fields: IssueFields, options: ColumnCatalogOp
   const estimation: ColumnDefinition<any>[] = [
     buildEstimationColumn('estimatedDays', 'Estimated Days', estimatedDaysValue, true),
     buildEstimationColumn('timedDays', 'Timed Days', timedDaysValue),
-    buildEstimationColumn('rolledUpDays', 'Rolled Up Days', rolledUpDaysValue),
+    buildEstimationColumn('rolledUpDays', 'Rolled-up Days', rolledUpDaysValue),
     buildPercentCompleteColumn(),
   ];
   if (options.planningHealth) {
