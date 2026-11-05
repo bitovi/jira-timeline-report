@@ -149,7 +149,7 @@ export interface ColumnDefinition<Value = unknown> {
 /**
  * Whether a column's raw (non-aggregated) values are numeric — i.e. its filter is `{ kind:
  * 'number' }`. True for real number fields and the computed Estimation columns (Estimated/Timed/
- * Rolled Up Days), which are quantitative day-count measures even though they render a "last ➡
+ * Rolled-up Days), which are quantitative day-count measures even though they render a "last ➡
  * current" diff string. Used to right-align numeric columns per the enterprise data-table
  * convention (quantitative numbers right-align; dates and text stay left).
  */

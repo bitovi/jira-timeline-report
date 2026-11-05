@@ -9,7 +9,8 @@ import { selectDue, selectStart, descSortByDue, sortByStart } from '../../shared
 import { CalculationType, RollupLevelAndCalculation } from '../../shared/types';
 import { DueData, StartData } from '../../../shared/issue-data/date-data';
 
-const methods = {
+/** The date rollup method for each Timing Calculation choice. */
+export const rollupDateMethods = {
   parentFirstThenChildren,
   childrenOnly,
   childrenFirstThenParent,
@@ -74,7 +75,7 @@ export function rollupDates<T>(groupedHierarchy: IssueOrRelease<T>[][], methodNa
   return rollupGroupedHierarchy(groupedHierarchy, {
     createRollupDataFromParentAndChild(issueOrRelease, children: RollupDateData[], hierarchyLevel) {
       const methodName = methodNames[hierarchyLevel] || 'childrenFirstThenParent';
-      const method = methods[methodName];
+      const method = rollupDateMethods[methodName];
       const result = method(issueOrRelease, children);
       return result;
     },

@@ -376,18 +376,43 @@ describe('buildColumnCatalog — planning health columns (spec/044)', () => {
   test('Rolled-up Due Date is a date column that defaults to Max', () => {
     const column = buildColumnCatalog(fields, { planningHealth: true }).find((c) => c.id === 'planning:rolledUpDue')!;
     const due = new Date(2027, 5, 1);
-    const issue: TableIssue = { key: 'A', planningHealth: { rolledUpDue: due, estimateProgress: 'Estimated' } };
+    const issue: TableIssue = {
+      key: 'A',
+      planningHealth: { rolledUpStart: null, rolledUpDue: due, estimateProgress: 'Estimated' },
+    };
     expect(column.getValue(issue)).toBe(due);
     expect(column.getValue({ key: 'B' })).toBeNull();
     expect(column.filter).toEqual({ kind: 'date' });
     expect(column.defaultAggregate).toBe('max');
   });
 
+  test('Rolled-up dates: an empty planning-health date stays empty; rows without one use the rollup', () => {
+    const catalog = buildColumnCatalog(fields, { planningHealth: true });
+    const start = catalog.find((c) => c.id === 'planning:rolledUpStart')!;
+    const due = catalog.find((c) => c.id === 'planning:rolledUpDue')!;
+    // e.g. Increment = "From Epics" with undated epics: no date, even with the pipeline's or its own.
+    const increment: TableIssue = {
+      key: 'INC-1',
+      planningHealth: { rolledUpStart: null, rolledUpDue: null, estimateProgress: 'No children' },
+      rollupDates: { start: new Date(2026, 0, 1), due: new Date(2030, 0, 1) },
+      dueDate: new Date(2030, 0, 1),
+    };
+    expect(start.getValue(increment)).toBeNull();
+    expect(due.getValue(increment)).toBeNull();
+    // A release row has no planning health: it shows the pipeline's dates.
+    const release: TableIssue = { key: 'R-1', rollupDates: { start: new Date(2026, 0, 1), due: new Date(2026, 5, 1) } };
+    expect(start.getValue(release)).toEqual(new Date(2026, 0, 1));
+    expect(due.getValue(release)).toEqual(new Date(2026, 5, 1));
+  });
+
   test('Estimate Progress reads the label, defaults to a stacked bar and sorts in planning order', () => {
     const column = buildColumnCatalog(fields, { planningHealth: true }).find(
       (c) => c.id === 'planning:estimateProgress',
     )!;
-    const issue: TableIssue = { key: 'A', planningHealth: { rolledUpDue: null, estimateProgress: 'Unestimated' } };
+    const issue: TableIssue = {
+      key: 'A',
+      planningHealth: { rolledUpStart: null, rolledUpDue: null, estimateProgress: 'Unestimated' },
+    };
     expect(column.getValue(issue)).toBe('Unestimated');
     expect(column.filter?.kind).toBe('select');
     expect(column.defaultAggregate).toBe('bar');

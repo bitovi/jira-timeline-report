@@ -64,6 +64,9 @@ const SHELL_PROP_KEYS_ADDED_SINCE = [
   'visibleIssuesOrReleasesObs',
   // 2026-10-29 — the full Filters panel on Flow Metrics and Time in Status. spec/043-filters-redesign.
   'levelFilteredDerivedIssuesObs',
+  // 2026-11-05 — the Table's Rolled-up Start/Due Date follow every level's Timing Calculation.
+  // spec/044-planning-health-mvp open question 1.
+  'issueTimingCalculationsObs',
 ];
 
 // A stand-in for routeData / ChildReportConfig — propsFor only ever reads named properties off it.
