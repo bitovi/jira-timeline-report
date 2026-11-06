@@ -38,6 +38,10 @@ export function rollupWarningIssuesForGroupedHierarchy<T>(groupedHierarchy: Issu
     createRollupDataFromParentAndChild(issueOrRelease, children: IssueOrRelease<T>[][]) {
       if (isDerivedRelease(issueOrRelease)) return [...children.flat(1)];
 
+      // A Done issue can't be a warning, even with a stale `warning` label left on it.
+      // Its descendants still roll up through it.
+      if (issueOrRelease.statusCategory === 'Done') return [...children.flat(1)];
+
       const lowerCaseLabels = (issueOrRelease.labels || []).map((label) => label.toLowerCase());
       const hasWarningLabel = lowerCaseLabels.some((label) => label === 'warning');
       const hasWarningStatus = isDerivedIssue(issueOrRelease) && issueOrRelease?.status === 'warning';
