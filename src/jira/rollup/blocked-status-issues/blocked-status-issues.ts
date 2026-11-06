@@ -45,6 +45,10 @@ export function rollupBlockedIssuesForGroupedHierarchy<T>(groupedHierarchy: Issu
     createRollupDataFromParentAndChild(issueOrRelease, children: IssueOrRelease<T>[][]) {
       if (isDerivedRelease(issueOrRelease)) return [...children.flat(1)];
 
+      // A Done issue can't be blocking anything, even with a stale `blocked` label left on it.
+      // Its descendants still roll up through it.
+      if (issueOrRelease.statusCategory === 'Done') return [...children.flat(1)];
+
       const lowerCaseLabels = (issueOrRelease.labels || []).map((label) => label.toLowerCase());
       const hasBlockedLabel = lowerCaseLabels.some((label) => label === 'blocked');
       const hasBlockedStatus =

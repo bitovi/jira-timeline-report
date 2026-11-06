@@ -225,3 +225,44 @@ describe('rollupWarningIssues', () => {
     expect(o1?.warningIssues).toEqual([...i7WarningIssues, ...i8WarningIssues]);
   });
 });
+
+describe('rollupWarningIssuesForGroupedHierarchy with Done issues', () => {
+  const keysPerLevel = (issuesAndReleases: IssueOrRelease[][]) =>
+    rollupWarningIssuesForGroupedHierarchy(issuesAndReleases).map(({ rollupData }) =>
+      rollupData.map((warnings) => warnings.map((issue) => issue.key)),
+    );
+
+  it('ignores a Done issue with a stale warning label', () => {
+    const grouped = (
+      [
+        [{ key: 'e-1', parentKey: null, labels: [] }],
+        [{ key: 's-2', parentKey: 'e-1', statusCategory: 'Done', labels: ['Warning'] }],
+      ] as IssueOrRelease[][]
+    ).reverse();
+
+    expect(keysPerLevel(grouped)).toEqual([[[]], [[]]]);
+  });
+
+  it('still counts a warning label on an issue that is not Done', () => {
+    const grouped = (
+      [
+        [{ key: 'e-1', parentKey: null, labels: [] }],
+        [{ key: 's-2', parentKey: 'e-1', statusCategory: 'In Progress', labels: ['warning'] }],
+      ] as IssueOrRelease[][]
+    ).reverse();
+
+    expect(keysPerLevel(grouped)).toEqual([[['s-2']], [['s-2']]]);
+  });
+
+  it('still rolls up warning descendants through a Done parent', () => {
+    const grouped = (
+      [
+        [{ key: 'i-1', parentKey: null, labels: [] }],
+        [{ key: 'e-2', parentKey: 'i-1', statusCategory: 'Done', labels: ['warning'] }],
+        [{ key: 's-3', parentKey: 'e-2', labels: ['warning'] }],
+      ] as IssueOrRelease[][]
+    ).reverse();
+
+    expect(keysPerLevel(grouped)).toEqual([[['s-3']], [['s-3']], [['s-3']]]);
+  });
+});
