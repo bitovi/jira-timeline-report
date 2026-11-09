@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rollup Calculation + estimated-time Table — mockup (spec/042, spec/043)</title>
+    <style>
+      :root {
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --subtle: #6b778c;
+        --border: #dfe1e6;
+        --neutral-10: #f7f8f9;
+        --neutral-20: #f1f2f4;
+        --brand: #0c66e4;
+        --brand-bg: #e9f2ff;
+        --avg: #8f7ee7;
+        --avg-bg: #f3f0ff;
+        --warn-bg: #fff7d6;
+        --warn-border: #f5cd47;
+        --ok: #22a06b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        background: #fafbfc;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      header.page {
+        padding: 16px 24px 8px;
+      }
+      header.page h1 {
+        font-size: 20px;
+        margin: 0 0 4px;
+      }
+      header.page p {
+        margin: 0;
+        color: var(--muted);
+        max-width: 1100px;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 0;
+        min-height: calc(100vh - 80px);
+      }
+      aside {
+        background: #fff;
+        border-right: 1px solid var(--border);
+        padding: 16px 20px 40px;
+      }
+      main {
+        padding: 16px 24px 60px;
+        overflow-x: auto;
+      }
+      h2 {
+        font-size: 16px;
+        margin: 8px 0 2px;
+      }
+      h3 {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        margin: 18px 0 6px;
+      }
+      .hint {
+        font-size: 12px;
+        color: var(--subtle);
+        margin: 0 0 8px;
+      }
+      label.field {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        margin: 10px 0 3px;
+      }
+      select {
+        width: 100%;
+        padding: 6px 8px;
+        border: 2px solid var(--border);
+        border-radius: 4px;
+        font: inherit;
+        background: var(--neutral-10);
+      }
+      select:focus {
+        outline: none;
+        border-color: var(--brand);
+        background: #fff;
+      }
+      .level {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+      }
+      .level .elbow {
+        border-left: 2px solid var(--border);
+        border-bottom: 2px solid var(--border);
+        border-bottom-left-radius: 8px;
+        width: 16px;
+        height: 22px;
+        flex: none;
+      }
+      .level-name {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 0;
+      }
+      .presets {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+      .presets button {
+        border: 2px solid var(--border);
+        background: #fff;
+        border-radius: 6px;
+        padding: 8px;
+        text-align: left;
+        cursor: pointer;
+        font: inherit;
+      }
+      .presets button strong {
+        display: block;
+        font-size: 13px;
+      }
+      .presets button span {
+        font-size: 11px;
+        color: var(--subtle);
+      }
+      .presets button.active {
+        border-color: var(--brand);
+        background: var(--brand-bg);
+      }
+      .custom-note {
+        font-size: 11px;
+        color: var(--subtle);
+        margin-top: 4px;
+        min-height: 14px;
+      }
+      .notice {
+        background: var(--warn-bg);
+        border: 1px solid var(--warn-border);
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-size: 12px;
+        margin-top: 16px;
+      }
+      .controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+      .pill {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: #fff;
+        padding: 5px 10px;
+        font-size: 13px;
+      }
+      .pill b {
+        font-weight: 600;
+      }
+      .settings-summary {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 0 0 10px;
+      }
+      table.grid {
+        border-collapse: collapse;
+        background: #fff;
+        border: 1px solid var(--border);
+        font-size: 12px;
+        min-width: 100%;
+      }
+      table.grid th,
+      table.grid td {
+        border-bottom: 1px solid var(--border);
+        padding: 5px 7px;
+        white-space: nowrap;
+      }
+      table.grid th {
+        background: var(--neutral-20);
+        text-align: left;
+        font-size: 12px;
+        font-weight: 600;
+        position: relative;
+      }
+      table.grid th.num,
+      table.grid td.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      table.grid th .grp {
+        display: block;
+        font-weight: 400;
+        font-size: 10px;
+        color: var(--subtle);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      th.team-col {
+        background: #eef6ff !important;
+      }
+      td.team-col {
+        background: #f8fbff;
+      }
+      tr.init td {
+        font-weight: 600;
+      }
+      tr.total td {
+        background: var(--neutral-20);
+        font-weight: 700;
+        border-top: 2px solid var(--border);
+      }
+      tr.group td {
+        background: var(--neutral-10);
+        font-weight: 600;
+      }
+      .indent {
+        display: inline-block;
+        width: 20px;
+      }
+      .key {
+        color: var(--brand);
+        font-size: 12px;
+        margin-right: 6px;
+      }
+      .type {
+        font-size: 10px;
+        border-radius: 3px;
+        padding: 1px 5px;
+        margin-right: 6px;
+        color: #fff;
+      }
+      .type.Initiative {
+        background: #6e5dc6;
+      }
+      .type.Epic {
+        background: #8270db;
+        opacity: 0.75;
+      }
+      .muted {
+        color: var(--subtle);
+      }
+      .avg {
+        color: var(--avg);
+      }
+      .chip {
+        display: inline-block;
+        font-size: 11px;
+        border-radius: 10px;
+        padding: 1px 7px;
+        background: var(--neutral-20);
+        color: var(--muted);
+      }
+      .chip.estimate {
+        background: #dcfff1;
+        color: #216e4e;
+      }
+      .chip.dates {
+        background: #e9f2ff;
+        color: #0055cc;
+      }
+      .chip.average {
+        background: var(--avg-bg);
+        color: #5e4db2;
+      }
+      .chip.unsized {
+        background: #ffeceb;
+        color: #ae2e24;
+      }
+      .chip.children {
+        background: var(--neutral-20);
+      }
+      .bar {
+        display: inline-block;
+        width: 54px;
+        height: 6px;
+        background: var(--neutral-20);
+        border-radius: 3px;
+        vertical-align: middle;
+        margin-left: 6px;
+        overflow: hidden;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+        background: var(--ok);
+      }
+      .clickable {
+        cursor: pointer;
+        border-bottom: 1px dashed var(--brand);
+      }
+      .callout {
+        font-size: 12px;
+        color: var(--muted);
+        background: #fff;
+        border: 1px dashed var(--border);
+        border-radius: 6px;
+        padding: 8px 12px;
+        margin: 10px 0 0;
+        max-width: 1100px;
+      }
+      section.block {
+        margin-top: 28px;
+      }
+      section.block > h2 {
+        margin-bottom: 4px;
+      }
+      .ann {
+        display: inline-block;
+        background: #fff0b3;
+        color: #533f04;
+        font-size: 11px;
+        border-radius: 3px;
+        padding: 0 5px;
+        margin-left: 6px;
+        font-weight: 600;
+      }
+      /* modal */
+      .backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(9, 30, 66, 0.54);
+        display: none;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 60px;
+      }
+      .backdrop.open {
+        display: flex;
+      }
+      .modal {
+        background: #fff;
+        border-radius: 8px;
+        width: 960px;
+        max-width: 95vw;
+        padding: 20px 24px;
+        box-shadow: 0 8px 24px rgba(9, 30, 66, 0.3);
+      }
+      .modal h2 {
+        margin-top: 0;
+      }
+      .modal .summary {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 10px 0;
+      }
+      .stat {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px 12px;
+        min-width: 140px;
+      }
+      .stat .v {
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .stat .l {
+        font-size: 11px;
+        color: var(--subtle);
+      }
+      .stat.avgd {
+        border-color: var(--avg);
+        background: var(--avg-bg);
+      }
+      .modal .close {
+        float: right;
+        border: none;
+        background: var(--neutral-20);
+        border-radius: 4px;
+        padding: 4px 10px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="page">
+      <h1>Rollup Calculation + estimated-time Table</h1>
+      <p>
+        Interactive mockup for <b>spec/043</b> (Rollup Calculation settings &amp; work rollup) and <b>spec/042</b> Phase
+        1 (estimated-time columns). Numbers are computed live from the sample data; change a setting or pick a preset
+        and the Table updates. Click any <span class="clickable">% Complete</span> value to open the Gantt
+        percent-complete modal.
+      </p>
+    </header>
+
+    <div class="layout">
+      <!-- ============ SIDEBAR ============ -->
+      <aside>
+        <h2>Rollup Calculation</h2>
+        <p class="hint">Renamed from "Timing Calculation". How dates and work roll up from children to parents.</p>
+
+        <h3>Dates</h3>
+        <p class="hint">Which dates are prioritized between parent and child? (unchanged)</p>
+        <div class="level-name">Initiative</div>
+        <div class="level">
+          <div class="elbow"></div>
+          <div style="flex: 1">
+            <select disabled>
+              <option>From Initiative or Epics (earliest to latest)</option>
+            </select>
+            <div class="level-name">Epic</div>
+          </div>
+        </div>
+
+        <h3>Work</h3>
+        <p class="hint">How work is sized, rolled up, and marked complete.</p>
+        <div class="presets" id="presets">
+          <button data-preset="timeline">
+            <strong>Timeline</strong>
+            <span>Today's behavior. Dates first; guesses for missing sizes.</span>
+          </button>
+          <button data-preset="effort">
+            <strong>Estimated effort</strong>
+            <span>Estimates only; no guesses; larger of parent or children.</span>
+          </button>
+        </div>
+        <div class="custom-note" id="customNote"></div>
+
+        <label class="field" for="sizeFrom">Size work from</label>
+        <select id="sizeFrom">
+          <option value="datesFirst">Dates, then estimate</option>
+          <option value="estimateFirst">Estimate, then dates</option>
+          <option value="estimateOnly">Estimate only</option>
+        </select>
+
+        <label class="field" for="estimateValue">Estimate value</label>
+        <select id="estimateValue">
+          <option value="confidenceAdjusted">Median × LOGNORMINV(confidence)</option>
+          <option value="median">Median only</option>
+        </select>
+
+        <label class="field" for="missingConfidence">Missing confidence</label>
+        <select id="missingConfidence">
+          <option value="assume50">Assume 50%</option>
+          <option value="unsized">Treat as no estimate</option>
+        </select>
+
+        <label class="field" for="missingSize">Items without a size</label>
+        <select id="missingSize">
+          <option value="levelAverage">Use the level's average</option>
+          <option value="unsized">Leave unsized (count them, add 0 days)</option>
+        </select>
+
+        <label class="field">Parent vs. children</label>
+        <div class="level-name">Initiative</div>
+        <div class="level">
+          <div class="elbow"></div>
+          <div style="flex: 1">
+            <select id="pvc">
+              <option value="childrenFirstThenParent">From Epics, then Initiative</option>
+              <option value="larger">Larger of Initiative or Epics</option>
+              <option value="childrenOnly">From Epics</option>
+              <option value="parentOnly">From Initiative</option>
+            </select>
+            <div class="level-name">Epic</div>
+          </div>
+        </div>
+
+        <label class="field" for="completeBy">Mark complete by</label>
+        <select id="completeBy">
+          <option value="dates">Dates</option>
+          <option value="datesStatusWins">Dates, but status wins</option>
+          <option value="status">Status only</option>
+        </select>
+
+        <div class="notice">
+          <b>Spread effort moved here.</b> "Spread effort" was a per-team setting. It is now <b>Size work from</b> for
+          the whole report. 2 teams had their own value; this report now uses <i>Dates, then estimate</i> for all teams.
+        </div>
+      </aside>
+
+      <!-- ============ MAIN ============ -->
+      <main>
+        <div class="controls">
+          <span class="pill">Report type: <b>Table</b></span>
+          <span class="pill">Rows: <b>Hierarchy</b> · Initiative → Epic</span>
+          <span class="pill">Group by: <b>None</b></span>
+          <span class="pill">+ Add column</span>
+        </div>
+        <p class="settings-summary" id="settingsSummary"></p>
+
+        <table class="grid" id="table"></table>
+
+        <div class="callout">
+          <b>Reading the team columns:</b> each row shows that team's share of the row's work, so a team column sums
+          correctly down the Total row even though Initiatives and Epics are both shown. The team columns always add up
+          to <b>Total (with averages)</b>. <span class="chip estimate">estimate</span>
+          <span class="chip dates">dates</span> <span class="chip average">average</span>
+          <span class="chip unsized">no size</span> show where each Epic's size came from.
+        </div>
+
+        <section class="block">
+          <h2>Group by Team (Epic rows only)</h2>
+          <p class="hint">
+            Group headers use the new <b>ratio</b> aggregation for percentages (Σ completed ÷ Σ total). The greyed value
+            shows what today's <b>avg</b> aggregation would show.
+          </p>
+          <table class="grid" id="grouped"></table>
+        </section>
+      </main>
+    </div>
+
+    <!-- ============ MODAL ============ -->
+    <div class="backdrop" id="backdrop">
+      <div class="modal" id="modal"></div>
+    </div>
+
+    <script>
+      const TEAMS = ['Atlas', 'Borealis', 'Comet'];
+
+      // est.adj = confidence-adjusted days, est.median = median days, est.conf = has confidence.
+      // dates = business days between start and due; f = elapsed share of start → due.
+      const DATA = [
+        {
+          key: 'INIT-1',
+          type: 'Initiative',
+          summary: 'Self-serve onboarding',
+          team: 'Atlas',
+          est: { adj: 120, median: 80, conf: true },
+          dates: null,
+          f: 0,
+          status: 'In Progress',
+          children: [
+            {
+              key: 'EPIC-11',
+              summary: 'Signup flow',
+              team: 'Atlas',
+              est: { adj: 20, median: 14, conf: true },
+              dates: 30,
+              f: 0.5,
+              status: 'In Progress',
+            },
+            {
+              key: 'EPIC-12',
+              summary: 'Email verification',
+              team: 'Atlas',
+              est: { adj: 10, median: 7, conf: true },
+              dates: null,
+              f: 0,
+              status: 'Done',
+            },
+            {
+              key: 'EPIC-13',
+              summary: 'Billing setup',
+              team: 'Borealis',
+              est: null,
+              dates: 40,
+              f: 0.25,
+              status: 'In Progress',
+            },
+            { key: 'EPIC-14', summary: 'Admin console', team: 'Comet', est: null, dates: null, f: 0, status: 'To Do' },
+          ],
+        },
+        {
+          key: 'INIT-2',
+          type: 'Initiative',
+          summary: 'Reporting v2',
+          team: 'Borealis',
+          est: null,
+          dates: null,
+          f: 0,
+          status: 'In Progress',
+          children: [
+            {
+              key: 'EPIC-21',
+              summary: 'Data pipeline',
+              team: 'Borealis',
+              est: { adj: 35, median: 24, conf: true },
+              dates: 25,
+              f: 1,
+              status: 'In Progress',
+            },
+            {
+              key: 'EPIC-22',
+              summary: 'Dashboards',
+              team: 'Comet',
+              est: { adj: 25, median: 17, conf: true },
+              dates: 20,
+              f: 0,
+              status: 'To Do',
+            },
+            {
+              key: 'EPIC-23',
+              summary: 'CSV exports',
+              team: 'Atlas',
+              est: { adj: 8, median: 8, conf: false },
+              dates: null,
+              f: 0,
+              status: 'Done',
+            },
+          ],
+        },
+        {
+          key: 'INIT-3',
+          type: 'Initiative',
+          summary: 'Mobile parity',
+          team: 'Comet',
+          est: { adj: 60, median: 40, conf: true },
+          dates: 90,
+          f: 0.1,
+          status: 'In Progress',
+          children: [
+            { key: 'EPIC-31', summary: 'iOS navigation', team: 'Comet', est: null, dates: null, f: 0, status: 'To Do' },
+            {
+              key: 'EPIC-32',
+              summary: 'Android offline',
+              team: 'Atlas',
+              est: { adj: 12, median: 8, conf: true },
+              dates: null,
+              f: 0,
+              status: 'To Do',
+            },
+          ],
+        },
+      ];
+      DATA.forEach((i) => i.children.forEach((c) => (c.type = 'Epic')));
+
+      const PRESETS = {
+        timeline: { sizeFrom: 'datesFirst', missingSize: 'levelAverage', pvc: 'childrenFirstThenParent' },
+        effort: { sizeFrom: 'estimateOnly', missingSize: 'unsized', pvc: 'larger' },
+      };
+      const S = {
+        sizeFrom: 'datesFirst',
+        estimateValue: 'confidenceAdjusted',
+        missingConfidence: 'assume50',
+        missingSize: 'levelAverage',
+        pvc: 'childrenFirstThenParent',
+        completeBy: 'dates',
+      };
+
+      // ---------- derive ----------
+      function estimateDays(it) {
+        if (!it.est) return null;
+        if (!it.est.conf && S.missingConfidence === 'unsized') return null;
+        return S.estimateValue === 'median' ? it.est.median : it.est.adj;
+      }
+      function ownSize(it) {
+        const e = estimateDays(it);
+        const d = it.dates;
+        if (S.sizeFrom === 'datesFirst')
+          return d != null ? { size: d, from: 'dates' } : e != null ? { size: e, from: 'estimate' } : null;
+        if (S.sizeFrom === 'estimateFirst')
+          return e != null ? { size: e, from: 'estimate' } : d != null ? { size: d, from: 'dates' } : null;
+        return e != null ? { size: e, from: 'estimate' } : null;
+      }
+      function completedOf(size, it) {
+        const f = it.dates != null ? it.f : 0;
+        if (S.completeBy === 'status') return it.status === 'Done' ? size : 0;
+        if (S.completeBy === 'datesStatusWins') {
+          if (it.status === 'Done') return size;
+          if (it.status === 'To Do') return 0;
+        }
+        return size * f;
+      }
+
+      // ---------- rollup ----------
+      const emptyTeam = () => ({ known: 0, knownC: 0, avg: 0, avgC: 0 });
+      function selfRollup(it, sz) {
+        const c = completedOf(sz.size, it);
+        return {
+          source: 'self',
+          from: sz.from,
+          known: sz.size,
+          knownC: c,
+          avg: 0,
+          avgC: 0,
+          unsized: [],
+          full: true,
+          byTeam: { [it.team]: { known: sz.size, knownC: c, avg: 0, avgC: 0 } },
+        };
+      }
+      function noSizeRollup(it, levelAvg) {
+        if (S.missingSize === 'levelAverage') {
+          const c = it.status === 'Done' ? levelAvg : 0;
+          return {
+            source: 'average',
+            known: 0,
+            knownC: 0,
+            avg: levelAvg,
+            avgC: c,
+            unsized: [it.key],
+            full: false,
+            byTeam: { [it.team]: { known: 0, knownC: 0, avg: levelAvg, avgC: c } },
+          };
+        }
+        return { source: 'unsized', known: 0, knownC: 0, avg: 0, avgC: 0, unsized: [it.key], full: false, byTeam: {} };
+      }
+      function ownRule(it, levelAvg) {
+        const sz = ownSize(it);
+        return sz ? selfRollup(it, sz) : noSizeRollup(it, levelAvg);
+      }
+      function sumKids(kids) {
+        const r = {
+          source: 'children',
+          known: 0,
+          knownC: 0,
+          avg: 0,
+          avgC: 0,
+          unsized: [],
+          full: kids.every((k) => k.full),
+          byTeam: {},
+        };
+        for (const k of kids) {
+          r.known += k.known;
+          r.knownC += k.knownC;
+          r.avg += k.avg;
+          r.avgC += k.avgC;
+          r.unsized.push(...k.unsized);
+          for (const [t, v] of Object.entries(k.byTeam)) {
+            const tt = (r.byTeam[t] ||= emptyTeam());
+            tt.known += v.known;
+            tt.knownC += v.knownC;
+            tt.avg += v.avg;
+            tt.avgC += v.avgC;
+          }
+        }
+        return r;
+      }
+      function parentWins(it, own, kids) {
+        const sum = sumKids(kids);
+        const c = completedOf(own.size, it);
+        const byTeam = {};
+        for (const [t, v] of Object.entries(sum.byTeam))
+          byTeam[t] = { known: v.known, knownC: v.knownC, avg: 0, avgC: 0 };
+        const rest = (byTeam[it.team] ||= emptyTeam());
+        rest.known += own.size - sum.known;
+        rest.knownC += Math.max(0, c - sum.knownC);
+        return {
+          source: 'self',
+          from: own.from,
+          larger: true,
+          known: own.size,
+          knownC: c,
+          avg: 0,
+          avgC: 0,
+          unsized: [],
+          full: true,
+          byTeam,
+        };
+      }
+
+      function mean(arr, dflt) {
+        return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : dflt;
+      }
+
+      function compute() {
+        const epics = DATA.flatMap((i) => i.children);
+        const epicAvg = mean(
+          epics
+            .map(ownSize)
+            .filter(Boolean)
+            .map((s) => s.size),
+          30,
+        );
+        const epicRoll = new Map(epics.map((e) => [e.key, ownRule(e, epicAvg)]));
+        const initAvg = mean(
+          DATA.map(ownSize)
+            .filter(Boolean)
+            .map((s) => s.size),
+          30,
+        );
+
+        const initRoll = new Map();
+        for (const it of DATA) {
+          const kids = it.children.map((c) => epicRoll.get(c.key));
+          const own = ownSize(it);
+          let r;
+          if (S.pvc === 'childrenFirstThenParent') {
+            if (kids.every((k) => k.full)) r = sumKids(kids);
+            else if (own) r = selfRollup(it, own);
+            else r = sumKids(kids);
+          } else if (S.pvc === 'larger') {
+            const sum = sumKids(kids);
+            r = own && own.size > sum.known ? parentWins(it, own, kids) : sum;
+          } else if (S.pvc === 'childrenOnly') {
+            r = sumKids(kids);
+          } else {
+            r = ownRule(it, initAvg);
+          }
+          // Gaps are always reported, whichever side wins (spec/043 Rules).
+          const gaps = [...new Set([...kids.flatMap((k) => k.unsized), ...r.unsized])];
+          r = { ...r, unsized: gaps };
+          initRoll.set(it.key, r);
+        }
+        return { epicRoll, initRoll, epicAvg };
+      }
+
+      // ---------- render helpers ----------
+      const fmt = (n) => (n == null ? '—' : Math.round(n).toString());
+      const pct = (num, den) => (den ? Math.round((num * 100) / den) : null);
+      const pctCell = (p, clickKey) => {
+        if (p == null) return '<span class="muted">—</span>';
+        const txt = `${p}%<span class="bar"><i style="width:${p}%"></i></span>`;
+        return clickKey ? `<span class="clickable" data-modal="${clickKey}">${txt}</span>` : txt;
+      };
+      function sourceChip(r) {
+        if (r.source === 'self') return `<span class="chip ${r.from}">${r.from}${r.larger ? ' · larger' : ''}</span>`;
+        if (r.source === 'average') return '<span class="chip average">average</span>';
+        if (r.source === 'unsized') return '<span class="chip unsized">no size</span>';
+        return '<span class="chip children">children</span>';
+      }
+      const total = (r) => r.known + r.avg;
+      const done = (r) => r.knownC + r.avgC;
+
+      function teamCell(r, t) {
+        const v = r.byTeam[t];
+        if (!v) return '<td class="num team-col muted">—</td>';
+        const a = v.avg ? ` <span class="avg">+${fmt(v.avg)}</span>` : '';
+        return `<td class="num team-col">${fmt(v.known)}${a}</td>`;
+      }
+      function breakdown(r) {
+        return (
+          Object.entries(r.byTeam)
+            .map(([t, v]) => [t, v.known + v.avg, v.avg])
+            .filter(([, n]) => n > 0)
+            .sort((a, b) => b[1] - a[1])
+            .map(([t, n, a]) => `${t} ${fmt(n)}d${a ? '*' : ''}`)
+            .join(' · ') || '<span class="muted">—</span>'
+        );
+      }
+
+      function row(it, r, depth) {
+        return `<tr class="${depth ? 'epic' : 'init'}">
+          <td>${depth ? '<span class="indent"></span>' : ''}<span class="type ${it.type}">${it.type}</span><span class="key">${it.key}</span>${it.summary}</td>
+          <td>${it.team}</td>
+          <td>${it.status}</td>
+          <td>${sourceChip(r)}</td>
+          <td class="num">${fmt(r.known)}</td>
+          <td class="num avg">${r.avg ? fmt(r.avg) : '<span class="muted">0</span>'}</td>
+          <td class="num">${fmt(total(r))}</td>
+          <td class="num">${r.unsized.length || '<span class="muted">0</span>'}</td>
+          ${TEAMS.map((t) => teamCell(r, t)).join('')}
+          <td>${breakdown(r)}</td>
+          <td class="num">${pctCell(pct(done(r), total(r)), depth ? null : it.key)}</td>
+          <td class="num">${pctCell(pct(r.knownC, r.known))}</td>
+          <td class="num">${fmt(r.known - r.knownC)}</td>
+        </tr>`;
+      }
+
+      function render() {
+        const { epicRoll, initRoll, epicAvg } = compute();
+
+        document.getElementById('settingsSummary').innerHTML =
+          `Active Work settings: <b>${label('sizeFrom')}</b> · <b>${label('missingSize')}</b>` +
+          (S.missingSize === 'levelAverage' ? ` (Epic average = ${fmt(epicAvg)}d)` : '') +
+          ` · Initiative ← Epics: <b>${label('pvc')}</b> · Complete by <b>${label('completeBy')}</b>`;
+
+        const head = `<tr>
+          <th>Summary</th><th>Team</th><th>Status</th>
+          <th><span class="grp">Rollup</span>Size from</th>
+          <th class="num"><span class="grp">Rollup</span>Known Days</th>
+          <th class="num"><span class="grp">Rollup</span>Averaged Days</th>
+          <th class="num"><span class="grp">Rollup</span>Total (with averages)</th>
+          <th class="num"><span class="grp">Rollup</span>Items w/o size</th>
+          ${TEAMS.map((t) => `<th class="num team-col"><span class="grp">By team</span>Known Days · ${t}</th>`).join('')}
+          <th><span class="grp">By team</span>Team Breakdown</th>
+          <th class="num"><span class="grp">Rollup</span>% Complete</th>
+          <th class="num"><span class="grp">Rollup</span>% Complete (known)</th>
+          <th class="num"><span class="grp">Rollup</span>Remaining (known)</th>
+        </tr>`;
+
+        let body = '';
+        const tops = [];
+        for (const it of DATA) {
+          const r = initRoll.get(it.key);
+          tops.push(r);
+          body += row(it, r, 0);
+          for (const c of it.children) body += row(c, epicRoll.get(c.key), 1);
+        }
+        const T = sumKids(tops);
+        body += `<tr class="total">
+          <td>Total (top-level rows)</td><td></td><td></td><td></td>
+          <td class="num">${fmt(T.known)}</td>
+          <td class="num avg">${fmt(T.avg)}</td>
+          <td class="num">${fmt(total(T))}</td>
+          <td class="num">${T.unsized.length}</td>
+          ${TEAMS.map((t) => teamCell(T, t)).join('')}
+          <td>${breakdown(T)}</td>
+          <td class="num">${pctCell(pct(done(T), total(T)))}<span class="ann">ratio</span></td>
+          <td class="num">${pctCell(pct(T.knownC, T.known))}<span class="ann">ratio</span></td>
+          <td class="num">${fmt(T.known - T.knownC)}</td>
+        </tr>`;
+        document.getElementById('table').innerHTML = `<thead>${head}</thead><tbody>${body}</tbody>`;
+
+        // grouped by team (epic rows)
+        const epics = DATA.flatMap((i) => i.children);
+        let g = `<thead><tr><th>Team / Epic</th><th>Size from</th><th class="num">Known Days</th><th class="num">Total (with averages)</th><th class="num">% Complete</th></tr></thead><tbody>`;
+        for (const t of TEAMS) {
+          const rows = epics.filter((e) => e.team === t);
+          const rs = rows.map((e) => epicRoll.get(e.key));
+          const sum = sumKids(rs);
+          const pcts = rs.map((r) => pct(done(r), total(r))).filter((p) => p != null);
+          const avgOfRows = pcts.length ? Math.round(mean(pcts, 0)) : null;
+          g += `<tr class="group"><td>${t} <span class="muted">(${rows.length} epics)</span></td><td></td>
+            <td class="num">${fmt(sum.known)}</td><td class="num">${fmt(total(sum))}</td>
+            <td class="num">${pctCell(pct(done(sum), total(sum)))} <span class="ann">ratio</span>
+              <span class="muted" style="text-decoration:line-through;margin-left:6px">avg ${avgOfRows == null ? '—' : avgOfRows + '%'}</span></td></tr>`;
+          for (const e of rows) {
+            const r = epicRoll.get(e.key);
+            g += `<tr><td><span class="indent"></span><span class="key">${e.key}</span>${e.summary}</td><td>${sourceChip(r)}</td>
+              <td class="num">${fmt(r.known)}</td><td class="num">${fmt(total(r))}</td><td class="num">${pctCell(pct(done(r), total(r)))}</td></tr>`;
+          }
+        }
+        document.getElementById('grouped').innerHTML = g + '</tbody>';
+
+        window.__state = { epicRoll, initRoll };
+        syncPresetButtons();
+      }
+
+      function label(id) {
+        const el = document.getElementById(id);
+        return el.options[el.selectedIndex].text;
+      }
+
+      // ---------- modal ----------
+      function openModal(key) {
+        const { epicRoll, initRoll } = window.__state;
+        const it = DATA.find((d) => d.key === key);
+        const r = initRoll.get(key);
+        const rows = it.children
+          .map((c) => {
+            const cr = epicRoll.get(c.key);
+            const t = total(cr);
+            return `<tr><td><span class="key">${c.key}</span>${c.summary}</td><td>${c.team}</td><td>${sourceChip(cr)}</td>
+              <td class="num">${pctCell(pct(done(cr), t))}</td>
+              <td class="num">${pctCell(pct(cr.knownC, cr.known))}</td>
+              <td class="num">${fmt(done(cr))}</td><td class="num">${fmt(t - done(cr))}</td><td class="num">${fmt(t)}</td>
+              <td class="num avg">${cr.avg ? fmt(cr.avg) : '<span class="muted">0</span>'}</td></tr>`;
+          })
+          .join('');
+        const usedChildren = r.source === 'children';
+        document.getElementById('modal').innerHTML = `
+          <button class="close" onclick="closeModal()">Close</button>
+          <h2>${it.key} ${it.summary} — Percent complete</h2>
+          <p class="hint">Calculation source: <b>${r.source}${r.larger ? ' (Initiative estimate is larger than its Epics)' : ''}</b> ·
+            Work settings: ${label('sizeFrom')} · ${label('missingSize')} · ${label('pvc')} · Complete by ${label('completeBy')}</p>
+          <div class="summary">
+            <div class="stat"><div class="v">${pct(done(r), total(r)) ?? '—'}%</div><div class="l">Percent complete (with averages)</div></div>
+            <div class="stat"><div class="v">${pct(r.knownC, r.known) ?? '—'}${r.known ? '%' : ''}</div><div class="l">Percent complete (known only)</div></div>
+            <div class="stat"><div class="v">${fmt(total(r))}</div><div class="l">Total working days</div></div>
+            <div class="stat avgd"><div class="v">${fmt(r.avg)} of ${fmt(total(r))}</div><div class="l">working days are averaged</div></div>
+            <div class="stat"><div class="v">${r.unsized.length}</div><div class="l">items have no size${r.unsized.length ? ': ' + r.unsized.join(', ') : ''}</div></div>
+          </div>
+          ${
+            usedChildren || r.larger
+              ? `<table class="grid"><thead><tr><th>Epic</th><th>Team</th><th>Size from</th><th class="num">Percent</th><th class="num">Known %</th>
+                <th class="num">Completed</th><th class="num">Remaining</th><th class="num">Total</th><th class="num">Averaged Days</th></tr></thead><tbody>${rows}</tbody></table>
+                ${r.larger ? '<p class="hint" style="margin-top:8px">The Initiative\'s own estimate is used because it is larger than the sum of its Epics\' known days. Epics are shown for reference; the remainder is credited to the Initiative\'s team.</p>' : ''}`
+              : `<p class="hint">Uses the Initiative's own ${r.source === 'self' ? r.from : 'average'} (self-calculation boxes as today).</p>`
+          }`;
+        document.getElementById('backdrop').classList.add('open');
+      }
+      function closeModal() {
+        document.getElementById('backdrop').classList.remove('open');
+      }
+      document.getElementById('backdrop').addEventListener('click', (e) => {
+        if (e.target.id === 'backdrop') closeModal();
+      });
+      document.addEventListener('click', (e) => {
+        const k = e.target.closest('[data-modal]')?.dataset.modal;
+        if (k) openModal(k);
+      });
+
+      // ---------- settings wiring ----------
+      const IDS = ['sizeFrom', 'estimateValue', 'missingConfidence', 'missingSize', 'pvc', 'completeBy'];
+      IDS.forEach((id) => {
+        const el = document.getElementById(id);
+        el.value = S[id];
+        el.addEventListener('change', () => {
+          S[id] = el.value;
+          render();
+        });
+      });
+      document.querySelectorAll('#presets button').forEach((b) =>
+        b.addEventListener('click', () => {
+          Object.assign(S, PRESETS[b.dataset.preset]);
+          IDS.forEach((id) => (document.getElementById(id).value = S[id]));
+          render();
+        }),
+      );
+      function syncPresetButtons() {
+        let active = null;
+        for (const [name, p] of Object.entries(PRESETS)) {
+          if (Object.entries(p).every(([k, v]) => S[k] === v)) active = name;
+        }
+        document
+          .querySelectorAll('#presets button')
+          .forEach((b) => b.classList.toggle('active', b.dataset.preset === active));
+        document.getElementById('customNote').textContent = active ? '' : 'Custom — options differ from both presets.';
+      }
+
+      render();
+    </script>
+  </body>
+</html>

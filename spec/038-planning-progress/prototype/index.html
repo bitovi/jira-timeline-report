@@ -149,12 +149,35 @@
           transparent 7px
         );
         background-color: #d9a8f2;
-        border: 1px dashed #8993a4 !important;
       }
-      .nomdemo {
-        background: #f1f2f4;
-        outline: 1px dotted var(--danger);
-        outline-offset: -2px;
+      .sw i.ibeamdemo {
+        border: none;
+        border-radius: 0;
+        background:
+          linear-gradient(#8590a2, #8590a2) left / 2px 100% no-repeat,
+          linear-gradient(#8590a2, #8590a2) right / 2px 100% no-repeat,
+          linear-gradient(#8590a2, #8590a2) center / 100% 2px no-repeat;
+      }
+      .sw i.dotdemo {
+        width: 11px;
+        border: none;
+        border-radius: 50%;
+        background: #8590a2;
+      }
+      .sw i.owndemo {
+        background: #8341ad;
+        border: none;
+        border-right: 3px solid #091e42;
+        border-radius: 0;
+      }
+      .sw i.rolldemo {
+        background: #8341ad;
+        border: none;
+        clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 100%, 0 100%);
+      }
+      .sw i.ovrdemo {
+        background: repeating-linear-gradient(-45deg, #ffd9b8 0 3px, #fff3eb 3px 6px);
+        border-color: var(--warn);
       }
     </style>
   </head>
@@ -169,10 +192,10 @@
     <div class="controls">
       <div class="ctl">
         <label for="seed">Seed</label>
-        <input type="number" id="seed" value="1337" />
+        <input type="number" id="seed" value="42" />
       </div>
       <div class="ctl">
-        <label for="count">Outcomes</label>
+        <label for="count">Directions</label>
         <select id="count">
           <option>2</option>
           <option selected>4</option>
@@ -192,11 +215,17 @@
       <div class="ctl">
         <label for="enc">Own vs rolled</label>
         <select id="enc">
-          <option value="bracket" selected>Bracket</option>
+          <option value="ends" selected>Ends</option>
+          <option value="bracket">Bracket</option>
           <option value="anchor">Anchor</option>
           <option value="border">Border</option>
           <option value="none">None</option>
         </select>
+      </div>
+      <div class="ctl">
+        <label for="zoom">Zoom</label>
+        <input type="range" id="zoom" min="60" max="1200" step="10" value="150" />
+        <span id="zoomVal"></span>
       </div>
       <div class="stats" id="stats"></div>
     </div>
@@ -210,9 +239,15 @@
       <span class="sw"><i style="background: #f3e7fc"></i>Refined</span>
       <span class="sw"><i style="background: #d9a8f2"></i>Sized</span>
       <span class="sw"><i style="background: #8341ad"></i>Scheduled</span>
-      <span><b>Marks</b></span>
-      <span class="sw"><i class="hatchdemo"></i>projected (queued by rank)</span>
-      <span class="sw"><i class="nomdemo"></i>no estimate — width is fictional</span>
+      <span><b>Shape</b></span>
+      <span class="sw"><i style="background: #8341ad"></i>dates + estimate</span>
+      <span class="sw"><i class="ibeamdemo"></i>dates, no estimate</span>
+      <span class="sw"><i class="hatchdemo"></i>estimate, queued by rank</span>
+      <span class="sw"><i class="dotdemo"></i>neither — takes no time</span>
+      <span><b>Dates</b></span>
+      <span class="sw"><i class="owndemo"></i>own date (hard end)</span>
+      <span class="sw"><i class="rolldemo"></i>rolled up from children (slanted end)</span>
+      <span class="sw"><i class="ovrdemo"></i>work underneath runs past this due</span>
     </div>
 
     <div id="chart"></div>
@@ -239,13 +274,15 @@
         const seed = Number(el('seed').value) || 1;
         const portfolio = window.PlanningData.generatePortfolio({
           seed,
-          outcomeCount: Number(el('count').value),
+          directionCount: Number(el('count').value),
         });
 
         window.PlanningRender.render(portfolio, chart, {
           ramp: el('ramp').value,
           sourceEncoding: el('enc').value,
+          monthWidth: Number(el('zoom').value),
         });
+        el('zoomVal').textContent = el('zoom').value + 'px/mo';
 
         // Per level: averaging the rolled-up rate across all levels hides it, because
         // stories are never rolled and always dominate the node count.
@@ -258,18 +295,30 @@
             walk(n.children);
           }
         };
-        walk(portfolio.outcomes);
+        walk(portfolio.directions);
 
-        const all = countNodes(portfolio.outcomes, () => true);
-        const contra = countNodes(portfolio.outcomes, (n) => n.claimedRung > n.evidencedRung);
-        const ghost = countNodes(portfolio.outcomes, (n) => n.exec !== 'todo' && n.rollupEstimate === 0);
+        const all = countNodes(portfolio.directions, () => true);
+        const contra = countNodes(portfolio.directions, (n) => n.claimedRung > n.evidencedRung);
+        const ghost = countNodes(portfolio.directions, (n) => n.exec !== 'todo' && n.rollupEstimate === 0);
         const rolledPct = (lvl) =>
           byLevel[lvl] ? Math.round((byLevel[lvl].rolled / byLevel[lvl].n) * 100) + '%' : '—';
 
+        const mixedEnds = countNodes(portfolio.directions, (n) => n.dateSource === 'mixed');
+        const deepDue = (n) =>
+          n.children.reduce((m, k) => {
+            const d = deepDue(k);
+            return d > m ? d : m;
+          }, n.rollupDue || '');
+        const overrun = countNodes(
+          portfolio.directions,
+          (n) => n.ownDue !== null && n.children.some((k) => deepDue(k) > n.ownDue),
+        );
+
         el('stats').innerHTML =
           `${all} issues · rolled-up estimates: ` +
-          `outcome ${rolledPct('outcome')} · initiative ${rolledPct('initiative')} · epic ${rolledPct('epic')}<br>` +
-          `${Math.round((contra / all) * 100)}% claim&nbsp;&gt;&nbsp;evidence · ${ghost} started with nothing planned anywhere`;
+          `direction ${rolledPct('direction')} · increment ${rolledPct('increment')} · epic ${rolledPct('epic')}<br>` +
+          `${Math.round((contra / all) * 100)}% claim&nbsp;&gt;&nbsp;evidence · ${ghost} started with nothing planned anywhere<br>` +
+          `${mixedEnds} with one own end + one rolled end · ${overrun} with work running past their due`;
       }
 
       el('regen').addEventListener('click', draw);
@@ -277,6 +326,20 @@
       el('enc').addEventListener('change', () => window.PlanningRender.setSourceEncoding(chart, el('enc').value));
       el('count').addEventListener('change', draw);
       el('seed').addEventListener('change', draw);
+      // Re-render rather than CSS-scale: dot widths are in pixels, so layout depends on px/month.
+      let zoomFrame = 0;
+      el('zoom').addEventListener('input', () => {
+        if (zoomFrame) return;
+        zoomFrame = requestAnimationFrame(() => {
+          zoomFrame = 0;
+          const wrap = chart.querySelector('.pp-wrap');
+          const left = wrap ? wrap.getBoundingClientRect().left + window.scrollX : 0;
+          const centerFrac = wrap ? (window.scrollX + window.innerWidth / 2 - left) / wrap.offsetWidth : 0;
+          draw();
+          const next = chart.querySelector('.pp-wrap');
+          if (next) window.scrollTo(left + centerFrac * next.offsetWidth - window.innerWidth / 2, window.scrollY);
+        });
+      });
       el('reroll').addEventListener('click', () => {
         el('seed').value = Math.floor(Math.random() * 100000);
         draw();

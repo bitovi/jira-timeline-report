@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sizing settings — layout options (spec/043)</title>
+    <style>
+      :root {
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --subtle: #6b778c;
+        --border: #dfe1e6;
+        --neutral-10: #f7f8f9;
+        --neutral-20: #f1f2f4;
+        --brand: #0c66e4;
+        --brand-bg: #e9f2ff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 20px 24px 60px;
+        background: #fafbfc;
+        font-size: 14px;
+        line-height: 1.45;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 6px;
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 1100px;
+        margin: 0 0 8px;
+      }
+      .cases {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 10px 0 18px;
+      }
+      .case {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+      .case b {
+        display: block;
+        font-size: 13px;
+      }
+      .options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+        gap: 16px;
+      }
+      .option {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+      }
+      .option > header {
+        padding: 12px 16px 8px;
+        border-bottom: 1px solid var(--border);
+      }
+      .option > header h2 {
+        font-size: 15px;
+        margin: 0;
+      }
+      .option > header p {
+        margin: 2px 0 0;
+        font-size: 12px;
+        color: var(--subtle);
+      }
+      .panel {
+        padding: 12px 16px;
+        flex: 1;
+      }
+      .panel h3 {
+        font-size: 14px;
+        margin: 0 0 8px;
+      }
+      .field-label {
+        font-size: 12px;
+        font-weight: 600;
+        margin: 12px 0 4px;
+        display: block;
+      }
+      .field-label:first-of-type {
+        margin-top: 0;
+      }
+      .radio,
+      .check {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        padding: 3px 0;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .radio small,
+      .check small {
+        display: block;
+        color: var(--subtle);
+        font-size: 11px;
+      }
+      .radio input,
+      .check input {
+        margin-top: 3px;
+      }
+      .indent {
+        margin-left: 22px;
+      }
+      select {
+        padding: 5px 6px;
+        border: 2px solid var(--border);
+        border-radius: 4px;
+        font: inherit;
+        font-size: 13px;
+        background: var(--neutral-10);
+        max-width: 100%;
+      }
+      select.wide {
+        width: 100%;
+      }
+      .sentence {
+        font-size: 14px;
+        line-height: 2.2;
+      }
+      .sentence select {
+        font-weight: 600;
+        color: var(--brand);
+      }
+      .ranked {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+      .ranked li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+      }
+      .ranked li:last-child {
+        border-bottom: none;
+      }
+      .ranked li.off {
+        color: var(--subtle);
+        background: var(--neutral-10);
+      }
+      .ranked .num {
+        width: 18px;
+        text-align: center;
+        font-weight: 700;
+        color: var(--muted);
+      }
+      .ranked .name {
+        flex: 1;
+      }
+      .ranked .name small {
+        display: block;
+        font-size: 11px;
+        color: var(--subtle);
+      }
+      .ranked button {
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 4px;
+        width: 24px;
+        height: 22px;
+        cursor: pointer;
+        font-size: 11px;
+        padding: 0;
+      }
+      .ranked button:disabled {
+        opacity: 0.3;
+        cursor: default;
+      }
+      .ranked li.fixed {
+        background: var(--neutral-20);
+        font-style: italic;
+      }
+      .result {
+        border-top: 1px solid var(--border);
+        padding: 10px 16px 14px;
+        background: var(--neutral-10);
+        border-radius: 0 0 8px 8px;
+      }
+      .result .summary {
+        font-size: 12px;
+        margin: 0 0 8px;
+      }
+      .result table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      .result td,
+      .result th {
+        padding: 3px 4px;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+      }
+      .result th {
+        font-weight: 600;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .result td.size {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .via {
+        display: inline-block;
+        font-size: 10px;
+        border-radius: 8px;
+        padding: 0 6px;
+        margin-left: 4px;
+        font-weight: 600;
+      }
+      .via.estimate {
+        background: #dcfff1;
+        color: #216e4e;
+      }
+      .via.span {
+        background: #e9f2ff;
+        color: #0055cc;
+      }
+      .via.teamTime {
+        background: #fff7d6;
+        color: #7f5f01;
+      }
+      .via.average {
+        background: #f3f0ff;
+        color: #5e4db2;
+      }
+      .via.unsized {
+        background: #ffeceb;
+        color: #ae2e24;
+      }
+      .proscons {
+        font-size: 12px;
+        padding: 8px 16px 12px;
+        border-top: 1px solid var(--border);
+      }
+      .proscons div {
+        margin: 2px 0;
+      }
+      .pro::before {
+        content: '+ ';
+        color: #216e4e;
+        font-weight: 700;
+      }
+      .con::before {
+        content: '− ';
+        color: #ae2e24;
+        font-weight: 700;
+      }
+      .shared {
+        margin-top: 28px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px 18px;
+        max-width: 1100px;
+      }
+      .shared h2 {
+        font-size: 16px;
+        margin: 0 0 6px;
+      }
+      .shared ol {
+        margin: 6px 0 0;
+        padding-left: 20px;
+      }
+      .shared li {
+        margin: 6px 0;
+      }
+      .shared .q {
+        font-weight: 600;
+      }
+      .shared .muted {
+        color: var(--subtle);
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>"How much work is an item?" — sidebar layout options</h1>
+    <p class="intro">
+      Four ways to lay out the same settings. Each one is interactive. Below each, the
+      <b>result</b> shows the size it gives four example epics, and a plain-English summary of the settings. All four
+      can express the same rules; the question is which is easiest to understand.
+    </p>
+    <div class="cases" id="cases"></div>
+
+    <div class="options">
+      <!-- ===== A: main choice + fallback ===== -->
+      <section class="option" data-option="A">
+        <header>
+          <h2>A. Main choice + fallbacks</h2>
+          <p>Pick one way to size items, then what to do when that's missing.</p>
+        </header>
+        <div class="panel">
+          <h3>How much work is an item?</h3>
+          <span class="field-label">Size each item by</span>
+          <label class="radio"
+            ><input type="radio" name="A-primary" value="teamTime" checked /><span
+              >Team time over its dates<small
+                >Its share of each day the team works on it; overlapping items split the day by estimate</small
+              ></span
+            ></label
+          >
+          <label class="radio"
+            ><input type="radio" name="A-primary" value="estimate" /><span
+              >Its estimate<small>Story points or median + confidence, ÷ the team's velocity</small></span
+            ></label
+          >
+          <label class="radio"
+            ><input type="radio" name="A-primary" value="span" /><span
+              >Its date span<small>Business days from start to due</small></span
+            ></label
+          >
+
+          <span class="field-label" id="A-fb-label">If it has no dates</span>
+          <div id="A-fb"></div>
+
+          <span class="field-label">If it still has no size</span>
+          <label class="radio"
+            ><input type="radio" name="A-last" value="average" checked /><span
+              >Use the average size of its level</span
+            ></label
+          >
+          <label class="radio"
+            ><input type="radio" name="A-last" value="unsized" /><span
+              >Leave it unsized<small>Counted as "without a size"; adds 0 days</small></span
+            ></label
+          >
+        </div>
+        <div class="result"></div>
+        <div class="proscons">
+          <div class="pro">The main choice is obvious; fallbacks only appear when they apply.</div>
+          <div class="pro">Easy to add a fourth sizing method later.</div>
+          <div class="con">Three separate controls to read top to bottom.</div>
+        </div>
+      </section>
+
+      <!-- ===== B: single dropdown ===== -->
+      <section class="option" data-option="B">
+        <header>
+          <h2>B. One dropdown of combinations</h2>
+          <p>Every primary + fallback pair as one choice.</p>
+        </header>
+        <div class="panel">
+          <h3>How much work is an item?</h3>
+          <span class="field-label">Size items by</span>
+          <select class="wide" id="B-combo">
+            <option value="teamTime|estimate" selected>Team time over dates, else estimate</option>
+            <option value="teamTime|">Team time over dates only</option>
+            <option value="estimate|">Estimate only</option>
+            <option value="estimate|span">Estimate, else date span</option>
+            <option value="estimate|teamTime">Estimate, else team time over dates</option>
+            <option value="span|">Date span only</option>
+            <option value="span|estimate">Date span, else estimate</option>
+          </select>
+          <span class="field-label">If it still has no size</span>
+          <select class="wide" id="B-last">
+            <option value="average">Use the average size of its level</option>
+            <option value="unsized">Leave it unsized</option>
+          </select>
+        </div>
+        <div class="result"></div>
+        <div class="proscons">
+          <div class="pro">Compact: two controls.</div>
+          <div class="con">Seven similar-sounding options; you have to read them all to find the one you want.</div>
+          <div class="con">Grows multiplicatively with each new sizing method.</div>
+        </div>
+      </section>
+
+      <!-- ===== C: ranked list ===== -->
+      <section class="option" data-option="C">
+        <header>
+          <h2>C. Ranked list</h2>
+          <p>Turn sources on/off and order them; the first one an item has wins.</p>
+        </header>
+        <div class="panel">
+          <h3>How much work is an item?</h3>
+          <span class="field-label">Use the first of these the item has</span>
+          <ul class="ranked" id="C-list"></ul>
+          <p style="font-size: 11px; color: var(--subtle); margin: 6px 0 0">
+            Date span and team time both need dates, so only one of them can be on.
+          </p>
+        </div>
+        <div class="result"></div>
+        <div class="proscons">
+          <div class="pro">One control shows the whole decision order at a glance.</div>
+          <div class="pro">Same mental model as the Dates "parent, then children" setting.</div>
+          <div class="con">Reordering is fiddly; the span/team-time exclusivity is a special rule.</div>
+        </div>
+      </section>
+
+      <!-- ===== D: sentence ===== -->
+      <section class="option" data-option="D">
+        <header>
+          <h2>D. Fill-in-the-blank sentence</h2>
+          <p>The settings read as a sentence you can edit.</p>
+        </header>
+        <div class="panel">
+          <h3>How much work is an item?</h3>
+          <div class="sentence" id="D-sentence"></div>
+        </div>
+        <div class="result"></div>
+        <div class="proscons">
+          <div class="pro">Reads exactly like the rule; no separate summary needed.</div>
+          <div class="pro">Middle clauses appear and disappear as they become relevant.</div>
+          <div class="con">Less familiar in a settings sidebar; long sentences wrap in a narrow column.</div>
+        </div>
+      </section>
+    </div>
+
+    <section class="shared">
+      <h2>Where this sits in the sidebar</h2>
+      <p class="muted">
+        Whichever layout wins, the Work part of the sidebar would be organized as one question per dimension, in this
+        order (Dates — "When is it?" — stays as today above it):
+      </p>
+      <ol>
+        <li>
+          <span class="q">How much work is an item?</span> — the layouts above (estimate, date span, team time;
+          fallbacks).
+        </li>
+        <li><span class="q">How much of it is done?</span> — Dates · Dates, but status wins · Status only.</li>
+        <li>
+          <span class="q">How do parents and children combine?</span> — per level: Children, then parent · Larger of the
+          two · Children only · Parent only.
+        </li>
+        <li>
+          <span class="q">How are estimates read?</span> <span class="muted">(advanced, collapsed)</span> — Median ×
+          confidence or median only; missing confidence = 50% or no estimate.
+        </li>
+      </ol>
+    </section>
+
+    <script>
+      // Example epics, sizes in team-days. Team time = the epic's share of each busy day over its dates (illustrative).
+      const CASES = [
+        { id: 'both', label: 'Estimate + dates', est: 15, span: 30, teamTime: 20 },
+        { id: 'estOnly', label: 'Estimate, no dates', est: 15, span: null, teamTime: null },
+        { id: 'datesOnly', label: 'Dates, no estimate', est: null, span: 30, teamTime: 12 },
+        { id: 'neither', label: 'Neither', est: null, span: null, teamTime: null },
+      ];
+      const LEVEL_AVG = 21;
+      const NAMES = {
+        estimate: 'estimate',
+        span: 'date span',
+        teamTime: 'team time over dates',
+        average: 'level average',
+        unsized: 'no size',
+      };
+
+      document.getElementById('cases').innerHTML =
+        CASES.map(
+          (c) =>
+            `<div class="case"><b>${c.label}</b>estimate ${c.est ?? '—'} · span ${c.span ?? '—'} · team time ${c.teamTime ?? '—'}</div>`,
+        ).join('') + `<div class="case"><b>Level average</b>${LEVEL_AVG} days</div>`;
+
+      // A rule = ordered list of sources + last resort.
+      function resolve(rule, c) {
+        for (const s of rule.order) {
+          const v = s === 'estimate' ? c.est : s === 'span' ? c.span : c.teamTime;
+          if (v != null) return { size: v, via: s };
+        }
+        return rule.last === 'average' ? { size: LEVEL_AVG, via: 'average' } : { size: 0, via: 'unsized' };
+      }
+      function describe(rule) {
+        const [first, ...rest] = rule.order;
+        if (!first)
+          return `Every item is sized by the ${rule.last === 'average' ? 'level average' : '— nothing (all unsized)'}.`;
+        let s = `Size by <b>${NAMES[first]}</b>`;
+        for (const r of rest) s += `; if missing, by <b>${NAMES[r]}</b>`;
+        s += `; otherwise <b>${rule.last === 'average' ? 'the level average' : 'leave unsized'}</b>.`;
+        return s;
+      }
+      function renderResult(section, rule) {
+        const el = section.querySelector('.result');
+        el.innerHTML =
+          `<p class="summary">${describe(rule)}</p><table><thead><tr><th>Example epic</th><th style="text-align:right">Size</th></tr></thead><tbody>` +
+          CASES.map((c) => {
+            const r = resolve(rule, c);
+            return `<tr><td>${c.label}</td><td class="size">${r.via === 'unsized' ? '—' : r.size + 'd'}<span class="via ${r.via}">${NAMES[r.via]}</span></td></tr>`;
+          }).join('') +
+          '</tbody></table>';
+      }
+      const sec = (k) => document.querySelector(`[data-option="${k}"]`);
+
+      // ---------- A ----------
+      const A = { primary: 'teamTime', fallbackEstimate: true, fallbackDates: 'none', last: 'average' };
+      function renderA() {
+        const fb = document.getElementById('A-fb');
+        const lbl = document.getElementById('A-fb-label');
+        if (A.primary === 'estimate') {
+          lbl.textContent = 'If it has no estimate';
+          fb.innerHTML = `
+            <label class="radio"><input type="radio" name="A-fbd" value="span" ${A.fallbackDates === 'span' ? 'checked' : ''}/><span>Use its date span</span></label>
+            <label class="radio"><input type="radio" name="A-fbd" value="teamTime" ${A.fallbackDates === 'teamTime' ? 'checked' : ''}/><span>Use team time over its dates</span></label>
+            <label class="radio"><input type="radio" name="A-fbd" value="none" ${A.fallbackDates === 'none' ? 'checked' : ''}/><span>Don't use dates</span></label>`;
+          fb.querySelectorAll('input').forEach((i) =>
+            i.addEventListener('change', () => ((A.fallbackDates = i.value), updateA())),
+          );
+        } else {
+          lbl.textContent = 'If it has no dates';
+          fb.innerHTML = `<label class="check"><input type="checkbox" ${A.fallbackEstimate ? 'checked' : ''}/><span>Use its estimate</span></label>`;
+          fb.querySelector('input').addEventListener(
+            'change',
+            (e) => ((A.fallbackEstimate = e.target.checked), updateA()),
+          );
+        }
+      }
+      function ruleA() {
+        const order = [A.primary];
+        if (A.primary === 'estimate') {
+          if (A.fallbackDates !== 'none') order.push(A.fallbackDates);
+        } else if (A.fallbackEstimate) order.push('estimate');
+        return { order, last: A.last };
+      }
+      function updateA() {
+        renderA();
+        renderResult(sec('A'), ruleA());
+      }
+      document
+        .querySelectorAll('input[name="A-primary"]')
+        .forEach((i) => i.addEventListener('change', () => ((A.primary = i.value), updateA())));
+      document
+        .querySelectorAll('input[name="A-last"]')
+        .forEach((i) => i.addEventListener('change', () => ((A.last = i.value), updateA())));
+      updateA();
+
+      // ---------- B ----------
+      function updateB() {
+        const [p, f] = document.getElementById('B-combo').value.split('|');
+        renderResult(sec('B'), { order: f ? [p, f] : [p], last: document.getElementById('B-last').value });
+      }
+      document.getElementById('B-combo').addEventListener('change', updateB);
+      document.getElementById('B-last').addEventListener('change', updateB);
+      updateB();
+
+      // ---------- C ----------
+      const C = {
+        items: [
+          { id: 'teamTime', on: true, note: 'Its share of each day; overlapping items split the day' },
+          { id: 'estimate', on: true, note: "Points or median + confidence, ÷ team's velocity" },
+          { id: 'span', on: false, note: 'Business days from start to due' },
+          { id: 'average', on: true, note: 'Average size of its level' },
+        ],
+      };
+      const C_LABEL = {
+        estimate: 'Estimate',
+        span: 'Date span',
+        teamTime: 'Team time over dates',
+        average: 'Level average',
+      };
+      function renderC() {
+        const list = document.getElementById('C-list');
+        let n = 0;
+        list.innerHTML =
+          C.items
+            .map((it, idx) => {
+              const num = it.on ? ++n : '';
+              return `<li class="${it.on ? '' : 'off'}">
+                <input type="checkbox" data-i="${idx}" ${it.on ? 'checked' : ''}/>
+                <span class="num">${num}</span>
+                <span class="name">${C_LABEL[it.id]}<small>${it.note}</small></span>
+                <button data-up="${idx}" ${idx === 0 ? 'disabled' : ''} title="Move up">▲</button>
+                <button data-down="${idx}" ${idx === C.items.length - 1 ? 'disabled' : ''} title="Move down">▼</button>
+              </li>`;
+            })
+            .join('') + `<li class="fixed"><span class="num"></span><span class="name">Otherwise: no size</span></li>`;
+        list.querySelectorAll('input').forEach((i) =>
+          i.addEventListener('change', () => {
+            const it = C.items[+i.dataset.i];
+            it.on = i.checked;
+            // span and teamTime are mutually exclusive
+            if (it.on && (it.id === 'span' || it.id === 'teamTime')) {
+              const other = C.items.find((x) => x.id === (it.id === 'span' ? 'teamTime' : 'span'));
+              other.on = false;
+            }
+            updateC();
+          }),
+        );
+        list.querySelectorAll('[data-up]').forEach((b) => b.addEventListener('click', () => move(+b.dataset.up, -1)));
+        list
+          .querySelectorAll('[data-down]')
+          .forEach((b) => b.addEventListener('click', () => move(+b.dataset.down, 1)));
+      }
+      function move(i, d) {
+        const j = i + d;
+        [C.items[i], C.items[j]] = [C.items[j], C.items[i]];
+        updateC();
+      }
+      function ruleC() {
+        const order = [];
+        let last = 'unsized';
+        for (const it of C.items) {
+          if (!it.on) continue;
+          if (it.id === 'average') {
+            last = 'average';
+            break; // average always resolves, so anything after it is unreachable
+          }
+          order.push(it.id);
+        }
+        return { order, last };
+      }
+      function updateC() {
+        renderC();
+        renderResult(sec('C'), ruleC());
+      }
+      updateC();
+
+      // ---------- D ----------
+      const D = { primary: 'teamTime', fallback: 'estimate', last: 'average' };
+      function sel(id, value, opts) {
+        return `<select data-d="${id}">${opts.map(([v, t]) => `<option value="${v}" ${v === value ? 'selected' : ''}>${t}</option>`).join('')}</select>`;
+      }
+      function renderD() {
+        const needs = D.primary === 'estimate' ? 'estimate' : 'dates';
+        const fbOpts =
+          D.primary === 'estimate'
+            ? [
+                ['span', 'use its date span'],
+                ['teamTime', 'use team time over its dates'],
+                ['none', 'skip it'],
+              ]
+            : [
+                ['estimate', 'use its estimate'],
+                ['none', 'skip it'],
+              ];
+        if (!fbOpts.some(([v]) => v === D.fallback)) D.fallback = fbOpts[0][0];
+        let html = `Size each item by ${sel('primary', D.primary, [
+          ['teamTime', 'team time over its dates'],
+          ['estimate', 'its estimate'],
+          ['span', 'its date span'],
+        ])}. `;
+        html += `If it has no ${needs}, ${sel('fallback', D.fallback, fbOpts)}. `;
+        html += `If it still has no size, ${sel('last', D.last, [
+          ['average', 'use the average size of its level'],
+          ['unsized', 'leave it unsized'],
+        ])}.`;
+        const el = document.getElementById('D-sentence');
+        el.innerHTML = html;
+        el.querySelectorAll('select').forEach((s) =>
+          s.addEventListener('change', () => {
+            D[s.dataset.d] = s.value;
+            updateD();
+          }),
+        );
+      }
+      function updateD() {
+        renderD();
+        const order = [D.primary];
+        if (D.fallback !== 'none') order.push(D.fallback);
+        renderResult(sec('D'), { order, last: D.last });
+      }
+      updateD();
+    </script>
+  </body>
+</html>

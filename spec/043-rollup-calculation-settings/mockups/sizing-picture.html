@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>How big is each work item? — sizing picture (spec/043)</title>
+    <style>
+      :root {
+        --text: #172b4d;
+        --muted: #5e6c84;
+        --subtle: #6b778c;
+        --border: #dfe1e6;
+        --neutral-10: #f7f8f9;
+        --neutral-20: #f1f2f4;
+        --brand: #0c66e4;
+        --brand-bg: #e9f2ff;
+        --day: 44px;
+        --row: 32px;
+        --unit: 40px; /* px per team-day in the team-time row */
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        margin: 0;
+        padding: 20px 24px 60px;
+        background: #fafbfc;
+        font-size: 14px;
+        line-height: 1.45;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 15px;
+        margin: 0 0 4px;
+      }
+      .intro {
+        color: var(--muted);
+        max-width: 1100px;
+        margin: 0 0 14px;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 20px;
+        align-items: start;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px 16px;
+      }
+      .hint {
+        font-size: 12px;
+        color: var(--subtle);
+        margin: 0 0 10px;
+      }
+      /* controls */
+      [hidden] {
+        display: none !important;
+      }
+      .field-label {
+        font-size: 12px;
+        font-weight: 600;
+        margin: 12px 0 4px;
+        display: block;
+      }
+      .radio,
+      .check {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        padding: 3px 0;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .radio small,
+      .check small {
+        display: block;
+        color: var(--subtle);
+        font-size: 11px;
+      }
+      .radio input,
+      .check input {
+        margin-top: 3px;
+      }
+
+      /* ===== combined grid ===== */
+      .grid {
+        display: grid;
+        grid-template-columns: 170px 64px repeat(var(--days), var(--day)) 76px 140px;
+        font-size: 12px;
+        overflow-x: auto;
+      }
+      .grid > div {
+        min-width: 0;
+      }
+      .th {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        border-bottom: 1px solid var(--border);
+        padding: 0 6px 3px;
+        align-self: end;
+      }
+      .th.num {
+        text-align: right;
+      }
+      .th.measure {
+        border-left: 1px solid var(--border);
+      }
+      .th.day {
+        text-align: center;
+        font-weight: 400;
+        font-size: 10px;
+        color: var(--subtle);
+        padding: 0 0 3px;
+      }
+      .th.day.wk {
+        border-left: 1px solid var(--border);
+      }
+      .cell {
+        height: var(--row);
+        line-height: var(--row);
+        border-bottom: 1px solid var(--neutral-20);
+        padding: 0 6px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .cell.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .cell.measure {
+        border-left: 1px solid var(--border);
+      }
+      .cell.na {
+        color: var(--subtle);
+      }
+      .cell.ignored {
+        color: #a5adba;
+      }
+      .cell.used {
+        font-weight: 700;
+        background: var(--brand-bg);
+        color: var(--text);
+      }
+      .sw {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        margin-right: 6px;
+        vertical-align: -1px;
+      }
+      .timeline {
+        display: grid;
+        grid-template-columns: repeat(var(--days), var(--day));
+        align-items: center;
+        height: var(--row);
+        border-bottom: 1px solid var(--neutral-20);
+      }
+      .bar {
+        height: 18px;
+        border-radius: 4px;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 0 5px;
+        line-height: 18px;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+      .bar.noest {
+        background-image: repeating-linear-gradient(
+          45deg,
+          rgba(255, 255, 255, 0.35) 0 4px,
+          transparent 4px 8px
+        ) !important;
+      }
+      .bar.leftout {
+        opacity: 0.35;
+      }
+      .nodates {
+        grid-column: 1 / -1;
+        font-size: 11px;
+        color: var(--subtle);
+        font-style: italic;
+        padding-left: 4px;
+      }
+      .via {
+        display: inline-block;
+        font-size: 10px;
+        line-height: 16px;
+        border-radius: 8px;
+        padding: 0 6px;
+        margin-left: 6px;
+        font-weight: 600;
+        background: var(--neutral-20);
+        color: var(--muted);
+      }
+      .via.fallback {
+        background: #fff7d6;
+        color: #7f5f01;
+      }
+      .via.unsized {
+        background: #ffeceb;
+        color: #ae2e24;
+      }
+
+      /* bottom row: capacity + totals */
+      .bottom {
+        border-top: 2px solid var(--border);
+        background: var(--neutral-10);
+        padding-top: 6px;
+        padding-bottom: 6px;
+      }
+      .bottom.label {
+        grid-column: span 2;
+        padding: 6px 8px 6px 6px;
+        font-size: 11px;
+        display: flex;
+        justify-content: space-between;
+        gap: 6px;
+      }
+      .bottom.label b {
+        font-size: 12px;
+        display: block;
+      }
+      .capwrap {
+        display: flex;
+        align-items: flex-end;
+      }
+      .capcol {
+        display: flex;
+        flex-direction: column-reverse;
+        width: 100%;
+        border-left: 1px solid #fff;
+        background: repeating-linear-gradient(
+          to top,
+          transparent 0 calc(var(--unit) - 1px),
+          var(--border) calc(var(--unit) - 1px) var(--unit)
+        );
+      }
+      .capcol.idle {
+        background: repeating-linear-gradient(45deg, var(--neutral-20) 0 4px, #fff 4px 8px);
+      }
+      .seg {
+        width: 100%;
+      }
+      .bottom.total {
+        text-align: right;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        padding: 6px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+      }
+      .bottom.total small {
+        font-weight: 400;
+        color: var(--subtle);
+        font-size: 10px;
+      }
+      .bottom.total.measure {
+        border-left: 1px solid var(--border);
+      }
+      .bar.used {
+        outline: 2px solid var(--text);
+        outline-offset: 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>How big is each work item?</h1>
+    <p class="intro">
+      One team, five work items. Some have an estimate, some have dates, some both, one neither. Pick how to size work
+      on the left. The bottom row shows where each day of the team's time goes; the columns on the right show each work
+      item's size by every method, with the one the settings use highlighted.
+    </p>
+
+    <div class="layout">
+      <aside class="card">
+        <h2>How much work is an item?</h2>
+
+        <span class="field-label">Size each item by</span>
+        <label class="radio"
+          ><input type="radio" name="primary" value="teamTime" checked /><span
+            >Team time over its dates<small
+              >Its share of each day the team works on it; overlapping items split the day by estimate</small
+            ></span
+          ></label
+        >
+        <label class="radio"
+          ><input type="radio" name="primary" value="estimate" /><span
+            >Its estimate<small>Points or median + confidence, ÷ the team's velocity</small></span
+          ></label
+        >
+        <label class="radio"
+          ><input type="radio" name="primary" value="span" /><span
+            >Its date span<small>Business days from start to due</small></span
+          ></label
+        >
+
+        <span class="field-label" id="fbLabel"></span>
+        <div id="fb"></div>
+
+        <span class="field-label" id="noEstLabel">If it has dates but no estimate</span>
+        <div id="noEst">
+          <label class="radio"
+            ><input type="radio" name="noEst" value="averagePace" checked /><span
+              >Use the team's average pace<small>It gets a share of each day like an estimated item</small></span
+            ></label
+          >
+          <label class="radio"
+            ><input type="radio" name="noEst" value="leaveOut" /><span
+              >Leave it out of team time<small>Other items get its days; it falls through to the next rule</small></span
+            ></label
+          >
+        </div>
+
+        <span class="field-label">If it still has no size</span>
+        <label class="radio"
+          ><input type="radio" name="last" value="average" checked /><span
+            >Use the average size of its level</span
+          ></label
+        >
+        <label class="radio"><input type="radio" name="last" value="unsized" /><span>Leave it unsized</span></label>
+      </aside>
+
+      <section class="card">
+        <h2>Team Atlas</h2>
+        <p class="hint" id="teamHint"></p>
+        <div class="grid" id="grid"></div>
+      </section>
+    </div>
+
+    <script>
+      const DAYS = 10; // business days shown; the last one is idle
+      // start/end are 1-based business days (inclusive). est = estimate in team-days.
+      const EPICS = [
+        { key: 'W1', name: 'Work Item 1', est: 2, start: 1, end: 8, color: '#1f845a' },
+        { key: 'W2', name: 'Work Item 2', est: 3, start: 2, end: 5, color: '#0c66e4' },
+        { key: 'W3', name: 'Work Item 3', est: null, start: 6, end: 9, color: '#8f7ee7' },
+        { key: 'W4', name: 'Work Item 4', est: 7, start: null, end: null, color: '#946f00' },
+        { key: 'W5', name: 'Work Item 5', est: null, start: null, end: null, color: '#8590a2' },
+      ];
+      const S = { primary: 'teamTime', fallback: 'estimate', noEst: 'averagePace', last: 'average' };
+      // Only applies when sizing by team time.
+      const leftOut = (e) => S.primary === 'teamTime' && S.noEst === 'leaveOut' && e.est == null;
+
+      const dated = (e) => e.start != null;
+      const span = (e) => (dated(e) ? e.end - e.start + 1 : null);
+      const density = (e) => (e.est != null && dated(e) ? e.est / span(e) : null);
+      const fmt = (n) => (n == null ? '—' : String(Math.round(n * 10) / 10));
+      const FRACTIONS = { 0.25: '¼', 0.5: '½', 0.75: '¾', [1 / 3]: '⅓', [2 / 3]: '⅔' };
+      const frac = (n) => {
+        const hit = Object.keys(FRACTIONS).find((k) => Math.abs(k - n) < 1e-9);
+        return hit ? FRACTIONS[hit] : fmt(n);
+      };
+      const NAMES = {
+        estimate: 'estimate',
+        span: 'date span',
+        teamTime: 'team time',
+        average: 'level average',
+        unsized: 'no size',
+      };
+
+      function allocate() {
+        const ds = EPICS.map(density).filter((d) => d != null);
+        const avgDensity = ds.length ? ds.reduce((a, b) => a + b, 0) / ds.length : 1;
+        const perDay = [];
+        const teamTime = Object.fromEntries(EPICS.map((e) => [e.key, null]));
+        for (let d = 1; d <= DAYS; d++) {
+          const active = EPICS.filter((e) => dated(e) && !leftOut(e) && e.start <= d && d <= e.end);
+          // Each busy day is 1 team-day, split among the active work items by density.
+          const w = active.map((e) => density(e) ?? avgDensity);
+          const total = w.reduce((a, b) => a + b, 0);
+          const segs = active.map((e, i) => ({ key: e.key, amount: w[i] / total }));
+          segs.forEach((s) => (teamTime[s.key] = (teamTime[s.key] ?? 0) + s.amount));
+          perDay.push(segs);
+        }
+        return { perDay, teamTime, avgDensity };
+      }
+
+      function sizes(teamTime) {
+        const measure = (e, m) => (m === 'estimate' ? e.est : m === 'span' ? span(e) : teamTime[e.key]);
+        const order = [S.primary];
+        if (S.fallback && S.fallback !== 'none') order.push(S.fallback);
+        const out = EPICS.map((e) => {
+          for (const [i, m] of order.entries()) {
+            const v = measure(e, m);
+            if (v != null) return { e, size: v, via: m, fallback: i > 0 };
+          }
+          return { e, size: null, via: null };
+        });
+        const known = out.filter((o) => o.size != null);
+        const avg = known.length ? known.reduce((a, o) => a + o.size, 0) / known.length : 30;
+        for (const o of out) {
+          if (o.size == null) {
+            if (S.last === 'average') Object.assign(o, { size: avg, via: 'average', fallback: true });
+            else Object.assign(o, { size: 0, via: 'unsized' });
+          }
+        }
+        return { out, avg, measure };
+      }
+
+      function renderControls() {
+        const showNoEst = S.primary === 'teamTime';
+        document.getElementById('noEstLabel').hidden = !showNoEst;
+        document.getElementById('noEst').hidden = !showNoEst;
+        const fb = document.getElementById('fb');
+        const lbl = document.getElementById('fbLabel');
+        if (S.primary === 'estimate') {
+          lbl.textContent = 'If it has no estimate';
+          if (!['span', 'teamTime', 'none'].includes(S.fallback)) S.fallback = 'none';
+          fb.innerHTML = [
+            ['span', 'Use its date span'],
+            ['teamTime', 'Use team time over its dates'],
+            ['none', "Don't use dates"],
+          ]
+            .map(
+              ([v, t]) =>
+                `<label class="radio"><input type="radio" name="fbr" value="${v}" ${S.fallback === v ? 'checked' : ''}/><span>${t}</span></label>`,
+            )
+            .join('');
+          fb.querySelectorAll('input').forEach((i) =>
+            i.addEventListener('change', () => ((S.fallback = i.value), render())),
+          );
+        } else {
+          lbl.textContent = 'If it has no dates';
+          if (!['estimate', 'none'].includes(S.fallback)) S.fallback = 'estimate';
+          fb.innerHTML = `<label class="check"><input type="checkbox" ${S.fallback === 'estimate' ? 'checked' : ''}/><span>Use its estimate</span></label>`;
+          fb.querySelector('input').addEventListener(
+            'change',
+            (e) => ((S.fallback = e.target.checked ? 'estimate' : 'none'), render()),
+          );
+        }
+      }
+
+      function render() {
+        renderControls();
+        const { perDay, teamTime } = allocate();
+        const { out, measure } = sizes(teamTime);
+        const byKey = Object.fromEntries(EPICS.map((e) => [e.key, e]));
+
+        document.documentElement.style.setProperty('--days', DAYS);
+        document.getElementById('teamHint').innerHTML =
+          `Sizes are in <b>team-days</b>: one business day of the whole team. Estimates are converted with the team's ` +
+          `velocity. Striped bars have dates but no estimate.`;
+
+        const measureCell = (e, m, o) => {
+          const v = measure(e, m);
+          const cls = v == null ? 'na' : o.via === m ? 'used' : 'ignored';
+          return `<div class="cell num ${m !== 'estimate' ? 'measure' : ''} ${cls}">${v == null ? '—' : fmt(v)}</div>`;
+        };
+
+        // header row
+        let g = '';
+        g += `<div class="th">Work item</div><div class="th num">Estimate</div>`;
+        for (let d = 1; d <= DAYS; d++) g += `<div class="th day ${d % 5 === 1 ? 'wk' : ''}">${d}</div>`;
+        g += `<div class="th num measure">Team time</div><div class="th num measure">Size used</div>`;
+
+        // work item rows
+        for (const o of out) {
+          const e = o.e;
+          g += `<div class="cell"><span class="sw" style="background:${e.color}"></span>${e.name}</div>`;
+          g += measureCell(e, 'estimate', o);
+          g += `<div class="timeline" style="grid-column: span ${DAYS}">${
+            dated(e)
+              ? `<div class="bar ${e.est == null ? 'noest' : ''} ${leftOut(e) ? 'leftout' : ''} ${o.via === 'span' ? 'used' : ''}" style="grid-column:${e.start} / ${e.end + 1}; background:${e.color}">${span(e)} days${leftOut(e) ? ' · left out' : ''}</div>`
+              : `<div class="nodates">No dates${e.est != null ? '' : ', no estimate'}</div>`
+          }</div>`;
+          g += measureCell(e, 'teamTime', o);
+          const tag = o.via === 'unsized' ? 'unsized' : o.fallback ? 'fallback' : '';
+          g += `<div class="cell num measure">${o.via === 'unsized' ? '—' : `<b>${fmt(o.size)}d</b>`}<span class="via ${tag}">${NAMES[o.via]}${o.fallback && o.via !== 'unsized' ? ' ↩' : ''}</span></div>`;
+        }
+
+        // bottom row: each busy day's team-day under the timeline, totals under the measures
+        const unit = 40;
+        const h = unit;
+        const sum = (f) => EPICS.reduce((a, e) => a + (f(e) ?? 0), 0);
+        g += `<div class="bottom label"><b>Team time per day</b></div>`;
+        perDay.forEach((segs) => {
+          const title = segs.map((s) => `${byKey[s.key].name}: ${frac(s.amount)}`).join(', ') || 'idle';
+          g += `<div class="bottom capwrap"><div class="capcol ${segs.length ? '' : 'idle'}" style="height:${h}px" title="${title}">${segs
+            .map((s) => `<div class="seg" style="height:${s.amount * unit}px;background:${byKey[s.key].color}"></div>`)
+            .join('')}</div></div>`;
+        });
+        const totalUsed = out.reduce((a, o) => a + (o.size ?? 0), 0);
+        g += `<div class="bottom total measure">${fmt(sum((e) => teamTime[e.key]))}</div>`;
+        g += `<div class="bottom total measure">${fmt(totalUsed)}d</div>`;
+        document.getElementById('grid').innerHTML = g;
+      }
+
+      document
+        .querySelectorAll('input[name="primary"]')
+        .forEach((i) => i.addEventListener('change', () => ((S.primary = i.value), render())));
+      document
+        .querySelectorAll('input[name="noEst"]')
+        .forEach((i) => i.addEventListener('change', () => ((S.noEst = i.value), render())));
+      document
+        .querySelectorAll('input[name="last"]')
+        .forEach((i) => i.addEventListener('change', () => ((S.last = i.value), render())));
+      render();
+    </script>
+  </body>
+</html>

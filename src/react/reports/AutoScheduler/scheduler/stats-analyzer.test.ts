@@ -365,14 +365,10 @@ describe('StatsAnalyzer plan (spec/044 consistent-plan.md)', () => {
     expect(latest().planQuantile).toBeGreaterThan(50);
   });
 
-  it('reproduces the same plan, with no over-capacity track, once its dates are written and frozen', () => {
-    const { analyzer, bars } = analyze(chain, 90);
-    analyzer.teardown();
-    const before = bars();
-
-    // What Update Epic Dates writes, read back the way Jira dates are parsed (local midnight).
-    const written = new Map(
-      before.map((bar: any) => {
+  // What Update Epic Dates writes, read back the way Jira dates are parsed (local midnight).
+  const writtenDates = (bars: any[]) =>
+    new Map(
+      bars.map((bar: any) => {
         const dates = getDatesFromSimulationIssue(bar, startDate);
         const local = (date: Date) => new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
         return [
@@ -381,6 +377,36 @@ describe('StatsAnalyzer plan (spec/044 consistent-plan.md)', () => {
         ];
       }),
     );
+
+  it('keeps the plan where it was when one epic in the middle is frozen at its written dates', () => {
+    const { analyzer, latest, bars } = analyze(chain, 90);
+    analyzer.teardown();
+    const before = bars();
+    const quantileBefore = latest().planQuantile;
+
+    // Freeze E4 only: E1–E3 now feed it (planned backward), E5–E6 follow it.
+    const written = writtenDates(before);
+    const withE4Frozen = chain.map((issue) =>
+      issue.key === 'E4' ? { ...issue, derivedTiming: { ...issue.derivedTiming, ...written.get('E4') } } : issue,
+    );
+    const again = analyze(withE4Frozen, 90, ['E4']);
+    again.analyzer.teardown();
+
+    const after = again.bars();
+    expect(Math.abs(again.latest().planQuantile - quantileBefore)).toBeLessThanOrEqual(5);
+    // The work feeding E4 still fits between the start date and E4.
+    expect(after[0].startDateWithTimeEnoughToFinish).toBeGreaterThanOrEqual(-1);
+    after.forEach((bar: any, i: number) => {
+      expect(Math.abs(bar.adjustedDaysOfWork - before[i].adjustedDaysOfWork)).toBeLessThanOrEqual(1);
+    });
+  });
+
+  it('reproduces the same plan, with no over-capacity track, once its dates are written and frozen', () => {
+    const { analyzer, bars } = analyze(chain, 90);
+    analyzer.teardown();
+    const before = bars();
+
+    const written = writtenDates(before);
     const frozenChain = chain.map((issue) => ({
       ...issue,
       derivedTiming: { ...issue.derivedTiming, ...written.get(issue.key) },
