@@ -68,6 +68,18 @@ export function getIssueHierarchyUnderType(timingCalculations = [], fromType, to
   return timingCalculations.slice(fromIndex, end);
 }
 
+/**
+ * Report types that have a "To" control (spec/012 — Table first; others opt in by adding a control
+ * AND joining this list). The param stays in the URL when the user switches report type, so every
+ * report NOT listed must ignore it — otherwise e.g. a Gantt silently drops the levels below the cap
+ * from the rollup and parents lose their children's dates.
+ */
+export const REPORT_TYPES_WITH_TO_ISSUE_TYPE = ['table'];
+
+export function toIssueTypeForReport(reportType, toIssueType) {
+  return REPORT_TYPES_WITH_TO_ISSUE_TYPE.includes(reportType) ? toIssueType : undefined;
+}
+
 // Compact, copy-pasteable projection of the transformed data (raw issues carry circular parent
 // refs and are too large to paste). Keeps the fields reports position/status off of.
 const projectIssueForLog = (issueOrRelease) => ({
@@ -149,7 +161,7 @@ export class TimelineReportViewModel extends ObservableObject {
         return getIssueHierarchyUnderType(
           this.routeData.issueTimingCalculations,
           this.routeData.primaryIssueType,
-          this.routeData.toIssueType,
+          toIssueTypeForReport(this.routeData.primaryReportType, this.routeData.toIssueType),
           this.routeData.issueHierarchy,
         );
       }

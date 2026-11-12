@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 
-import { getIssueHierarchyUnderType, TimelineReportViewModel } from './timeline-report-view-model.js';
+import {
+  getIssueHierarchyUnderType,
+  TimelineReportViewModel,
+  toIssueTypeForReport,
+} from './timeline-report-view-model.js';
 import { resolveLevelFilters } from '../../jira/rollup/filter-rows/level-filters';
 
 // The issue-type-config hierarchy (what `issueTimingCalculations` is built from). Level 0 is
@@ -219,5 +223,17 @@ describe('level filters', () => {
         'S-1',
       ]);
     });
+  });
+});
+
+describe('toIssueTypeForReport', () => {
+  it('applies the "To" cap on the Table report', () => {
+    expect(toIssueTypeForReport('table', 'Epic')).toBe('Epic');
+  });
+
+  it('ignores a leftover "To" cap on every other report type', () => {
+    for (const reportType of ['start-due', 'due', 'auto-scheduler', 'cards', 'report-of-reports']) {
+      expect(toIssueTypeForReport(reportType, 'Epic')).toBeUndefined();
+    }
   });
 });
