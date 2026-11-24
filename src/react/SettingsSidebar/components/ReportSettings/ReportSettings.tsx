@@ -25,6 +25,8 @@ interface ReportSettingsProps {
   unlicensed?: boolean;
   /** Renders the New Report link. See `SettingsSidebar`'s `onNewReport`. */
   onNewReport?: () => void;
+  /** The Timing button's label: "Rollup" behind the `rollupCalculation` flag (spec/046). */
+  timingLabel?: string;
 }
 
 const ReportSettings: FC<ReportSettingsProps> = ({
@@ -33,6 +35,7 @@ const ReportSettings: FC<ReportSettingsProps> = ({
   showStorage = false,
   unlicensed = false,
   onNewReport,
+  timingLabel = 'Timing',
 }) => {
   const [isFeedbackFormOpen, setIsFeedbackFormOpen] = useState(false);
   const [isBugFormOpen, setIsBugFormOpen] = useState(false);
@@ -99,7 +102,7 @@ const ReportSettings: FC<ReportSettingsProps> = ({
         </SidebarButton>
         <SidebarButton onClick={() => changeSettings('TIMING')}>
           <img src="./images/calendar.svg" aria-hidden />
-          Timing
+          {timingLabel}
         </SidebarButton>
 
         <div className="pt-6 pb-1">

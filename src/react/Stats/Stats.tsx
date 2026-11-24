@@ -12,7 +12,7 @@ type CanObservable<Value> = {
 };
 
 type RolledUpIssue = DerivedIssue & {
-  completionRollup: { totalWorkingDays: number };
+  completionRollup: { workingDaysWithAverages: number };
   historicalAdjustedEstimatedTime: Array<{
     historicalAdjustedEstimatedTime: number;
     teamName: String;

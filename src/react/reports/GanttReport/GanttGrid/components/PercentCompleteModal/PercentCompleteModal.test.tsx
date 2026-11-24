@@ -71,4 +71,56 @@ describe('PercentCompleteModal', () => {
     expect(screen.getByText('Calculation Source: average')).toBeInTheDocument();
     expect(screen.getByText('Story average days')).toBeInTheDocument();
   });
+
+  describe('work breakdown (rollupCalculation flag)', () => {
+    const parent = makeIssue({
+      key: 'A',
+      summary: 'Parent issue',
+      completedWorkingDays: 10,
+      totalWorkingDays: 40,
+      averagedWorkingDays: 8,
+      unsizedIssueKeys: ['C'],
+    });
+    const child = makeIssue({ key: 'B', summary: 'Child issue', completedWorkingDays: 10, totalWorkingDays: 32 });
+
+    it('is hidden when the flag is off', () => {
+      render(<PercentCompleteModal isOpen={true} onClose={vi.fn()} issue={parent} childIssues={[child]} />);
+      expect(screen.queryByText('Known %')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('work-breakdown-summary')).not.toBeInTheDocument();
+    });
+
+    it('adds Known % and Averaged Days, and summarizes the averaged days and gaps', () => {
+      render(
+        <PercentCompleteModal isOpen={true} onClose={vi.fn()} issue={parent} childIssues={[child]} showWorkBreakdown />,
+      );
+      expect(screen.getByText('Known %')).toBeInTheDocument();
+      expect(screen.getByText('Averaged Days')).toBeInTheDocument();
+      expect(screen.getByTestId('work-breakdown-summary')).toHaveTextContent(
+        '8 of 40 working days are averaged · 1 item has no size',
+      );
+      // parent known 10 of 32, child 10 of 32 (both % and known %) → 31% three times
+      expect(screen.getAllByText('31%')).toHaveLength(3);
+    });
+
+    it('says how a self-sized issue was sized', () => {
+      const self = makeIssue({
+        key: 'A',
+        completedWorkingDays: 2,
+        totalWorkingDays: 8,
+        source: 'self',
+        workSize: {
+          totalDaysOfWork: 8,
+          completedDaysOfWork: 2,
+          sizeFrom: 'teamTime',
+          legacy: false,
+          estimateDays: 4,
+          spanDays: 12,
+          teamTimeDays: 8,
+        },
+      });
+      render(<PercentCompleteModal isOpen={true} onClose={vi.fn()} issue={self} childIssues={[]} showWorkBreakdown />);
+      expect(screen.getByText('Sized by team time over its dates.')).toBeInTheDocument();
+      expect(screen.getByText('Team time over its dates')).toBeInTheDocument();
+    });
+  });
 });

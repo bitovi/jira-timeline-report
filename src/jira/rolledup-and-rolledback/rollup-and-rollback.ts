@@ -15,6 +15,11 @@ import {
   FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES,
 } from '../rollup/historical-adjusted-estimated-time/historical-adjusted-estimated-time';
 import { JiraIssue, RollupLevelAndCalculation } from '../shared/types';
+import { addWorkSize, AddWorkSizeOptions, WithWorkSize } from '../rollup/work-size/work-size';
+import { DEFAULT_WORK_SETTINGS, WorkSettings } from '../rollup/work-size/work-settings';
+
+/** The report's Work settings and anything the sizing stage needs beyond the issues. */
+export type WorkRollupConfig = { settings: WorkSettings } & AddWorkSizeOptions;
 
 export type WithIssueLastPeriod<T = unknown> = {
   issueLastPeriod: IssueOrRelease<T>;
@@ -27,6 +32,7 @@ export type WithRollups = WithReportingHierarchy &
   WithPercentComplete &
   WithChildStatuses &
   WithWorkTypeRollups &
+  Partial<WithWorkSize> &
   WithIssueLastPeriod;
 
 type RollupAddons = ReturnType<typeof addRollups>[number] extends IssueOrRelease<infer X> ? X : never;
@@ -36,6 +42,7 @@ export function rollupAndRollback(
   configuration: Partial<NormalizeIssueConfig>,
   rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[],
   when: Date,
+  work: WorkRollupConfig = { settings: DEFAULT_WORK_SETTINGS },
 ): IssueOrRelease<WithRollups>[] {
   // get old issues and prepare them
   const oldRawIssues = derivedIssuesToRawIssues(derivedIssues);
@@ -44,10 +51,12 @@ export function rollupAndRollback(
     configuration,
     rollupTimingLevelsAndCalculations,
     when,
+    // other work is loaded as it is now, without history, so it can't size the past period
+    { ...work, otherWork: [] },
   );
 
   // prepare current issues
-  const currentStatusRolledUp = addRollups(derivedIssues, rollupTimingLevelsAndCalculations);
+  const currentStatusRolledUp = addRollups(derivedIssues, rollupTimingLevelsAndCalculations, work);
 
   // TODO: use id in the future to handle issue keys being changed
   const oldMap: { [key: string]: (typeof pastStatusRolledUp)[number] } = {};
@@ -63,14 +72,23 @@ export function rollupAndRollback(
   return result;
 }
 
-function addRollups(derivedIssues: DerivedIssue[], rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[]) {
+function addRollups(
+  derivedIssues: DerivedIssue[],
+  rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[],
+  work: WorkRollupConfig = { settings: DEFAULT_WORK_SETTINGS },
+) {
   const normalizedReleases = normalizeReleases(derivedIssues, rollupTimingLevelsAndCalculations);
   const releases = deriveReleases(normalizedReleases);
   const reporting = addReportingHierarchy([...releases, ...derivedIssues], rollupTimingLevelsAndCalculations);
   const rolledUpDates = addRollupDates(reporting, rollupTimingLevelsAndCalculations);
   const rolledUpBlockers = rollupBlockedStatusIssues(rolledUpDates, rollupTimingLevelsAndCalculations);
   const rolledUpWarnings = rollupWarningIssues(rolledUpBlockers, rollupTimingLevelsAndCalculations);
-  const percentComplete = addPercentComplete(rolledUpWarnings, rollupTimingLevelsAndCalculations);
+  // a caller without Work settings (an older config) gets today's behavior
+  const { settings = DEFAULT_WORK_SETTINGS, ...workSizeOptions } = work;
+  const sized = addWorkSize(rolledUpWarnings, settings, workSizeOptions);
+  const percentComplete = addPercentComplete(sized, rollupTimingLevelsAndCalculations, {
+    missingSize: settings.missingSize,
+  });
   let childStatuses;
   if (FEATURE_HISTORICALLY_ADJUSTED_ESTIMATES()) {
     // NOTE not converting `historical-adjusted-estimated-time.js` to TS yet since it's experimental, per JMeyer
@@ -90,6 +108,7 @@ export function rollbackNormalizeAndDeriveEverything(
   configuration: Partial<NormalizeIssueConfig>,
   rollupTimingLevelsAndCalculations: RollupLevelAndCalculation[],
   when: Date,
+  work: WorkRollupConfig = { settings: DEFAULT_WORK_SETTINGS },
 ) {
   const pastRawIssues = rollbackIssues(rawIssues, when);
   // TODO remove commented code - DBrandon 2024/11/26
@@ -99,7 +118,7 @@ export function rollbackNormalizeAndDeriveEverything(
     const normalized = normalizeIssue(issue, configuration);
     return deriveIssue(normalized);
   });
-  return addRollups(pastDerived, rollupTimingLevelsAndCalculations);
+  return addRollups(pastDerived, rollupTimingLevelsAndCalculations, work);
 }
 
 function derivedIssuesToRawIssues<TRollupable extends DerivedIssue>(derivedIssues: TRollupable[]) {

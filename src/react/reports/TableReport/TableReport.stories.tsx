@@ -128,7 +128,7 @@ const makeFlatIssue = (
       datesDaysOfWork: estimatedDays,
       due: dueDate,
     },
-    completionRollup: { totalWorkingDays: estimatedDays },
+    completionRollup: { workingDaysWithAverages: estimatedDays },
     issue: {
       fields: {
         'Issue Type': { iconUrl: '' },
@@ -184,7 +184,7 @@ const makeRollup = (
       deterministicTotalDaysOfWork: estimatedDays,
       datesDaysOfWork: estimatedDays,
     },
-    completionRollup: { totalWorkingDays: estimatedDays },
+    completionRollup: { workingDaysWithAverages: estimatedDays },
     issue: {
       fields: {
         'Issue Type': { iconUrl: '' },

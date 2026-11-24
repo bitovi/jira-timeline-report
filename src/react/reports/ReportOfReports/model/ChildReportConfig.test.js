@@ -454,6 +454,12 @@ describe('ChildReportConfig', () => {
       loadBlockers: 'true',
       primaryReportType: 'table',
       timingCalculations: 'Epic:childrenFirstThenParent,Story:parentFirstThenChildren',
+      workSizeBy: 'teamTime',
+      workSizeFallback: 'none',
+      workNoEstimate: 'leaveOut',
+      workMissingSize: 'unsized',
+      workTeamTimeOtherWork: 'true',
+      workTeamTimeOtherWorkJql: 'labels != report-ignore',
       statusesToExclude: 'Done,Cancelled',
       statusesToShow: 'In Progress',
       statusesToRemove: 'Done',
@@ -645,6 +651,9 @@ describe('ChildReportConfig', () => {
       'rawIssuesRequestData',
       'derivedIssuesRequestData',
       'derivedIssues',
+      // spec/046: the team's other work, fetched to split team time. Derived, not a saved setting;
+      // embedded children don't load it.
+      'teamTimeOtherWork',
       // CanJS's wildcard definition, not a property.
       '*',
     ];

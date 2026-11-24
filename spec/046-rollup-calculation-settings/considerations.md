@@ -4,6 +4,9 @@ Things to watch out for before building [Team time over dates](./spec.md#team-ti
 
 ## Team time depends on what the report loaded
 
+**Handled** in [spec.md § The team's other work](./spec.md#the-teams-other-work): options 2 and 1
+below, as a checkbox to load the team's other work, with a warning when it is off.
+
 Team time splits each day among the team's **loaded** items. If the team also works on F, and F
 overlaps A but isn't in the report, A gets those days to itself and comes out too big. Load F and A
 shrinks. The same item gets different sizes in different reports, and changing the JQL changes A's

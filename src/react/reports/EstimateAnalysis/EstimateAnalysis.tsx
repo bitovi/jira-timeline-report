@@ -14,7 +14,7 @@ import { TeamEstimateAccuracyVariance } from './TeamEstimateAccuracyVariance';
 import { TeamMeanVsVarianceScatter } from './TeamMeanVsVarianceScatter';
 
 type RolledUpIssue = DerivedIssue & {
-  completionRollup: { totalWorkingDays: number };
+  completionRollup: { workingDaysWithAverages: number };
   historicalAdjustedEstimatedTime: Array<{ historicalAdjustedEstimatedTime: number; teamName: String }>;
 };
 

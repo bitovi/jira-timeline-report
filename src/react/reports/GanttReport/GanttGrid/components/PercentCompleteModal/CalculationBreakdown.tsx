@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import cn from 'classnames';
-import type { DerivedTimingSlice } from '../../types';
+import type { DerivedTimingSlice, WorkSizeSlice } from '../../types';
 
 /**
  * Minimal shape `SelfCalculationBox`/`TotalWorkingDays` need — deliberately decoupled from the
@@ -19,10 +19,27 @@ export interface TimingIssue {
     daysPerSprint?: number;
   } | null;
   derivedTiming?: DerivedTimingSlice;
+  /** Set once the rollup's sizing stage ran; says how the size was picked (spec/046). */
+  workSize?: WorkSizeSlice;
 }
 
-function timingMethod(issue: TimingIssue): 'dates' | 'points-and-confidence' | 'points' | 'unknown' {
+type TimingMethod = 'dates' | 'points-and-confidence' | 'points' | 'team-time' | 'unknown';
+
+function timingMethod(issue: TimingIssue): TimingMethod {
   const derivedTiming = issue.derivedTiming;
+  const workSize = issue.workSize;
+  if (workSize) {
+    switch (workSize.sizeFrom) {
+      case 'teamTime':
+        return 'team-time';
+      case 'dates':
+        return 'dates';
+      case 'estimate':
+        return derivedTiming?.isStoryPointsMedianValid ? 'points-and-confidence' : 'points';
+      default:
+        return 'unknown';
+    }
+  }
   if (!derivedTiming) return 'unknown';
   if (!issue.team?.spreadEffortAcrossDates && derivedTiming.datesDaysOfWork != null) {
     return 'dates';
@@ -36,6 +53,21 @@ function timingMethod(issue: TimingIssue): 'dates' | 'points-and-confidence' | '
     return 'unknown';
   }
 }
+
+/** The size the rollup used: `workSize` when present, else today's `derivedTiming`. */
+function sizeOf(issue: TimingIssue): { total: number; completed: number } {
+  if (issue.workSize) {
+    return { total: issue.workSize.totalDaysOfWork || 0, completed: issue.workSize.completedDaysOfWork || 0 };
+  }
+  return { total: issue.derivedTiming?.totalDaysOfWork || 0, completed: issue.derivedTiming?.completedDaysOfWork || 0 };
+}
+
+/** Sized by the report's Work settings (epics), shown to one decimal since team time is fractional. */
+function sizedBySettings(issue: TimingIssue): boolean {
+  return Boolean(issue.workSize && !issue.workSize.legacy);
+}
+
+const round1 = (n: number | null | undefined) => Math.round((n ?? 0) * 10) / 10;
 
 function percent(numerator: number, denominator: number): string {
   return Math.round((numerator * 100) / (denominator || 1)) + '%';
@@ -63,10 +95,27 @@ export function TotalWorkingDays({ issue }: { issue: TimingIssue }) {
   const issueTimingMethod = timingMethod(issue);
   return (
     <>
-      <CalculationBox title="Total working days" currentValue={Math.round(derivedTiming?.totalDaysOfWork || 0)} />
+      <CalculationBox
+        title="Total working days"
+        currentValue={sizedBySettings(issue) ? round1(sizeOf(issue).total) : Math.round(sizeOf(issue).total)}
+      />
       <EquationEqual />
       {(() => {
         switch (issueTimingMethod) {
+          case 'team-time':
+            return (
+              <>
+                <CalculationBox
+                  title="Team time over its dates"
+                  currentValue={round1(issue.workSize?.teamTimeDays) + ' days'}
+                  className="border-[#6CC3E0] bg-[#E7F9FF]"
+                />
+                <div className="text-sm self-center" style={{ gridColumn: '4 / span 2' }}>
+                  Its share of each day of its {issue.workSize?.spanDays ?? derivedTiming?.datesDaysOfWork ?? 0}-day
+                  span; the team's overlapping epics split a day by estimate.
+                </div>
+              </>
+            );
           case 'points-and-confidence':
             return (
               <>
@@ -140,6 +189,7 @@ export function TotalWorkingDays({ issue }: { issue: TimingIssue }) {
 export const SelfCalculationBox: FC<{ issue: TimingIssue }> = ({ issue }) => {
   const derivedTiming = issue.derivedTiming;
   const issueTimingMethod = timingMethod(issue);
+  const { total, completed } = sizeOf(issue);
 
   return (
     <>
@@ -147,27 +197,33 @@ export const SelfCalculationBox: FC<{ issue: TimingIssue }> = ({ issue }) => {
       <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(5, auto)' }}>
         <CalculationBox
           title="Completed working days"
-          currentValue={Math.round(derivedTiming?.completedDaysOfWork || 0)}
+          currentValue={sizedBySettings(issue) ? round1(completed) : Math.round(completed)}
         />
         <EquationEqual />
         <CalculationBox
           title="Completed percent"
           className="border-[#F5CD47] bg-[#FFF7D6]"
-          currentValue={percent(derivedTiming?.completedDaysOfWork || 0, derivedTiming?.totalDaysOfWork || 0)}
+          currentValue={percent(completed, total)}
         />
         <div className="self-center justify-self-center">x</div>
         <CalculationBox
           title="Total working days"
           className="border-[#94C748] bg-[#EFFFD6]"
-          currentValue={Math.round(derivedTiming?.totalDaysOfWork || 0)}
+          currentValue={sizedBySettings(issue) ? round1(total) : Math.round(total)}
         />
         <CalculationBox
           title="Completed percent"
           className="border-[#F5CD47] bg-[#FFF7D6]"
-          currentValue={percent(derivedTiming?.completedDaysOfWork || 0, derivedTiming?.totalDaysOfWork || 0)}
+          currentValue={percent(completed, total)}
         />
         <EquationEqual />
-        {derivedTiming?.datesDaysOfWork ? (
+        {issueTimingMethod === 'team-time' ? (
+          <>
+            <CalculationBox title="Team time up to today" currentValue={round1(completed) + ' days'} />
+            <div className="self-center justify-self-center">÷</div>
+            <CalculationBox title="Team time" currentValue={round1(total) + ' days'} />
+          </>
+        ) : derivedTiming?.datesDaysOfWork ? (
           <>
             <CalculationBox title="Start date – Now" currentValue={derivedTiming.datesCompletedDaysOfWork + ' days'} />
             <div className="self-center justify-self-center">÷</div>

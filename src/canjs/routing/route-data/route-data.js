@@ -49,7 +49,10 @@ import {
   createTeamFieldLookup,
 } from '../../../react/SettingsSidebar/components/TeamConfiguration/components/Teams/services/team-configuration/team-configuration';
 
-import { createNormalizeConfiguration } from '../../../react/SettingsSidebar/components/TeamConfiguration/components/Teams/shared/normalize';
+import {
+  createNormalizeConfiguration,
+  getTeamDateFields,
+} from '../../../react/SettingsSidebar/components/TeamConfiguration/components/Teams/shared/normalize';
 
 import { getSimplifiedIssueHierarchy } from '../../../stateful-data/jira-data-requests.js';
 import {
@@ -58,6 +61,14 @@ import {
   toSelectedParts,
 } from '../data-utils.js';
 import { getTimingLevels } from '../../../utils/timing/helpers';
+import {
+  WORK_PARAMS,
+  WORK_TEAM_TIME_OTHER_WORK_KEY,
+  WORK_TEAM_TIME_OTHER_WORK_JQL_KEY,
+  resolveWorkSettings,
+  usesTeamTime,
+} from '../../../jira/rollup/work-size/work-settings';
+import { buildOtherWorkQueries, loadTeamOtherWork } from '../../../jira/rollup/work-size/other-work';
 import { reportKeys } from '../../../react/services/reports';
 import { queryClient } from '../../../react/services/query/queryClient';
 import { nowUTC } from '../../../utils/date/utc';
@@ -94,6 +105,14 @@ function stringifyTimingCalculations(obj) {
   return Object.keys(obj || {})
     .map((key) => key + ':' + obj[key])
     .join(',');
+}
+
+/** A string route param limited to `values`; anything else reads as `default`. */
+function workEnumParam({ key, default: defaultValue, values }) {
+  return saveJSONToUrlButAlsoLookAtReport_DataWrapper(key, defaultValue, String, {
+    parse: (x) => (values.includes(x) ? x : defaultValue),
+    stringify: (x) => '' + x,
+  });
 }
 
 import { reports } from '../../../configuration/reports';
@@ -630,6 +649,116 @@ export class RouteData extends ObservableObject {
           }
         },
       },
+
+    // spec/046 Work settings: how much work an item is (mockups/sizing-picture.html). All default to
+    // today's behavior and apply with the `rollupCalculation` feature flag off (it only gates the UI).
+    workSizeBy: workEnumParam(WORK_PARAMS.sizeBy),
+    workSizeFallback: workEnumParam(WORK_PARAMS.sizeFallback),
+    workNoEstimate: workEnumParam(WORK_PARAMS.noEstimate),
+    workMissingSize: workEnumParam(WORK_PARAMS.missingSize),
+    workTeamTimeOtherWork: saveJSONToUrlButAlsoLookAtReport_DataWrapper(
+      WORK_TEAM_TIME_OTHER_WORK_KEY,
+      false,
+      Boolean,
+      booleanParsing,
+    ),
+    // Optional filter for the other-work queries, set next to the checkbox in the Sources tab.
+    workTeamTimeOtherWorkJql: saveJSONToUrlButAlsoLookAtReport_DataWrapper(
+      WORK_TEAM_TIME_OTHER_WORK_JQL_KEY,
+      '',
+      String,
+      {
+        parse: (x) => '' + x,
+        stringify: (x) => '' + x,
+      },
+    ),
+    get workSettings() {
+      return resolveWorkSettings({
+        sizeBy: this.workSizeBy,
+        sizeFallback: this.workSizeFallback,
+        noEstimate: this.workNoEstimate,
+        teamTimeOtherWork: this.workTeamTimeOtherWork,
+        missingSize: this.workMissingSize,
+      });
+    },
+
+    /**
+     * "Include the team's other overlapping work" (spec/046): each team's items at the same levels
+     * whose dates overlap the loaded ones, fetched only to split team time and never shown. An
+     * `OtherWorkStatus` (other-work.ts): `off` unless team time is in use and the box is checked.
+     * A load only starts when the queries or fields change, so re-deriving the report doesn't refetch.
+     */
+    teamTimeOtherWork: {
+      enumerable: false,
+      value({ listenTo, resolve }) {
+        let run = 0; // drops stale async steps of an earlier recompute
+        let loadToken = 0; // drops results of a superseded load
+        let currentKey = null; // the queries + fields of the load in flight or done
+
+        const stop = (status) => {
+          currentKey = null;
+          loadToken++;
+          resolve(status);
+        };
+
+        const recompute = () => {
+          const myRun = ++run;
+          const settings = this.workSettings;
+          if (!settings || !settings.teamTimeOtherWork || !usesTeamTime(settings)) {
+            return stop({ status: 'off' });
+          }
+          if (!this.isLoggedInObservable?.value) {
+            return stop({ status: 'unavailable', reason: "The team's other work can't be loaded for sample data." });
+          }
+          const issues = this.derivedIssues;
+          const configuration = this.normalizeConfiguration;
+          const fields = this.allFieldsToRequest;
+          if (!issues || !configuration || !fields) {
+            if (!currentKey) resolve({ status: 'loading', done: 0, total: 0 });
+            return;
+          }
+
+          Promise.resolve(this.fullyInheritedTeamConfigPromise)
+            .then((allTeamData) => {
+              if (myRun !== run) return;
+              const queryOptions = {
+                dateFieldsFor: (team, level) => getTeamDateFields(allTeamData, team, level),
+                nameToId: this.fieldMaps?.nameMap,
+                filterJql: this.workTeamTimeOtherWorkJql,
+              };
+              const fieldsToLoad = [...new Set([...fields, ...CORE_FIELDS])];
+              const key = JSON.stringify([buildOtherWorkQueries(issues, queryOptions).map((q) => q.jql), fieldsToLoad]);
+              if (key === currentKey) return;
+              currentKey = key;
+              const myLoad = ++loadToken;
+              resolve({ status: 'loading', done: 0, total: 0 });
+              return loadTeamOtherWork(issues, {
+                ...queryOptions,
+                fields: fieldsToLoad,
+                configuration,
+                fetchIssues: (params) => this.jiraHelpers.fetchAllJiraIssuesWithJQLUsingNamedFields(params),
+                onProgress: (progress) => {
+                  if (myLoad === loadToken) resolve({ status: 'loading', ...progress });
+                },
+              }).then((result) => {
+                if (myLoad === loadToken) resolve({ status: 'done', ...result });
+              });
+            })
+            .catch((error) => {
+              console.warn("Could not load the team's other work", error);
+              if (myRun === run) stop({ status: 'unavailable', reason: "Couldn't load the team's other work." });
+            });
+        };
+
+        listenTo('workSettings', recompute);
+        listenTo('workTeamTimeOtherWorkJql', recompute);
+        listenTo('derivedIssues', recompute);
+        listenTo('normalizeConfiguration', recompute);
+        listenTo('allFieldsToRequest', recompute);
+        listenTo('fieldMaps', recompute);
+        recompute();
+      },
+    },
 
     primaryReportType: saveJSONToUrlButAlsoLookAtReport_DataWrapper('primaryReportType', REPORTS[0].key, String, {
       parse: function (x) {

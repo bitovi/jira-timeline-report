@@ -32,7 +32,7 @@ export interface EstimationIssue {
   storyPointsMedian?: number;
   team?: EstimationTeam | null;
   derivedTiming?: EstimationDerivedTiming;
-  completionRollup?: { totalWorkingDays?: number };
+  completionRollup?: { workingDaysWithAverages?: number };
   reportingHierarchy: { childKeys: string[] };
   /** Raw Jira issue, only read for its issue-type icon. */
   issue?: { fields?: { 'Issue Type'?: { iconUrl?: string } } };

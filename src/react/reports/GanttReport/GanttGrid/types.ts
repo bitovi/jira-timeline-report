@@ -37,6 +37,17 @@ export interface DerivedTimingSlice {
   usedConfidence: number;
 }
 
+/** The sizing fields the % complete modal reads. */
+export interface WorkSizeSlice {
+  totalDaysOfWork: number | null;
+  completedDaysOfWork: number;
+  sizeFrom: 'teamTime' | 'estimate' | 'dates' | null;
+  legacy: boolean;
+  estimateDays: number | null;
+  spanDays: number | null;
+  teamTimeDays: number | null;
+}
+
 /** Minimal issue/release shape the Gantt report reads. */
 export interface IssueOrRelease {
   key: string;
@@ -64,12 +75,19 @@ export interface IssueOrRelease {
     design?: RollupStatus;
     [workType: string]: RollupStatus | undefined;
   };
+  /** A slice of the work rollup (`WorkRollup` in jira/rollup/percent-complete). */
   completionRollup: {
-    completedWorkingDays: number;
-    totalWorkingDays: number;
-    remainingWorkingDays?: number;
-    source?: 'self' | 'children' | 'average';
+    completedWorkingDaysWithAverages: number;
+    workingDaysWithAverages: number;
+    remainingWorkingDaysWithAverages?: number;
+    knownWorkingDays?: number;
+    knownCompletedWorkingDays?: number;
+    averagedWorkingDays?: number;
+    unsizedIssueKeys?: string[];
+    source?: 'self' | 'children' | 'average' | 'unsized';
   };
+  /** How the issue's own size was picked (`WorkSize` in jira/rollup/work-size). */
+  workSize?: WorkSizeSlice;
   /** Present when the underlying issue has been through `deriveIssue` — powers the "self" calculation breakdown. */
   derivedTiming?: DerivedTimingSlice;
   /**

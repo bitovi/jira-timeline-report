@@ -10,9 +10,49 @@ reporting (initiative totals, per-team sums), with:
 1. **Known vs. averaged work** carried separately, so a total can say how much of it is guessed.
 2. **A per-team breakdown** at every level, so an initiative can say "Team A 80d, Team B 40d" and
    the parts always add up to the total.
-3. **Report-level settings** for how work is sized, rolled up, and marked complete. Every default
-   reproduces today's behavior, **except sizing**: new reports default to team time over dates
-   (see [§Team time over dates](#team-time-over-dates)); saved reports keep today's sizing.
+3. **Report-level settings** for how **epics** are sized and rolled up. Every other level is sized
+   exactly as today (see [§Scope: epics only](#scope-epics-only)). The defaults reproduce today's
+   sizing, except for teams with Spread effort on.
+
+## Scope: epics only
+
+_Decided 2026-11-24. This section overrides anything below that says otherwise._
+
+The Work settings ("How much work is an epic?") apply **only to epics** (Jira hierarchy level 1).
+A story is one person's work and an initiative is several teams' work, so "team time" (one team
+sharing its days) only makes sense for epics.
+
+| Level                 | Size                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------ |
+| Stories and below     | Exactly as today (date span or estimate, by the team's Spread effort; level average) |
+| **Epics**             | **The Work settings**                                                                |
+| Initiatives and above | Exactly as today (children first, then own size by Spread effort; level average)     |
+
+**Units: days, as today.** Estimates stay in today's units (points ÷ `pointsPerDayPerTrack`, no
+÷ tracks) and a date span counts its business days. Team time is a share of each business day, so a
+lone epic's team time equals its date span. Every level adds up in the same units. (This replaces
+[§Units: team-days](#units-team-days).)
+
+**Defaults = today's sizing:** Its date span → Use its estimate → Use the average size of its level.
+There is no "not set" choice. For teams with Spread effort **off** an epic's size is unchanged; for
+teams with Spread effort **on**, epics now follow the report setting (date span first by default)
+instead of estimate first. Spread effort still applies to every other level.
+
+**Epics with loaded stories** follow the epic level's **date** rollup setting (Timing / Rollup
+Calculation, per level). Today work always uses _children first, then parent_; now the epic level
+takes its parent-vs-children rule from that setting:
+
+| Epic level's date setting      | Epic's work                                             |
+| ------------------------------ | ------------------------------------------------------- |
+| From parent (`parentOnly`)     | The epic's own size (Work settings), stories ignored    |
+| From children (`childrenOnly`) | Its stories' total (no stories: own data)               |
+| From parent, then children     | Own size if it has one, else its stories' total         |
+| From children, then parent     | Today's rule: stories if all have a size, else own size |
+| Earliest to latest (default)   | Today's rule (no "widest" meaning for size)             |
+
+Other levels keep _children first, then parent_ whatever their date setting.
+
+**Team's other work** only loads epics.
 
 "Estimated effort only" is not a separate rollup; it is this rollup with
 **Size work from = Estimate only** and **Items without a size = Leave unsized**.
@@ -115,6 +155,8 @@ parent and its children would compete for the same days) after derive and before
 
 ### Units: team-days
 
+> **Superseded** by [§Scope: epics only](#scope-epics-only): sizes stay in today's units.
+
 A **team-day** is one business day of the whole team. All sizing in the new settings is reported in
 team-days, per item, per team, and in totals. Organizations often know what a team-day costs, so
 team-days × that rate gives an item's rough cost.
@@ -172,6 +214,32 @@ Rejected alternatives:
 - **Cap each item at its own pace** (≤ density per day) — forces an even pace, so A can't take the
   whole day while alone (A = 6.7).
 
+### The team's other work
+
+Team time only splits days among **loaded** items. If the team also works on F, and F overlaps A
+but isn't in the report, A gets those days to itself and its team time comes out too high. See
+[considerations.md](./considerations.md).
+
+A checkbox in the **Sources** tab, next to "Load all children" and "Load all blockers" (it decides
+what gets loaded), behind the Rollup Calculation flag. Report-level and saved in the URL. It has a
+(?) tooltip explaining the use case and that it only matters when epics are sized by team time, plus
+an optional JQL filter like the other two. The filter is a plain condition (e.g.
+`labels != report-ignore`), added to each team's query as `AND (…)`; a leading `AND` is tolerated.
+The Rollup tab keeps only the result line (on) or the warning (off), under the team time option.
+
+| Setting                                       | Route key                  | Default |
+| --------------------------------------------- | -------------------------- | ------- |
+| **Include the team's other overlapping work** | `workTeamTimeOtherWork`    | off     |
+| Optional overlapping work JQL filters         | `workTeamTimeOtherWorkJql` | empty   |
+
+- **On:** for each team in the report, load that team's items at the same hierarchy level whose
+  dates overlap the loaded items (by the Team field, or project when the team falls back to its
+  project key). They are used only to split days; they are not shown in the report. Show a result
+  line and its limits, e.g. _"Loaded 23 more items from 3 teams to size team time. Work without
+  start/due dates or a Team field can't be found."_ Show loading progress while it runs.
+- **Off:** always show a warning, e.g. _"Team time only counts work loaded in this report. Turn on
+  'Include the team's other overlapping work' for more accurate sizes."_
+
 ### Across teams
 
 Totals and percent complete that span teams (initiatives) are weighted by team-days, so a day of
@@ -182,9 +250,8 @@ can be shown as cost and percent complete weighted by cost.
 
 ### Default
 
-Team time is the **first option** and the **default for new reports**, with
-the fallback chain team time → estimate → level average. Saved reports keep today's sizing (date
-span → estimate, or estimate first where Spread effort was on). See open question 3.
+> **Superseded** by [§Scope: epics only](#scope-epics-only): the default is date span → estimate →
+> level average for every report, new or saved. Team time is opt-in.
 
 Open: the option's name (e.g. "Its share of team time").
 
@@ -296,7 +363,9 @@ a mix.
 1. **`larger` compares the parent against children's _known_ days** (not with averages), so
    guessed children can't outweigh a real parent estimate. OK?
 2. **Migration** as above, or always start at `datesFirst` and only show the notice?
-3. **Keeping saved reports on today's sizing.** Defaults are omitted from the URL, so a saved report
+3. **Keeping saved reports on today's sizing.** _Resolved:_ the default is now today's sizing
+   (date span → estimate), so a saved report without the param keeps it (see [§Scope: epics
+   only](#scope-epics-only)). Defaults are omitted from the URL, so a saved report
    with no sizing param would switch to team time when the default changes. Options: rewrite every
    stored saved report once to add today's sizing explicitly, or use a new param name whose absence
    in a pre-existing saved report means today's sizing.

@@ -9,7 +9,14 @@ import type { IssueOrRelease } from '../types';
  * Unifies gantt-grid.js's `columnsToShow.getValue` + `getPercentComplete`.
  */
 export const computePercentComplete = (issue: IssueOrRelease): number | null => {
-  const { completedWorkingDays, totalWorkingDays } = issue.completionRollup;
-  if (!totalWorkingDays) return null;
-  return Math.round((completedWorkingDays * 100) / totalWorkingDays);
+  const { completedWorkingDaysWithAverages, workingDaysWithAverages } = issue.completionRollup;
+  if (!workingDaysWithAverages) return null;
+  return Math.round((completedWorkingDaysWithAverages * 100) / workingDaysWithAverages);
+};
+
+/** Percent complete of the known work only (averaged placeholders left out); `null` when nothing is known. */
+export const computeKnownPercentComplete = (issue: IssueOrRelease): number | null => {
+  const { knownCompletedWorkingDays = 0, knownWorkingDays = 0 } = issue.completionRollup;
+  if (!knownWorkingDays) return null;
+  return Math.round((knownCompletedWorkingDays * 100) / knownWorkingDays);
 };
