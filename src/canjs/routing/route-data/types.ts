@@ -14,6 +14,8 @@ type Overrides = {
   timingCalculations: Record<string, string>;
   childJQL: string;
   blockerJQL: string;
+  workTeamTimeOtherWork: boolean;
+  workTeamTimeOtherWorkJql: string;
   jql: string;
   statusesToExclude: string[];
   primaryIssueType: string;

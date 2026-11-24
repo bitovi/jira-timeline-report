@@ -113,7 +113,7 @@ const makeRollup = (key: string, summary: string, childKeys: string[] = []) =>
     url: `https://example.test/${key}`,
     reportingHierarchy: { childKeys },
     derivedTiming: {},
-    completionRollup: { totalWorkingDays: 3 },
+    completionRollup: { workingDaysWithAverages: 3 },
     issue: { fields: { 'Issue Type': { iconUrl: '' } } },
   }) as any;
 

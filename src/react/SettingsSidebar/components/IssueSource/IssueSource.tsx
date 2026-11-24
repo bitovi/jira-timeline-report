@@ -10,6 +10,9 @@ import { useAsyncFeatures } from '../../../services/features';
 import JQLTextArea from './components/JqlTextArea';
 import LoadChildren from './components/LoadChildren';
 import LoadBlockers from './components/LoadBlockers';
+import LoadOtherWork from './components/LoadOtherWork';
+import { useRouteData } from '../../../hooks/useRouteData';
+import type { OtherWorkStatus } from '../../../../jira/rollup/work-size/other-work';
 
 interface IssueSourceProps {}
 
@@ -19,6 +22,7 @@ const IssueSource: FC<IssueSourceProps> = () => {
   // The flag hides the CONTROL only; a URL carrying `loadBlockers=true` still loads blockers.
   // See spec/036-load-blockers-recursiveley §5.
   const { features } = useAsyncFeatures();
+  const [otherWorkStatus] = useRouteData<OtherWorkStatus | undefined>('teamTimeOtherWork');
 
   const {
     jql,
@@ -33,6 +37,10 @@ const IssueSource: FC<IssueSourceProps> = () => {
     setBlockerJql,
     loadBlockers,
     setLoadBlockers,
+    loadOtherWork,
+    setLoadOtherWork,
+    otherWorkJql,
+    setOtherWorkJql,
   } = useJQL();
 
   return (
@@ -55,6 +63,16 @@ const IssueSource: FC<IssueSourceProps> = () => {
             setLoadBlockers={setLoadBlockers}
             blockerJql={blockerJql}
             setBlockerJql={setBlockerJql}
+          />
+        )}
+        {/* spec/046 — behind the Rollup Calculation flag, like the rest of the Work settings */}
+        {features?.rollupCalculation && (
+          <LoadOtherWork
+            loadOtherWork={loadOtherWork}
+            setLoadOtherWork={setLoadOtherWork}
+            otherWorkJql={otherWorkJql}
+            setOtherWorkJql={setOtherWorkJql}
+            status={otherWorkStatus}
           />
         )}
       </div>

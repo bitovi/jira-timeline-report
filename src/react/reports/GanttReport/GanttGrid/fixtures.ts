@@ -4,7 +4,8 @@
  * These are deterministic fixtures so both unit/component tests and Storybook
  * boundary stories render predictable layouts.
  */
-import type { DerivedTimingSlice, IssueOrRelease, RollupStatus } from './types';
+import type { DerivedTimingSlice, IssueOrRelease, RollupStatus, WorkSizeSlice } from './types';
+import { createWorkRollup } from '../../../../jira/rollup/percent-complete/percent-complete';
 
 interface MakeRollupStatusOptions {
   status?: string;
@@ -39,9 +40,13 @@ interface MakeIssueOptions {
   depth?: number;
   completedWorkingDays?: number;
   totalWorkingDays?: number;
+  /** Of `totalWorkingDays` / `completedWorkingDays`, how much is averaged (the rest is known). */
+  averagedWorkingDays?: number;
+  averagedCompletedWorkingDays?: number;
+  unsizedIssueKeys?: string[];
   /** Which % complete calculation produced these numbers — defaults to 'children' (the pre-existing fixture behavior). */
-  source?: 'self' | 'children' | 'average';
-  remainingWorkingDays?: number;
+  source?: 'self' | 'children' | 'average' | 'unsized';
+  workSize?: WorkSizeSlice;
   derivedTiming?: DerivedTimingSlice;
   issueTypeIconUrl?: string;
   workTypeRollups?: Partial<Record<'dev' | 'qa' | 'uat' | 'design', MakeRollupStatusOptions>>;
@@ -64,8 +69,11 @@ export const makeIssue = ({
   depth = 0,
   completedWorkingDays = 0,
   totalWorkingDays = 0,
+  averagedWorkingDays = 0,
+  averagedCompletedWorkingDays = 0,
+  unsizedIssueKeys = [],
   source = 'children',
-  remainingWorkingDays = totalWorkingDays - completedWorkingDays,
+  workSize,
   derivedTiming,
   issueTypeIconUrl,
   type,
@@ -94,7 +102,15 @@ export const makeIssue = ({
       Object.entries(workTypeRollups).map(([workType, options]) => [workType, makeRollupStatus(options)]),
     ),
   },
-  completionRollup: { completedWorkingDays, totalWorkingDays, remainingWorkingDays, source },
+  completionRollup: createWorkRollup({
+    source,
+    knownWorkingDays: totalWorkingDays - averagedWorkingDays,
+    knownCompletedWorkingDays: completedWorkingDays - averagedCompletedWorkingDays,
+    averagedWorkingDays,
+    averagedCompletedWorkingDays,
+    unsizedIssueKeys,
+  }),
+  workSize,
   derivedTiming,
   issue: issueTypeIconUrl ? { fields: { 'Issue Type': { iconUrl: issueTypeIconUrl } } } : undefined,
   reportingHierarchy: { depth, childKeys },

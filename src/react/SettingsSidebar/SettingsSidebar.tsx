@@ -54,6 +54,7 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({
           showSidebarBranding={showSidebarBranding}
           changeSettings={changeSettings}
           showStorage={!!features?.reportsStorage}
+          timingLabel={features?.rollupCalculation ? 'Rollup' : 'Timing'}
           unlicensed={unlicensed}
           onNewReport={onNewReport}
         />
@@ -65,7 +66,7 @@ const SettingsSidebar: FC<SettingsSidebarProps> = ({
       )}
       {showSettings === 'TIMING' && (
         <SidebarLayout onGoBack={returnToSettings}>
-          <TimingCalculation />
+          <TimingCalculation showWork={!!features?.rollupCalculation} />
         </SidebarLayout>
       )}
       {showSettings === 'TEAMS' && (

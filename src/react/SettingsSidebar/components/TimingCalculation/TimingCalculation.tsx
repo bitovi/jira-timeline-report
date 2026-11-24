@@ -4,18 +4,32 @@ import Heading from '@atlaskit/heading';
 import Select from '@atlaskit/select';
 
 import { useTimingCalculations } from './hooks/useTimingCalculations';
+import WorkSettings from './components/WorkSettings';
 
 function getPadding(depth: number) {
   return ['pl-0', 'pl-8', 'pl-16', 'pl-24', 'pl-32'][depth] ?? 'pl-40';
 }
 
-const TimingCalculation = () => {
+interface TimingCalculationProps {
+  /**
+   * Behind the `rollupCalculation` feature flag (spec/046), resolved by the parent: renames the
+   * section to Rollup Calculation and adds the Work settings under the dates.
+   */
+  showWork?: boolean;
+}
+
+const TimingCalculation = ({ showWork = false }: TimingCalculationProps) => {
   const { selectableTimingLevels, updateCalculation } = useTimingCalculations();
 
   return (
     <>
       <div className="pt-4">
-        <Heading size="medium">Timing Calculation</Heading>
+        <Heading size="medium">{showWork ? 'Rollup Calculation' : 'Timing Calculation'}</Heading>
+        {showWork && (
+          <div className="pt-2">
+            <Heading size="small">Dates</Heading>
+          </div>
+        )}
         <p className="text-sm pt-1">Which dates are prioritized between parent and child?</p>
       </div>
       <div className="flex flex-col gap-2 my-2">
@@ -51,6 +65,7 @@ const TimingCalculation = () => {
           );
         })}
       </div>
+      {showWork && <WorkSettings />}
     </>
   );
 };

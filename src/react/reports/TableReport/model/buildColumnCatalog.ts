@@ -117,15 +117,15 @@ function timedDaysValue(issue: TableIssue): number | undefined {
 }
 
 function rolledUpDaysValue(issue: TableIssue): number | undefined {
-  const rollup = issue.completionRollup as { totalWorkingDays?: number } | undefined;
-  return rollup?.totalWorkingDays || undefined;
+  const rollup = issue.completionRollup as { workingDaysWithAverages?: number } | undefined;
+  return rollup?.workingDaysWithAverages || undefined;
 }
 
 /** Percent complete via the shared {@link computePercentComplete} (completed / total working days),
  * guarding the loose {@link TableIssue} shape: `null` when there's no rollup / no work to divide by. */
 function percentCompleteValue(issue: TableIssue): number | null {
-  const rollup = issue.completionRollup as { totalWorkingDays?: number } | undefined;
-  if (!rollup?.totalWorkingDays) return null;
+  const rollup = issue.completionRollup as { workingDaysWithAverages?: number } | undefined;
+  if (!rollup?.workingDaysWithAverages) return null;
   return computePercentComplete(issue as unknown as Parameters<typeof computePercentComplete>[0]);
 }
 

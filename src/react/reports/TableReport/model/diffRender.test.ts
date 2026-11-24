@@ -31,26 +31,26 @@ describe('roundIfNumber', () => {
 
 describe('compareToLast', () => {
   const getValue = (i: TableIssue) =>
-    (i.completionRollup as { totalWorkingDays?: number } | undefined)?.totalWorkingDays;
+    (i.completionRollup as { workingDaysWithAverages?: number } | undefined)?.workingDaysWithAverages;
   const identity = (v: unknown) => v;
 
   it('prefixes 🚫 when there is no prior period', () => {
-    const issue = makeIssue({ completionRollup: { totalWorkingDays: 5 } });
+    const issue = makeIssue({ completionRollup: { workingDaysWithAverages: 5 } });
     expect(compareToLast(issue, getValue, identity)).toBe('🚫 ➡ 5');
   });
 
   it('shows last ➡ current when the value changed', () => {
     const issue = makeIssue({
-      completionRollup: { totalWorkingDays: 5 },
-      issueLastPeriod: makeIssue({ completionRollup: { totalWorkingDays: 3 } }),
+      completionRollup: { workingDaysWithAverages: 5 },
+      issueLastPeriod: makeIssue({ completionRollup: { workingDaysWithAverages: 3 } }),
     });
     expect(compareToLast(issue, getValue, identity)).toBe('3 ➡ 5');
   });
 
   it('shows a single value when unchanged', () => {
     const issue = makeIssue({
-      completionRollup: { totalWorkingDays: 5 },
-      issueLastPeriod: makeIssue({ completionRollup: { totalWorkingDays: 5 } }),
+      completionRollup: { workingDaysWithAverages: 5 },
+      issueLastPeriod: makeIssue({ completionRollup: { workingDaysWithAverages: 5 } }),
     });
     expect(compareToLast(issue, getValue, identity)).toBe('5');
   });
@@ -61,7 +61,7 @@ describe('compareToLast', () => {
   });
 
   it('rounds by default (no formatValue argument)', () => {
-    const issue = makeIssue({ completionRollup: { totalWorkingDays: 12.4 } });
+    const issue = makeIssue({ completionRollup: { workingDaysWithAverages: 12.4 } });
     expect(compareToLast(issue, getValue)).toBe('🚫 ➡ 12');
   });
 });

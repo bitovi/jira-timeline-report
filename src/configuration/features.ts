@@ -14,6 +14,9 @@ type Feature = {
  */
 export const REPORTS_STORAGE_FEATURE_FLAG = 'reportsStorage';
 
+/** Read from outside the settings providers (the percent-complete modal), so named once. */
+export const ROLLUP_CALCULATION_FEATURE_FLAG = 'rollupCalculation';
+
 export const nonReportsFeatures: Feature[] = [
   // `secondaryReport` used to live here. The slot it gated is gone, and its report is now the
   // `cards` entry in `reports.ts` — which derives the `cardsReport` flag below. Anyone who had the
@@ -54,6 +57,15 @@ export const nonReportsFeatures: Feature[] = [
     name: 'Planning health columns',
     subtitle: 'Adds Rolled-up Start Date, Rolled-up Due Date and Estimate Progress columns to the Table report.',
     featureFlag: 'planningHealth',
+    onByDefault: false,
+  },
+  // Gates the Rollup Calculation UI: the Work settings in the (renamed) Timing Calculation section
+  // and the known/averaged additions in the percent-complete modal. The `work*` route params
+  // themselves apply with the flag off, like `loadBlockers`. See spec/046-rollup-calculation-settings.
+  {
+    name: 'Rollup Calculation',
+    subtitle: 'Choose how work is sized, rolled up and marked complete, including team time over dates.',
+    featureFlag: ROLLUP_CALCULATION_FEATURE_FLAG,
     onByDefault: false,
   },
 ] as const;

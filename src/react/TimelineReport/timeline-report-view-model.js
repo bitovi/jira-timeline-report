@@ -184,6 +184,11 @@ export class TimelineReportViewModel extends ObservableObject {
         this.routeData.normalizeConfiguration,
         this.rollupTimingLevelsAndCalculations,
         when,
+        // spec/046: how work is sized, plus the team's other overlapping work once it has loaded
+        {
+          settings: this.routeData.workSettings,
+          otherWork: this.routeData.teamTimeOtherWork?.status === 'done' ? this.routeData.teamTimeOtherWork.issues : [],
+        },
       );
 
       const statuses = calculateReportStatuses(rolledUp, when);

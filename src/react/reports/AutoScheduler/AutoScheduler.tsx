@@ -49,7 +49,7 @@ import {
 } from '../../SettingsSidebar/components/TeamConfiguration/components/Teams/shared/estimation';
 
 type RolledUpIssue = DerivedIssue & {
-  completionRollup: { totalWorkingDays: number };
+  completionRollup: { workingDaysWithAverages: number };
 };
 
 type ObservableOfIssues = CanObservable<Array<RolledUpIssue>>;

@@ -1,6 +1,20 @@
 import { expect, test, describe, it } from 'vitest';
-import { rollupPercentComplete } from './percent-complete';
+import { rollupPercentComplete, WorkRollup } from './percent-complete';
 import { IssueOrRelease } from '../rollup';
+
+/**
+ * The old `PercentCompleteRollup` fields, rebuilt from known + averaged. These tests predate the
+ * split, so comparing in the old shape proves default settings reproduce the old numbers.
+ */
+function toLegacy(rollup: WorkRollup) {
+  return {
+    completedWorkingDays: rollup.completedWorkingDaysWithAverages,
+    remainingWorkingDays: rollup.remainingWorkingDaysWithAverages,
+    totalWorkingDays: rollup.workingDaysWithAverages,
+    userSpecifiedValues: rollup.userSpecifiedValues,
+    source: rollup.source,
+  };
+}
 
 describe('percentComplete', () => {
   describe('childrenFirstThenParent', () => {
@@ -117,7 +131,7 @@ describe('percentComplete', () => {
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
-        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+        expect(actual[i].rollupData.map(toLegacy)).toStrictEqual(expected[i].rollupData);
       }
     });
 
@@ -235,7 +249,7 @@ describe('percentComplete', () => {
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
-        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+        expect(actual[i].rollupData.map(toLegacy)).toStrictEqual(expected[i].rollupData);
       }
     });
     it('should use average estimates if no estimate provided for stories', () => {
@@ -351,7 +365,7 @@ describe('percentComplete', () => {
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
-        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+        expect(actual[i].rollupData.map(toLegacy)).toStrictEqual(expected[i].rollupData);
       }
     });
 
@@ -432,7 +446,7 @@ describe('percentComplete', () => {
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
-        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+        expect(actual[i].rollupData.map(toLegacy)).toStrictEqual(expected[i].rollupData);
       }
     });
     it('should use default estimate if no estimates on stories, and fall back to epic estimates for epics and initiatives', () => {
@@ -512,7 +526,7 @@ describe('percentComplete', () => {
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
-        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+        expect(actual[i].rollupData.map(toLegacy)).toStrictEqual(expected[i].rollupData);
       }
     });
 
@@ -593,7 +607,7 @@ describe('percentComplete', () => {
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
-        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+        expect(actual[i].rollupData.map(toLegacy)).toStrictEqual(expected[i].rollupData);
       }
     });
     it('should use default estimate if no estimates on stories or epics, and fall back to initiative estimates (with completed days of work)', () => {
@@ -673,7 +687,7 @@ describe('percentComplete', () => {
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
-        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+        expect(actual[i].rollupData.map(toLegacy)).toStrictEqual(expected[i].rollupData);
       }
     });
 
@@ -754,7 +768,7 @@ describe('percentComplete', () => {
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
-        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+        expect(actual[i].rollupData.map(toLegacy)).toStrictEqual(expected[i].rollupData);
       }
     });
     it('should prefer stories over epics and initiatives with completion', () => {
@@ -834,7 +848,7 @@ describe('percentComplete', () => {
 
       expect(actual).toHaveLength(expected.length);
       for (const i of Array(actual.length).keys()) {
-        expect(actual[i].rollupData).toStrictEqual(expected[i].rollupData);
+        expect(actual[i].rollupData.map(toLegacy)).toStrictEqual(expected[i].rollupData);
       }
     });
   });

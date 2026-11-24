@@ -7,6 +7,7 @@ import {
 import { requiredFieldsFor } from '../../TableReport/model/builtinFieldRegistry';
 import { allStatusesSorted } from '../../../../jira/normalized/normalize';
 import { getTimingLevels } from '../../../../utils/timing/helpers';
+import { WORK_PARAMS, resolveWorkSettings } from '../../../../jira/rollup/work-size/work-settings';
 import { issueHierarchyFromNormalizedIssues, toSelectedParts } from '../../../../canjs/routing/data-utils.js';
 import { reports as REPORTS } from '../../../../configuration/reports';
 import { DAY_IN_MS } from '../../../../utils/date/date-helpers.js';
@@ -148,6 +149,14 @@ export const CHILD_PARAMS = {
         .join(','),
     defaultRaw: '',
   },
+
+  // spec/046 Work settings. Invalid values resolve to defaults in `workSettings`.
+  workSizeBy: string(WORK_PARAMS.sizeBy.default),
+  workSizeFallback: string(WORK_PARAMS.sizeFallback.default),
+  workNoEstimate: string(WORK_PARAMS.noEstimate.default),
+  workMissingSize: string(WORK_PARAMS.missingSize.default),
+  workTeamTimeOtherWork: boolean(),
+  workTeamTimeOtherWorkJql: string(),
 
   // filtering
   statusesToExclude: list(),
@@ -430,6 +439,17 @@ export class ChildReportConfig extends ObservableObject {
     fieldMaps: sharedFromParent('fieldMaps'),
 
     // --- hybrid --------------------------------------------------------------------------------
+
+    /** THIS child's Work settings (spec/046), resolved like route-data's `workSettings`. */
+    get workSettings() {
+      return resolveWorkSettings({
+        sizeBy: this.workSizeBy,
+        sizeFallback: this.workSizeFallback,
+        noEstimate: this.workNoEstimate,
+        teamTimeOtherWork: this.workTeamTimeOtherWork,
+        missingSize: this.workMissingSize,
+      });
+    },
 
     /**
      * The global hierarchy sliced by THIS child's `timingCalculations`. Treating it as fully global

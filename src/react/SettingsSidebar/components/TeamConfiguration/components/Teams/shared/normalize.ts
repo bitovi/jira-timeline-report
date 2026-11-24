@@ -19,6 +19,12 @@ const getConfiguration = (allData: AllTeamData, teamKey?: string, heirarchyLevel
   return allData[key]?.[level] ?? allData[key]?.defaults ?? allData.__GLOBAL__[level] ?? allData.__GLOBAL__.defaults;
 };
 
+/** The start/due date fields (names) a team uses at a hierarchy level. Used to query a team's other work (spec/046). */
+export const getTeamDateFields = (allData: AllTeamData, teamKey: string, hierarchyLevel: number) => {
+  const { startDateField, dueDateField } = getConfiguration(allData, teamKey, hierarchyLevel);
+  return { startDateField, dueDateField };
+};
+
 const defaults = [
   'Start date',
   'Due date',

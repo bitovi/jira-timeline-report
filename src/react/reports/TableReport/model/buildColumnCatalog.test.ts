@@ -138,7 +138,7 @@ describe('buildColumnCatalog', () => {
     expect(timed.getValue({ derivedTiming: { datesDaysOfWork: 7 } })).toBe(7);
 
     const rolled = byId.get('estimation:rolledUpDays')!;
-    expect(rolled.getValue({ completionRollup: { totalWorkingDays: 12 } })).toBe(12);
+    expect(rolled.getValue({ completionRollup: { workingDaysWithAverages: 12 } })).toBe(12);
 
     // render shows the "last ➡ current" diff (Phase 2 parity with the Estimation Table)
     const issue: TableIssue = { derivedTiming: { isStoryPointsMedianValid: true, deterministicTotalDaysOfWork: 4.6 } };
@@ -155,12 +155,16 @@ describe('buildColumnCatalog', () => {
     expect(percent.defaultAggregate).toBe('avg');
 
     // getValue: completed / total working days, rounded; null when there's no work.
-    expect(percent.getValue({ completionRollup: { completedWorkingDays: 3, totalWorkingDays: 4 } })).toBe(75);
-    expect(percent.getValue({ completionRollup: { completedWorkingDays: 0, totalWorkingDays: 0 } })).toBeNull();
+    expect(
+      percent.getValue({ completionRollup: { completedWorkingDaysWithAverages: 3, workingDaysWithAverages: 4 } }),
+    ).toBe(75);
+    expect(
+      percent.getValue({ completionRollup: { completedWorkingDaysWithAverages: 0, workingDaysWithAverages: 0 } }),
+    ).toBeNull();
     expect(percent.getValue({})).toBeNull();
 
     // render: `NN%` / `—`, plain text when no callback is supplied.
-    const issue: TableIssue = { completionRollup: { completedWorkingDays: 3, totalWorkingDays: 4 } };
+    const issue: TableIssue = { completionRollup: { completedWorkingDaysWithAverages: 3, workingDaysWithAverages: 4 } };
     expect(percent.render(75, { issue })).toBe('75%');
     expect(percent.render(null, { issue })).toBe('—');
 
