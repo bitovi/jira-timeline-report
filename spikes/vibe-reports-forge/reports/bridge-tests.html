@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+  <body>
+    <h3>Bridge allowlist tests (runs inside the report frame)</h3>
+    <ol id="out"></ol>
+    <script>
+      let n = 0;
+      const pending = new Map();
+      addEventListener('message', (e) => {
+        if (e.source !== parent) return;
+        const p = pending.get(e.data && e.data.id);
+        if (p) {
+          pending.delete(e.data.id);
+          p(e.data);
+        }
+      });
+      const send = (msg, timeout = 30000) =>
+        new Promise((resolve) => {
+          const id = msg.id ?? 'b' + ++n;
+          pending.set(id, resolve);
+          parent.postMessage({ ...msg, id }, '*');
+          setTimeout(() => pending.has(id) && (pending.delete(id), resolve({ id, timeout: true })), timeout);
+        });
+
+      const cases = [
+        [
+          'valid getIssues',
+          { type: 'getIssues', jql: 'created >= -3650d ORDER BY created DESC', limit: 5 },
+          (r) => r.ok && Array.isArray(r.data.issues),
+        ],
+        ['unknown type', { type: 'deleteIssue', jql: 'x' }, (r) => r.ok === false],
+        [
+          'write attempt via type',
+          { type: 'requestJira', path: '/rest/api/3/issue', method: 'POST' },
+          (r) => r.ok === false,
+        ],
+        [
+          'extra property (method)',
+          { type: 'getIssues', jql: 'created >= -3650d', method: 'DELETE' },
+          (r) => r.ok === false,
+        ],
+        ['extra property (path)', { type: 'getIssues', jql: 'x', path: '/rest/api/3/myself' }, (r) => r.ok === false],
+        ['non-string jql (number)', { type: 'getIssues', jql: 42 }, (r) => r.ok === false],
+        ['non-string jql (object)', { type: 'getIssues', jql: { toString: 1 } }, (r) => r.ok === false],
+        ['fields not array', { type: 'getIssues', jql: 'x', fields: 'summary' }, (r) => r.ok === false],
+        [
+          'field name injection',
+          { type: 'getIssues', jql: 'x', fields: ['summary&expand=foo'] },
+          (r) => r.ok === false,
+        ],
+        ['limit too large', { type: 'getIssues', jql: 'x', limit: 999999 }, (r) => r.ok === false],
+        ['malformed JQL', { type: 'getIssues', jql: 'project = = "NOPE' }, (r) => r.ok === false && !!r.error.message],
+        [
+          'valid after malformed (host still works)',
+          { type: 'getIssues', jql: 'created >= -3650d ORDER BY created DESC', limit: 1 },
+          (r) => r.ok,
+        ],
+      ];
+
+      (async () => {
+        const out = document.getElementById('out');
+        const results = [];
+        for (const [name, msg, check] of cases) {
+          const r = await send(msg);
+          const pass = !r.timeout && check(r);
+          const detail = r.timeout
+            ? 'no reply'
+            : r.ok
+              ? `ok, ${r.data.issues.length} issues`
+              : `error: ${r.error.message}`;
+          results.push({ name, pass, detail });
+          const li = document.createElement('li');
+          li.textContent = `${pass ? 'PASS' : 'FAIL'} — ${name}: ${detail}`;
+          li.style.color = pass ? '#216e4e' : '#ae2a19';
+          out.append(li);
+        }
+        // Non-object messages get no usable id, so they are checked by the host log instead.
+        parent.postMessage('a string message', '*');
+        parent.postMessage(null, '*');
+        parent.postMessage({ __spikeTest: true, kind: 'bridge-results', results }, '*');
+      })();
+    </script>
+  </body>
+</html>

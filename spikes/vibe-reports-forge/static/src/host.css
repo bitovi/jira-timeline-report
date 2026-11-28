@@ -1,0 +1,45 @@
+body {
+  font:
+    13px system-ui,
+    sans-serif;
+  margin: 12px;
+  color: #172b4d;
+}
+section {
+  border: 1px solid #dfe1e6;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+h2 {
+  font-size: 15px;
+  margin: 0 0 6px;
+}
+button {
+  margin: 2px 4px 2px 0;
+}
+table {
+  border-collapse: collapse;
+  margin-top: 6px;
+}
+td,
+th {
+  border: 1px solid #dfe1e6;
+  padding: 2px 6px;
+  text-align: left;
+  vertical-align: top;
+  font-size: 12px;
+}
+.pass {
+  color: #216e4e;
+}
+.fail {
+  color: #ae2a19;
+  font-weight: bold;
+}
+.frames {
+  margin-top: 8px;
+}
+code {
+  font-size: 11px;
+}

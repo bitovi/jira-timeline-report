@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Issues by status</title>
+    <style>
+      body {
+        font:
+          13px system-ui,
+          sans-serif;
+        margin: 12px;
+        color: #172b4d;
+      }
+      h1 {
+        font-size: 16px;
+        margin: 0 0 8px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 12px;
+      }
+      td,
+      th {
+        border-bottom: 1px solid #dfe1e6;
+        padding: 3px 6px;
+        text-align: left;
+      }
+      .err {
+        color: #ae2a19;
+      }
+      .bar-label {
+        font-size: 11px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Issues by status <small id="meta"></small></h1>
+    <svg id="chart" width="600" height="160" role="img" aria-label="Issues by status chart"></svg>
+    <table>
+      <thead>
+        <tr>
+          <th>Key</th>
+          <th>Summary</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <script>
+      // Minimal Report SDK client: postMessage to the host, which validates and queries Jira as the viewer.
+      const sdk = (() => {
+        let next = 0;
+        const pending = new Map();
+        addEventListener('message', (e) => {
+          if (e.source !== parent) return;
+          const p = pending.get(e.data && e.data.id);
+          if (!p) return;
+          pending.delete(e.data.id);
+          e.data.ok ? p.resolve(e.data.data) : p.reject(Object.assign(new Error(e.data.error.message), e.data.error));
+        });
+        const call = (msg) =>
+          new Promise((resolve, reject) => {
+            const id = 'r' + ++next;
+            pending.set(id, { resolve, reject });
+            parent.postMessage({ id, ...msg }, '*');
+          });
+        return {
+          getIssues: (jql, opts = {}) => call({ type: 'getIssues', jql, ...opts }).then((d) => d.issues),
+        };
+      })();
+
+      const JQL = 'updated >= -3650d ORDER BY updated DESC';
+      const el = (tag, attrs = {}, text) => {
+        const ns = ['svg', 'rect', 'text'].includes(tag) ? 'http://www.w3.org/2000/svg' : null;
+        const node = ns ? document.createElementNS(ns, tag) : document.createElement(tag);
+        for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+        if (text != null) node.textContent = text;
+        return node;
+      };
+
+      sdk
+        .getIssues(JQL, { fields: ['summary', 'status'], limit: 200 })
+        .then((issues) => {
+          document.getElementById('meta').textContent = `(${issues.length} issues, ${JQL})`;
+          const counts = {};
+          for (const i of issues) {
+            const s = i.fields.status?.name ?? 'Unknown';
+            counts[s] = (counts[s] || 0) + 1;
+          }
+          const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+          const max = Math.max(1, ...entries.map(([, n]) => n));
+          const chart = document.getElementById('chart');
+          const w = 600 / Math.max(1, entries.length);
+          entries.forEach(([name, n], i) => {
+            const h = (n / max) * 120;
+            chart.append(el('rect', { x: i * w + 4, y: 130 - h, width: w - 8, height: h, fill: '#0c66e4' }));
+            chart.append(el('text', { x: i * w + 4, y: 145, class: 'bar-label' }, `${name} (${n})`));
+          });
+          const rows = document.getElementById('rows');
+          for (const i of issues.slice(0, 50)) {
+            const tr = el('tr');
+            tr.append(el('td', {}, i.key), el('td', {}, i.fields.summary), el('td', {}, i.fields.status?.name));
+            rows.append(tr);
+          }
+          document.body.dataset.rendered = String(issues.length);
+        })
+        .catch((e) => {
+          document.body.append(el('p', { class: 'err' }, 'Error: ' + e.message));
+          document.body.dataset.rendered = 'error';
+        });
+    </script>
+  </body>
+</html>

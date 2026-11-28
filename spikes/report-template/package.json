@@ -1,0 +1,27 @@
+{
+  "name": "report-template-spike",
+  "private": true,
+  "description": "spec/045 S8: npm/TypeScript authoring template for vibe-coded reports. Not part of the main repo build.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && vite build",
+    "build:sdk": "node sdk/build-runtime.mjs",
+    "test:sandbox": "node harness/run.mjs"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.6.0",
+    "vite": "^7.0.0",
+    "vite-plugin-singlefile": "^2.0.0"
+  }
+}

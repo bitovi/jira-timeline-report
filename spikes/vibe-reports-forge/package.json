@@ -1,0 +1,18 @@
+{
+  "name": "vibe-reports-forge-spike",
+  "private": true,
+  "description": "Throwaway Forge app for spec/045 feasibility spikes. Not part of the main repo build.",
+  "scripts": {
+    "build": "node build.mjs",
+    "local": "node local/serve.mjs",
+    "local:test": "node local/run-sandbox-tests.mjs"
+  },
+  "dependencies": {
+    "@forge/bridge": "latest",
+    "@forge/kvs": "latest",
+    "@forge/resolver": "latest"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}

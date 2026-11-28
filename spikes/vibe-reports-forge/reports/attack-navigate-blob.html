@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+  <body>
+    <p>Blob navigation attack: navigate this frame to a blob: document (fresh globals, no prelude) and try WebRTC.</p>
+    <script>
+      const payload =
+        '<script>(async()=>{let r;try{if(typeof RTCPeerConnection==="undefined")r="no RTCPeerConnection";else{' +
+        'const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});const t=new Set();' +
+        'pc.onicecandidate=e=>e.candidate&&t.add(e.candidate.type);pc.createDataChannel("x");' +
+        'await pc.setLocalDescription(await pc.createOffer());await new Promise(z=>setTimeout(z,3000));r=[...t].join(",")||"none"}}' +
+        'catch(e){r="threw "+e.message}parent.postMessage({__spikeTest:true,kind:"nav-blob-webrtc",result:r},"*")})()<' +
+        '/script>';
+      setTimeout(() => {
+        try {
+          location.href = URL.createObjectURL(new Blob([payload], { type: 'text/html' }));
+        } catch (e) {
+          parent.postMessage({ __spikeTest: true, kind: 'nav-threw', message: e.message }, '*');
+        }
+      }, 50);
+      setTimeout(() => parent.postMessage({ __spikeTest: true, kind: 'nav-still-here' }, '*'), 2500);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "sdk": { "version": "1", "provide": "host" },
+  "data": {
+    "work": { "source": "settings", "fields": ["Summary", "Status", "Start date", "Due date"] }
+  }
+}
